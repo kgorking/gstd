@@ -1,0 +1,35 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "cls && ${env:GBS_BIN} cl=msvc clean config=debug,warnings build unittest",
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "rebuild",
+            "type": "shell",
+            "command": "${env:GBS_BIN} cl=msvc clean build=release,warnings"
+        },
+        {
+            "label": "clean",
+            "type": "shell",
+            "command": "${env:GBS_BIN} clean"
+        },
+        {
+            "label": "test",
+            "type": "shell",
+            "command": "${env:GBS_BIN} cl=msvc config=release,warnings unittest",
+            "problemMatcher": [],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        }
+    ]
+}
