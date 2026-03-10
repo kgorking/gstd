@@ -3,14 +3,22 @@ import std;
 import gs;
 
 TEST_CASE("test.os_list_dir") {
-    bool saw = false;
-    for (string name : os::list_dir("s.gstd/src/os")) {
-        if (name == "read_lines.cppm") {
-            saw = true;
-            break;
+    bool saw_file = false;
+    bool saw_directory = false;
+    for (const auto& entry : os::list_dir("s.gstd/src/os")) {
+        if (entry.name == "read_lines.cppm") {
+            saw_file = true;
+            CHECK(!entry.is_directory);
+            CHECK(!entry.is_symlink);
+        }
+        if (entry.name == "..") {
+            // Parent directory entry
+            if (entry.is_directory) {
+                saw_directory = true;
+            }
         }
     }
-    CHECK(saw);
+    CHECK(saw_file);
 }
 
 TEST_CASE("test.os_exists") {
