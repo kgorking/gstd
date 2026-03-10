@@ -19,12 +19,6 @@ namespace {
     // Get the byte length of a UTF-8 character from its first byte
     inline std::ptrdiff_t utf8_char_len(char8_t first_byte) {
         return std::max(1, std::countl_one((std::uint8_t)first_byte));
-        /*if ((first_byte & 0x80) == 0) return 1;          // 0xxxxxxx
-        if ((first_byte & 0xE0) == 0xC0) return 2;       // 110xxxxx
-        if ((first_byte & 0xF0) == 0xE0) return 3;       // 1110xxxx
-        if ((first_byte & 0xF8) == 0xF0) return 4;       // 11110xxx
-        return 1; // Invalid UTF-8, treat as 1 byte
-        */
     }
 
     // Count the number of UTF-8 characters in a byte range
@@ -79,6 +73,7 @@ namespace {
     }
 }
 
+// An immutable UTF-8 string class with efficient slicing (substring) and character-level indexing.
 export class string {
     std::shared_ptr<StringData> data_;
     std::ptrdiff_t start_;
