@@ -217,36 +217,44 @@ public:
         return string(data_, new_start, new_end);
     }
 
-    // Substring as string_view - works with character positions
-    std::u8string_view substr_view(std::ptrdiff_t char_pos, std::ptrdiff_t char_len = -1) const {
-        std::ptrdiff_t byte_pos = char_index_to_byte_offset(data_->data + start_, end_ - start_, char_pos);
-        std::ptrdiff_t new_start = start_ + byte_pos;
-        
-        std::ptrdiff_t byte_len;
-        if (char_len < 0) {
-            byte_len = end_ - new_start;
-        } else {
-            byte_len = char_index_to_byte_offset(data_->data + new_start, end_ - new_start, char_len);
-        }
-        
-        return std::u8string_view(data_->data + new_start, byte_len);
-    }
-
-    // Remove prefix
-    void remove_prefix(std::ptrdiff_t len) {
-        start_ += len;
+    // Remove prefix (character count)
+    void remove_prefix(std::ptrdiff_t char_count) {
+        if (char_count <= 0) return;
+        std::ptrdiff_t byte_offset = char_index_to_byte_offset(data_->data + start_, end_ - start_, char_count);
+        start_ += byte_offset;
         if (start_ > end_)
             start_ = end_;
     }
 
-    // Convert to string_view
-    std::u8string_view view() const {
-        return std::u8string_view(data_->data + start_, end_ - start_);
+    // Remove postfix (character count)
+    void remove_postfix(std::ptrdiff_t char_count) {
+        if (char_count <= 0) return;
+        std::ptrdiff_t char_pos = size() - char_count;
+        if (char_pos <= 0) {
+            end_ = start_;
+            return;
+        }
+        std::ptrdiff_t byte_offset = char_index_to_byte_offset(data_->data + start_, end_ - start_, char_pos);
+        end_ = start_ + byte_offset;
     }
 
     // Get raw data pointer
     const char8_t* data() const {
         return data_->data + start_;
+    }
+
+    // Get last character as a string
+    string back() const {
+        if (empty()) return string();
+        
+        // Walk backwards from the end to find the start of the last UTF-8 character
+        // UTF-8 continuation bytes have pattern 10xxxxxx, so skip those
+        std::ptrdiff_t last_char_start = end_ - 1;
+        while (last_char_start > start_ && (data_->data[last_char_start] & 0xC0) == 0x80) {
+            last_char_start--;
+        }
+        
+        return string(data_, last_char_start, end_);
     }
 
     // Get C-style string pointer (for compatibility)
@@ -256,8 +264,7 @@ public:
 
     // Convert to std::string
     std::string to_string() const {
-        auto v = view();
-        return std::string(v.begin(), v.end());
+        return std::string(data_->data + start_, data_->data + end_);
     }
 
     // Find functions
@@ -318,6 +325,31 @@ public:
 
     bool ends_with(char8_t c) const {
         return !empty() && data_->data[end_ - 1] == c;
+    }
+
+    // Concatenation
+    string operator+(const string& other) const {
+        std::ptrdiff_t total_size = size_bytes() + other.size_bytes();
+        char8_t* new_data = new char8_t[total_size + 1];
+        std::memcpy(new_data, data(), size_bytes());
+        std::memcpy(new_data + size_bytes(), other.data(), other.size_bytes());
+        new_data[total_size] = 0;
+        auto block = std::make_shared<StringData>();
+        block->data = new_data;
+        block->size = total_size;
+        return string(block, 0, total_size);
+    }
+
+    string operator+(std::u8string_view sv) const {
+        return *this + string(sv);
+    }
+
+    string operator+(const char8_t* s) const {
+        return *this + string(s);
+    }
+
+    string operator+(const char* s) const {
+        return *this + string(s);
     }
 
     // Comparison

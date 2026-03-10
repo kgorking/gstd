@@ -104,3 +104,87 @@ TEST_CASE("test.string_literals") {
 
     CHECK(expected_emoji == u8"🚀");
 }
+
+TEST_CASE("test.string_remove_prefix") {
+    // Test remove_prefix with ASCII
+    string ascii("hello world");
+    ascii.remove_prefix(6);
+    CHECK(ascii == "world");
+    CHECK(ascii.size() == 5);
+
+    // Test remove_prefix with zero characters
+    string ascii2("hello");
+    ascii2.remove_prefix(0);
+    CHECK(ascii2 == "hello");
+
+    // Test remove_prefix with all characters
+    string ascii3("hello");
+    ascii3.remove_prefix(5);
+    CHECK(ascii3.empty());
+    CHECK(ascii3.size() == 0);
+
+    // Test remove_prefix with UTF-8 multibyte characters
+    char8_t utf8_bytes[] = { 
+        u8'h', 0xc3, 0xa9,  // h + é (1 char = 2 bytes)
+        u8'l', u8'l', u8'o', u8' ', u8'w', 
+        0xc3, 0xb6,         // ö (1 char = 2 bytes)
+        u8'r', u8'l', u8'd', 0 
+    };
+    string utf8_str(utf8_bytes);
+    // "héllo wörld": 11 characters
+    utf8_str.remove_prefix(5);  // Remove "héllo"
+    CHECK(utf8_str.size() == 6);  // Should be " wörld"
+    
+    char8_t expected_bytes[] = { u8' ', u8'w', 0xc3, 0xb6, u8'r', u8'l', u8'd', 0 };
+    string expected_str(expected_bytes);
+    CHECK(utf8_str == expected_str);
+
+    // Test with 4-byte emoji character
+    string rocket_emoji = "🚀🚀🚀";
+    rocket_emoji.remove_prefix(2);  // Remove first two emojis
+    CHECK(rocket_emoji.size() == 1);
+    string expected_rocket("🚀");
+    CHECK(rocket_emoji == expected_rocket);
+}
+
+TEST_CASE("test.string_remove_postfix") {
+    // Test remove_postfix with ASCII
+    string ascii("hello world");
+    ascii.remove_postfix(6);
+    CHECK(ascii == "hello");
+    CHECK(ascii.size() == 5);
+
+    // Test remove_postfix with zero characters
+    string ascii2("hello");
+    ascii2.remove_postfix(0);
+    CHECK(ascii2 == "hello");
+
+    // Test remove_postfix with all characters
+    string ascii3("hello");
+    ascii3.remove_postfix(5);
+    CHECK(ascii3.empty());
+    CHECK(ascii3.size() == 0);
+
+    // Test remove_postfix with UTF-8 multibyte characters
+    char8_t utf8_bytes[] = { 
+        u8'h', 0xc3, 0xa9,  // h + é (1 char = 2 bytes)
+        u8'l', u8'l', u8'o', u8' ', u8'w', 
+        0xc3, 0xb6,         // ö (1 char = 2 bytes)
+        u8'r', u8'l', u8'd', 0 
+    };
+    string utf8_str(utf8_bytes);
+    // "héllo wörld": 11 characters
+    utf8_str.remove_postfix(6);  // Remove " wörld"
+    CHECK(utf8_str.size() == 5);  // Should be "héllo"
+    
+    char8_t expected_bytes[] = { u8'h', 0xc3, 0xa9, u8'l', u8'l', u8'o', 0 };
+    string expected_str(expected_bytes);
+    CHECK(utf8_str == expected_str);
+
+    // Test with 4-byte emoji character
+    string rocket_emoji = "🚀🚀🚀";
+    rocket_emoji.remove_postfix(2);  // Remove last two emojis
+    CHECK(rocket_emoji.size() == 1);
+    string expected_rocket("🚀");
+    CHECK(rocket_emoji == expected_rocket);
+}
