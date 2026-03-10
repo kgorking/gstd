@@ -30,10 +30,11 @@ namespace os {
 
     export sequence<DirectoryEntry> list_dir(string path, bool recursive = false) {
 #ifdef _WIN32
-        std::string search{ path.to_string() };
-        if (!search.empty() && search.back() != '\\' && search.back() != '/')
-            search += "\\";
-        search += "*";
+        string search;
+        if (!path.empty() && (path.back() == '\\' || path.back() == '/'))
+            search = path + "*";
+        else
+            search = path + "\\*";
 
         WIN32_FIND_DATAA data;
         HANDLE h = FindFirstFileA(search.c_str(), &data);
@@ -76,7 +77,7 @@ namespace os {
                     entry.is_symlink = (ent->d_type == DT_LNK);
                     
                     // Get detailed file metadata using stat
-                    std::string full_path = path.to_string() + "/" + std::string(ent->d_name);
+                    string full_path = path + "/" + name;
                     struct stat stat_buf;
                     if (stat(full_path.c_str(), &stat_buf) == 0) {
                         entry.last_write_time = std::chrono::system_clock::from_time_t(stat_buf.st_mtime);
