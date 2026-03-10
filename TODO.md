@@ -6,5 +6,5 @@
   * Will support the 'Reader' and 'Writer' concept
   * Should also support the 'LineReader' concept, and the yet non-existing 'LineWriter'.
 
-* Add a 'os::exec' function to run a separate process, like std::system, but with access to the stdin/stdout pipes.
+* Add a 'os::exec' function to run a separate process, like std::system, but with access to the stdin/stdout pipes. Return a 'command' class that holds the pipes and other relevant information.
   * Use pipes to read std io from process.

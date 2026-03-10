@@ -14,6 +14,7 @@ export import :LineWriter;
 // os
 export import :file;
 export import :pipes;
+export import :exec;
 export import :read_file;
 export import :read_lines;
 export import :read_text;
