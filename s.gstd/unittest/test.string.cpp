@@ -44,8 +44,8 @@ TEST_CASE("test.string_utf8") {
     // "héllo wörld": 11 characters (13 bytes)
     CHECK(s.size() == 11);
     CHECK(s[0] == u8'h');
-    CHECK(s[1] == static_cast<char8_t>(0xc3));  // First byte of é character
-    CHECK(s[2] == u8'l');  // Next character after é
+    CHECK(s[1] == u8"é");
+    CHECK(s[2] == u8'l');
     CHECK(!s.empty());
 
     // Test substr with multibyte characters

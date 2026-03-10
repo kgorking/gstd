@@ -1,0 +1,1 @@
+/nologo /EHsc /sdl /std:c++23preview /utf-8 /D_MSVC_STL_HARDENING=1 /D_MSVC_STL_DESTRUCTOR_TOMBSTONES=1

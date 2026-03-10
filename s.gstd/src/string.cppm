@@ -18,18 +18,20 @@ struct StringData {
 namespace {
     // Get the byte length of a UTF-8 character from its first byte
     inline std::ptrdiff_t utf8_char_len(char8_t first_byte) {
-        if ((first_byte & 0x80) == 0) return 1;          // 0xxxxxxx
+        return std::max(1, std::countl_one((std::uint8_t)first_byte));
+        /*if ((first_byte & 0x80) == 0) return 1;          // 0xxxxxxx
         if ((first_byte & 0xE0) == 0xC0) return 2;       // 110xxxxx
         if ((first_byte & 0xF0) == 0xE0) return 3;       // 1110xxxx
         if ((first_byte & 0xF8) == 0xF0) return 4;       // 11110xxx
         return 1; // Invalid UTF-8, treat as 1 byte
+        */
     }
 
     // Count the number of UTF-8 characters in a byte range
     inline std::ptrdiff_t count_utf8_chars(const char8_t* data, std::ptrdiff_t byte_len) {
         std::ptrdiff_t char_count = 0;
         std::ptrdiff_t i = 0;
-        while (i < byte_len && data[i] != 0) {
+        while (i < byte_len) {
             i += utf8_char_len(data[i]);
             char_count++;
         }
@@ -60,8 +62,11 @@ namespace {
     inline std::ptrdiff_t char_index_to_byte_offset(const char8_t* data, std::ptrdiff_t byte_len, std::ptrdiff_t char_idx) {
         std::ptrdiff_t byte_offset = 0;
         std::ptrdiff_t char_count = 0;
-        while (byte_offset < byte_len && char_count < char_idx) {
-            byte_offset += utf8_char_len(data[byte_offset]);
+        while (char_count < char_idx) {
+            auto const char_len = utf8_char_len(data[byte_offset]);
+            if (byte_offset + char_len > byte_len)
+                return byte_offset;
+            byte_offset += char_len;
             char_count++;
         }
         return byte_offset;
@@ -190,14 +195,15 @@ public:
         start_ = end_;
     }
 
-    // Access (checked) - index works with character index, returns first byte of character
-    char8_t operator[](std::ptrdiff_t char_idx) const {
+    // Access (checked) - index works with character index, returns the whole UTF-8 character as a view
+    string operator[](std::ptrdiff_t char_idx) const {
         std::ptrdiff_t char_count = size();
         if (char_idx < 0 || char_idx >= char_count) {
             throw std::out_of_range("string index out of range");
         }
-        std::ptrdiff_t byte_offset = char_index_to_byte_offset(data_->data + start_, end_ - start_, char_idx);
-        return data_->data[start_ + byte_offset];
+        std::ptrdiff_t const byte_offset = char_index_to_byte_offset(data(), size_bytes(), char_idx);
+        std::ptrdiff_t const char_byte_len = get_char_byte_len(data(), byte_offset, size_bytes());
+        return string(data_, start_ + byte_offset, start_ + byte_offset + char_byte_len);
     }
 
     // Substring - works with character positions, not byte positions
@@ -277,7 +283,7 @@ public:
         for (std::ptrdiff_t i = pos; i <= len - sv.size(); ++i) {
             bool match = true;
             for (std::ptrdiff_t j = 0; j < sv.size(); ++j) {
-                if (data_->data[start_ + i + j] != sv[j]) {
+                if ((*this)[i + j] != sv[j]) {
                     match = false;
                     break;
                 }
@@ -341,8 +347,12 @@ public:
     }
 
     bool operator==(const char8_t* s) const {
-        auto const s_len = utf8_length(s);
-        return size() == s_len && 0 == std::memcmp(data(), s, utf8_byte_length(s));
+        auto const s_len = utf8_byte_length(s);
+        return size_bytes() == s_len && 0 == std::memcmp(data(), s, s_len);
+    }
+
+    bool operator==(const char8_t c) const {
+        return size() > 0 && data_->data[start_] == c;
     }
 
     bool operator==(const char* s) const {
