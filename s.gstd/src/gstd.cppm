@@ -9,9 +9,11 @@ export import :string;
 export import :Reader;
 export import :LineReader;
 export import :Writer;
+export import :LineWriter;
 
 // os
 export import :file;
+export import :pipes;
 export import :read_file;
 export import :read_lines;
 export import :read_text;

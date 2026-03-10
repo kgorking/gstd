@@ -7,6 +7,7 @@ import std;
 import :Reader;
 import :LineReader;
 import :Writer;
+import :LineWriter;
 import :string;
 
 #if !defined(_WIN32) && !defined(_WIN64)
@@ -26,6 +27,7 @@ export namespace os {
 		bool eof_flag = false;
 
 	public:
+		// Constructor for opening files by path
 		file(string path) {
 			open(path, O_RD | O_BIN);
 		}
@@ -33,6 +35,9 @@ export namespace os {
 		file(string path, int flags) {
 			open(path, flags);
 		}
+
+		// Constructor for pipes and other file descriptors
+		explicit file(int f) : fd(f), eof_flag(false) {}
 
 		file(const file&) = delete;
 		file& operator=(const file&) = delete;
@@ -169,8 +174,7 @@ export namespace os {
 
 				for (ssize_t i = 0; i < bytes_read; ++i) {
 					if (buffer[i] == '\n') {
-						result += buffer[i];
-						// Move file pointer back to after the newline
+						// Found newline - don't include it, move file pointer back to after the newline
 						ssize_t move_back = bytes_read - i - 1;
 						if (move_back > 0) {
 							lseek(fd, -move_back, SEEK_CUR);
@@ -201,11 +205,27 @@ export namespace os {
 
 			return static_cast<std::int64_t>(bytes_written);
 		}
+
+		std::expected<std::int64_t, std::error_code> write_line(string line) {
+			auto result = write(std::span<const char>(line.c_str(), line.size_bytes()));
+			if (!result) {
+				return result;
+			}
+
+			auto written = *result;
+			auto newline_result = write(std::span<const char>("\n", 1));
+			if (!newline_result) {
+				return newline_result;
+			}
+
+			return written + *newline_result;
+		}
 	};
 
 	static_assert(Reader<file>);
 	static_assert(LineReader<file>);
 	static_assert(Writer<file>);
+	static_assert(LineWriter<file>);
 
 	file open(string path) {
 		return { path };
