@@ -15,6 +15,9 @@ TEST_CASE("test.pipes.write_and_read_small_data") {
 	auto write_result = p.writer.write(std::span<const char>(test_data, 5));
 	CHECK(write_result == 5);
 	
+	// Close writer to signal EOF to reader - required on Windows pipes
+	p.writer.close();
+	
 	char buffer[32] = {};
 	auto read_result = p.reader.read(std::span<char>(buffer, sizeof(buffer) - 1));
 	CHECK(read_result == 5);
@@ -27,6 +30,9 @@ TEST_CASE("test.pipes.reader_concept") {
 	const char data[] = "test";
 	auto w = p.writer.write(std::span<const char>(data, 4));
 	CHECK(w == 4);
+	
+	// Close writer to signal EOF to reader - required on Windows pipes
+	p.writer.close();
 	
 	// Verify reader satisfies Reader concept
 	static_assert(Reader<std::remove_reference_t<decltype(p.reader)>>);
@@ -56,6 +62,9 @@ TEST_CASE("test.pipes.line_reader_concept") {
 	const char line_data[] = "test line\n";
 	auto write_result = p.writer.write(std::span<const char>(line_data, 10));
 	CHECK(write_result == 10);
+	
+	// Close writer to signal EOF to reader - required on Windows pipes
+	p.writer.close();
 	
 	auto line_result = p.reader.read_line();
 	CHECK(line_result == "test line");

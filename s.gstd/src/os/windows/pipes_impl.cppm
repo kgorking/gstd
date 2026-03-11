@@ -18,9 +18,10 @@ export namespace os {
 		HANDLE read_handle, write_handle;
 
 		if (!CreatePipe(&read_handle, &write_handle, nullptr, 0)) {
-			return { file(INVALID_HANDLE_VALUE), file(INVALID_HANDLE_VALUE) };
+			return { file(INVALID_HANDLE_VALUE, true), file(INVALID_HANDLE_VALUE, true) };
 		}
 
-		return { file(read_handle), file(write_handle) };
+		// Skip IOCP registration for pipes since they only use synchronous I/O
+		return { file(read_handle, true), file(write_handle, true) };
 	}
 }

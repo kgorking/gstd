@@ -7,8 +7,120 @@ import :LineReader;
 import :Writer;
 import :LineWriter;
 import :string;
+import :co;
+import :io_scheduler;
 
-export namespace os {
+export namespace os {	// Async read awaiter
+	class async_read_awaiter {
+	private:
+		HANDLE file_handle;
+		std::span<char> buffer;
+		OVERLAPPED* overlapped;
+		ULONGLONG* file_position;  // Pointer to file's position tracker
+
+	public:
+		async_read_awaiter(HANDLE h, std::span<char> buf, ULONGLONG* pos) 
+			: file_handle(h), buffer(buf), overlapped(nullptr), file_position(pos) {}
+
+		bool await_ready() const { return false; }  // Always suspend
+
+		void await_suspend(std::coroutine_handle<> cont) {
+			overlapped = get_scheduler().register_operation(cont);
+			
+			// Set the file position in the OVERLAPPED structure
+			overlapped->Offset = static_cast<DWORD>(*file_position & 0xFFFFFFFF);
+			overlapped->OffsetHigh = static_cast<DWORD>((*file_position >> 32) & 0xFFFFFFFF);
+
+			DWORD bytes_read = 0;
+			BOOL success = ReadFile(
+				file_handle,
+				buffer.data(),
+				static_cast<DWORD>(buffer.size()),
+				&bytes_read,
+				overlapped
+			);
+
+			if (success) {
+				// Synchronous completion - bytes_read is valid, set result only (position updated in await_resume)
+				get_scheduler().set_operation_result(overlapped, static_cast<std::int64_t>(bytes_read), false);
+				cont.resume();
+			} else if (GetLastError() != ERROR_IO_PENDING) {
+				// Error occurred
+				get_scheduler().set_operation_result(overlapped, 0, true);
+				cont.resume();
+			}
+			// If ERROR_IO_PENDING, await_resume will update position when result arrives
+		}
+
+		std::int64_t await_resume() {
+			auto [res, err] = get_scheduler().get_operation_result(overlapped);
+			if (overlapped) delete overlapped;
+			
+			if (err) {
+				throw std::system_error(std::make_error_code(std::errc::io_error));
+			}
+			
+			// Update file position based on bytes read
+			*file_position += res;
+			return res;
+		}
+	};
+
+	// Async write awaiter
+	class async_write_awaiter {
+	private:
+		HANDLE file_handle;
+		std::span<const char> buffer;
+		OVERLAPPED* overlapped;
+		ULONGLONG* file_position;  // Pointer to file's position tracker
+
+	public:
+		async_write_awaiter(HANDLE h, std::span<const char> buf, ULONGLONG* pos) 
+			: file_handle(h), buffer(buf), overlapped(nullptr), file_position(pos) {}
+
+		bool await_ready() const { return false; }
+
+		void await_suspend(std::coroutine_handle<> cont) {
+			overlapped = get_scheduler().register_operation(cont);
+			
+			// Set the file position in the OVERLAPPED structure
+			overlapped->Offset = static_cast<DWORD>(*file_position & 0xFFFFFFFF);
+			overlapped->OffsetHigh = static_cast<DWORD>((*file_position >> 32) & 0xFFFFFFFF);
+
+			DWORD bytes_written = 0;
+			BOOL success = WriteFile(
+				file_handle,
+				buffer.data(),
+				static_cast<DWORD>(buffer.size()),
+				&bytes_written,
+				overlapped
+			);
+
+			if (success) {
+				// Synchronous completion - bytes_written is valid, set result only (position updated in await_resume)
+				get_scheduler().set_operation_result(overlapped, static_cast<std::int64_t>(bytes_written), false);
+				cont.resume();
+			} else if (GetLastError() != ERROR_IO_PENDING) {
+				// Error occurred
+				get_scheduler().set_operation_result(overlapped, 0, true);
+				cont.resume();
+			}
+			// If ERROR_IO_PENDING, await_resume will update position when result arrives
+		}
+
+		std::int64_t await_resume() {
+			auto [res, err] = get_scheduler().get_operation_result(overlapped);
+			if (overlapped) delete overlapped;
+			
+			if (err) {
+				throw std::system_error(std::make_error_code(std::errc::io_error));
+			}
+			
+			// Update file position based on bytes written
+			*file_position += res;
+			return res;
+		}
+	};
 	constexpr int O_RD = 0x0001; // read
 	constexpr int O_WR = 0x0002; // write
 	constexpr int O_RDWR = O_RD | O_WR; // read/write
@@ -21,28 +133,45 @@ export namespace os {
 	class file final {
 		HANDLE handle;
 		bool eof_flag;
+		ULONGLONG file_position = 0;  // Track current file position for OVERLAPPED I/O
+		bool is_real_file = false;  // Track if this is a real file (not a pipe or other device)
 
 	public:
 		// Constructor for opening files by path
 		file(string path) {
 			handle = INVALID_HANDLE_VALUE;
 			eof_flag = false;
+			is_real_file = false;
 			open(path, O_RD | O_BIN);
+			if (handle != INVALID_HANDLE_VALUE) {
+				is_real_file = true;
+				get_scheduler().associate_handle(handle);
+			}
 		}
 
 		file(string path, int flags) {
 			handle = INVALID_HANDLE_VALUE;
 			eof_flag = false;
+			is_real_file = false;
 			open(path, flags);
+			if (handle != INVALID_HANDLE_VALUE) {
+				is_real_file = true;
+				get_scheduler().associate_handle(handle);
+			}
 		}
 
 		// Constructor for pipes and other handles
-		explicit file(HANDLE h) : handle(h), eof_flag(false) {}
+		// skip_iocp=true to skip IOCP registration (useful for pipes which use synchronous I/O)
+		explicit file(HANDLE h, bool skip_iocp = false) : handle(h), eof_flag(false) {
+			if (handle != INVALID_HANDLE_VALUE && !skip_iocp) {
+				get_scheduler().associate_handle(handle);
+			}
+		}
 
 		file(const file&) = delete;
 		file& operator=(const file&) = delete;
 
-		file(file&& other) noexcept : handle(other.handle), eof_flag(other.eof_flag) {
+		file(file&& other) noexcept : handle(other.handle), eof_flag(other.eof_flag), is_real_file(other.is_real_file) {
 			other.handle = INVALID_HANDLE_VALUE;
 			other.eof_flag = false;
 		}
@@ -52,6 +181,7 @@ export namespace os {
 				close();
 				handle = other.handle;
 				eof_flag = other.eof_flag;
+				is_real_file = other.is_real_file;
 				other.handle = INVALID_HANDLE_VALUE;
 				other.eof_flag = false;
 			}
@@ -98,6 +228,9 @@ export namespace os {
 			// If O_ATE flag is set, seek to end
 			if (flags & O_ATE) {
 				SetFilePointer(handle, 0, nullptr, FILE_END);
+				file_position = size();
+			} else {
+				file_position = 0;
 			}
 
 			eof_flag = false;
@@ -106,6 +239,10 @@ export namespace os {
 
 		void close() {
 			if (handle != INVALID_HANDLE_VALUE) {
+				// Only flush for real files, not pipes or other devices
+				if (is_real_file) {
+					FlushFileBuffers(handle);
+				}
 				CloseHandle(handle);
 				handle = INVALID_HANDLE_VALUE;
 				eof_flag = false;
@@ -143,9 +280,27 @@ export namespace os {
 
 			if (bytes_read == 0) {
 				eof_flag = true;
+			} else {
+				file_position += bytes_read;
 			}
 
 			return static_cast<std::int64_t>(bytes_read);
+		}
+
+		co<std::int64_t> read_async(std::span<char> buf) {
+			if (handle == INVALID_HANDLE_VALUE) {
+				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
+			}
+			
+			co_return co_await async_read_awaiter(handle, buf, &file_position);
+		}
+
+		co<std::int64_t> write_async(std::span<const char> buf) {
+			if (handle == INVALID_HANDLE_VALUE) {
+				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
+			}
+			
+			co_return co_await async_write_awaiter(handle, buf, &file_position);
 		}
 
 		string read_line() {
@@ -200,6 +355,7 @@ export namespace os {
 				throw std::system_error(std::make_error_code(std::errc::io_error));
 			}
 
+			file_position += bytes_written;
 			return static_cast<std::int64_t>(bytes_written);
 		}
 
