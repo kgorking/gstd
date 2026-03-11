@@ -6,15 +6,15 @@ import :file;
 import :LineWriter;
 import :string;
 
-namespace os {
-	export struct pipes {
+export namespace os {
+	struct rw_pipes {
 		file reader;
 		file writer;
 
-		pipes(file r, file w) : reader(std::move(r)), writer(std::move(w)) {}
+		rw_pipes(file r, file w) : reader(std::move(r)), writer(std::move(w)) {}
 	};
 
-	pipes create_pipes() {
+	rw_pipes pipes() {
 		HANDLE read_handle, write_handle;
 
 		if (!CreatePipe(&read_handle, &write_handle, nullptr, 0)) {
@@ -24,11 +24,3 @@ namespace os {
 		return { file(read_handle), file(write_handle) };
 	}
 }
-
-export namespace os {
-	using os::create_pipes;
-	
-	inline pipes pipes() {
-		return create_pipes();
-	}
-};

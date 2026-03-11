@@ -10,6 +10,7 @@ export import :Reader;
 export import :LineReader;
 export import :Writer;
 export import :LineWriter;
+export import :sync_console_writer;
 
 // os
 export import :file;

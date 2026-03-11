@@ -10,8 +10,6 @@ import :Writer;
 import :LineWriter;
 import :string;
 
-#if !defined(_WIN32) && !defined(_WIN64)
-
 export namespace os {
 	constexpr int O_RD = O_RDONLY; // read
 	constexpr int O_WR = O_WRONLY; // write
@@ -235,5 +233,3 @@ export namespace os {
 		return { path, flags };
 	}
 };
-
-#endif // !defined(_WIN32) && !defined(_WIN64)

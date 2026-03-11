@@ -14,8 +14,37 @@ struct StringData {
     }
 };
 
-// UTF-8 helper functions
+// helper functions for the string class
 namespace {
+    // Helper class for building strings with format
+    class StringBuilder {
+    public:
+        using value_type = char8_t;
+        char8_t* buffer = nullptr;
+        std::ptrdiff_t size = 0;
+        std::ptrdiff_t capacity = 0;
+        
+        inline ~StringBuilder() {
+            delete[] buffer;
+        }
+        
+        // Support for std::back_insert_iterator
+        inline void push_back(char8_t c) {
+            if (size >= capacity) {
+                // Grow capacity exponentially
+                std::ptrdiff_t new_capacity = (capacity == 0) ? 16 : capacity * 2;
+                char8_t* new_buffer = new char8_t[new_capacity];
+                if (buffer) {
+                    std::memcpy(new_buffer, buffer, size);
+                    delete[] buffer;
+                }
+                buffer = new_buffer;
+                capacity = new_capacity;
+            }
+            buffer[size++] = c;
+        }
+    };
+
     // Get the byte length of a UTF-8 character from its first byte
     inline std::ptrdiff_t utf8_char_len(char8_t first_byte) {
         return std::max(1, std::countl_one((std::uint8_t)first_byte));
@@ -170,6 +199,14 @@ public:
     string& operator=(const char (&arr)[N]) {
         *this = string(arr);
         return *this;
+    }
+
+    // Format a string using std::format
+    template<typename... Args>
+    static string fmt(std::format_string<Args...> format_str, Args&&... args) {
+        StringBuilder builder;
+        std::format_to(std::back_inserter(builder), format_str, std::forward<Args>(args)...);
+        return string(std::move(builder));
     }
 
     // returns number of characters, not bytes
@@ -395,6 +432,25 @@ private:
     // Private constructor for substr
     string(std::shared_ptr<StringData> data, std::ptrdiff_t start, std::ptrdiff_t end)
         : data_(data), start_(start), end_(end) {}
+
+    // Private constructor that takes ownership of a StringBuilder
+    string(StringBuilder&& builder) : start_(0) {
+        if (builder.size > 0 && builder.buffer) {
+            data_ = std::make_shared<StringData>();
+            // Add null terminator to the builder's buffer
+            //builder.buffer[builder.size] = 0;
+            // Transfer ownership of the buffer directly
+            data_->data = builder.buffer;
+            data_->size = builder.size;
+            end_ = builder.size;
+            // Clear the builder's buffer so its destructor doesn't delete it
+            builder.buffer = nullptr;
+        } else {
+            if (builder.buffer) delete[] builder.buffer;
+            data_ = nullptr;
+            end_ = 0;
+        }
+    }
 };
 
 // Non-member operators
@@ -409,3 +465,19 @@ export inline bool operator==(const char8_t* sz, string s) {
 export inline bool operator==(const char* sz, string s) {
     return s == sz;
 }
+
+// Formatter specialization for std::format support
+export template <>
+struct std::formatter<::string, char> {
+    constexpr auto parse(std::format_parse_context& ctx) {
+        return ctx.begin();
+    }
+
+    auto format(::string const& s, std::format_context& ctx) const {
+        auto out = ctx.out();
+        for (std::ptrdiff_t i = 0; i < s.size_bytes(); ++i) {
+            *out++ = static_cast<char>(s.data()[i]);
+        }
+        return out;
+    }
+};

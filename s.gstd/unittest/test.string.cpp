@@ -1,5 +1,4 @@
 #include "doctest.h"
-import std;
 import gs;
 
 TEST_CASE("test.string") {
@@ -187,4 +186,15 @@ TEST_CASE("test.string_remove_postfix") {
     CHECK(rocket_emoji.size() == 1);
     string expected_rocket("🚀");
     CHECK(rocket_emoji == expected_rocket);
+}
+TEST_CASE("test.string.format") {
+    string text = "world";
+    string formatted = string::fmt("Hello, {}!", text);
+    CHECK(formatted == "Hello, world!");
+
+    // Test with UTF-8 characters
+    string emoji = "🚀";
+    string expected = "Emoji: 🚀";
+    formatted = string::fmt("Emoji: {}", emoji);
+    CHECK(formatted == expected);
 }
