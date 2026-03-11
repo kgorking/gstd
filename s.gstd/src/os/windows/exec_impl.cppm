@@ -150,8 +150,6 @@ export namespace os {
 			return { INVALID_HANDLE_VALUE, file(INVALID_HANDLE_VALUE), file(INVALID_HANDLE_VALUE) };
 		}
 
-		std::println("os::exec '{}' process created with PID: {}", cmd_str, process_info.dwProcessId);
-
 		// Close the inherited handles in parent process
 		// Close the write end of stdout (only child writes to it)
 		CloseHandle(stdout_write);
