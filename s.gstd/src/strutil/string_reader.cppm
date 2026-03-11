@@ -11,7 +11,7 @@ namespace strutil {
     public:
         string_reader(string str) : s(std::move(str)) {}
 
-        std::expected<std::int64_t, std::error_code> read(std::span<char> buf) {
+        std::int64_t read(std::span<char> buf) {
             if (s.empty())
                 return 0;
 
@@ -21,7 +21,7 @@ namespace strutil {
             return static_cast<std::int64_t>(to_read);
         }
 
-        std::expected<string, std::error_code> read_line(char delim = '\n') {
+        string read_line(char delim = '\n') {
             std::ptrdiff_t end = s.find(delim);
             if (end == string::npos) {
                 string line = s;

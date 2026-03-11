@@ -58,16 +58,16 @@ export namespace os {
 		}
 
 		// Wait for the process to complete and return the exit code
-		std::expected<int, std::error_code> wait() {
+		int wait() {
 			if (child_pid <= 0) {
-				return std::unexpected(std::make_error_code(std::errc::bad_file_descriptor));
+				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
 
 			int status = 0;
 			pid_t wait_result = ::waitpid(child_pid, &status, 0);
 
 			if (wait_result < 0) {
-				return std::unexpected(std::make_error_code(std::errc::io_error));
+				throw std::system_error(std::make_error_code(std::errc::io_error));
 			}
 
 			int exit_code = 0;

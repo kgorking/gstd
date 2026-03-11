@@ -131,14 +131,14 @@ export namespace os {
 			return static_cast<std::size_t>(file_size.QuadPart);
 		}
 
-		std::expected<std::int64_t, std::error_code> read(std::span<char> buf) {
+		std::int64_t read(std::span<char> buf) {
 			if (handle == INVALID_HANDLE_VALUE) {
-				return std::unexpected(std::make_error_code(std::errc::bad_file_descriptor));
+				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
 
 			DWORD bytes_read = 0;
 			if (!ReadFile(handle, buf.data(), static_cast<DWORD>(buf.size()), &bytes_read, nullptr)) {
-				return std::unexpected(std::make_error_code(std::errc::io_error));
+				throw std::system_error(std::make_error_code(std::errc::io_error));
 			}
 
 			if (bytes_read == 0) {
@@ -148,9 +148,9 @@ export namespace os {
 			return static_cast<std::int64_t>(bytes_read);
 		}
 
-		std::expected<string, std::error_code> read_line() {
+		string read_line() {
 			if (handle == INVALID_HANDLE_VALUE) {
-				return std::unexpected(std::make_error_code(std::errc::bad_file_descriptor));
+				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
 
 			std::string result;
@@ -160,7 +160,7 @@ export namespace os {
 				DWORD bytes_read = 0;
 				if (!ReadFile(handle, buffer, sizeof(buffer), &bytes_read, nullptr)) {
 					if (result.empty()) {
-						return std::unexpected(std::make_error_code(std::errc::io_error));
+						throw std::system_error(std::make_error_code(std::errc::io_error));
 					}
 					break;
 				}
@@ -187,35 +187,26 @@ export namespace os {
 				return {result.c_str()};
 			}
 
-			return std::unexpected(std::make_error_code(std::errc::io_error));
+			throw std::system_error(std::make_error_code(std::errc::io_error));
 		}
 
-		std::expected<std::int64_t, std::error_code> write(std::span<const char> buf) {
+		std::int64_t write(std::span<const char> buf) {
 			if (handle == INVALID_HANDLE_VALUE) {
-				return std::unexpected(std::make_error_code(std::errc::bad_file_descriptor));
+				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
 
 			DWORD bytes_written = 0;
 			if (!WriteFile(handle, buf.data(), static_cast<DWORD>(buf.size()), &bytes_written, nullptr)) {
-				return std::unexpected(std::make_error_code(std::errc::io_error));
+				throw std::system_error(std::make_error_code(std::errc::io_error));
 			}
 
 			return static_cast<std::int64_t>(bytes_written);
 		}
 
-		std::expected<std::int64_t, std::error_code> write_line(string line) {
-			auto result = write(std::span<const char>(line.c_str(), line.size_bytes()));
-			if (!result) {
-				return result;
-			}
-
-			auto written = *result;
+		std::int64_t write_line(string line) {
+			auto written = write(std::span<const char>(line.c_str(), line.size_bytes()));
 			auto newline_result = write(std::span<const char>("\n", 1));
-			if (!newline_result) {
-				return newline_result;
-			}
-
-			return written + *newline_result;
+			return written + newline_result;
 		}
 	};
 

@@ -54,19 +54,19 @@ export namespace os {
 		}
 
 		// Wait for the process to complete and return the exit code
-		std::expected<int, std::error_code> wait() {
+		int wait() {
 			if (process_handle == INVALID_HANDLE_VALUE) {
-				return std::unexpected(std::make_error_code(std::errc::bad_file_descriptor));
+				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
 
 			DWORD wait_result = WaitForSingleObject(process_handle, INFINITE);
 			if (wait_result != WAIT_OBJECT_0) {
-				return std::unexpected(std::make_error_code(std::errc::io_error));
+				throw std::system_error(std::make_error_code(std::errc::io_error));
 			}
 
 			DWORD exit_code = 0;
 			if (!GetExitCodeProcess(process_handle, &exit_code)) {
-				return std::unexpected(std::make_error_code(std::errc::io_error));
+				throw std::system_error(std::make_error_code(std::errc::io_error));
 			}
 
 			return static_cast<int>(exit_code);

@@ -13,13 +13,11 @@ TEST_CASE("test.exec.basic_command") {
 	// Read output from the command
 	char buffer[256] = {};
 	auto read_result = cmd.get_stdout().read(std::span<char>(buffer, sizeof(buffer) - 1));
-	REQUIRE(read_result);
-	CHECK(*read_result == 7);
+	REQUIRE(read_result == 7);
 
 	// Wait for the process to complete
 	auto exit_code = cmd.wait();
-	CHECK(exit_code);
-	CHECK(*exit_code == 0);
+	CHECK(exit_code == 0);
 }
 
 TEST_CASE("test.exec.read_multiple_lines") {
@@ -33,12 +31,10 @@ TEST_CASE("test.exec.read_multiple_lines") {
 
 	std::vector<char> buffer(256);
 	auto read_result = cmd.get_stdout().read(std::span(buffer.data(), buffer.size()));
-	CHECK(read_result);
-	CHECK(*read_result > 0);
+	CHECK(read_result > 0);
 
 	auto exit_code = cmd.wait();
-	CHECK(exit_code);
-	CHECK(*exit_code == 0);
+	CHECK(exit_code == 0);
 }
 
 TEST_CASE("test.exec.nonzero_exit_code") {
@@ -51,8 +47,7 @@ TEST_CASE("test.exec.nonzero_exit_code") {
 	CHECK(cmd);
 
 	auto exit_code = cmd.wait();
-	CHECK(exit_code);
-	CHECK(*exit_code == 42);
+	CHECK(exit_code == 42);
 }
 
 TEST_CASE("test.exec.reader_concept") {
@@ -66,6 +61,5 @@ TEST_CASE("test.exec.reader_concept") {
 	// Verify stdout satisfies Reader concept
 	static_assert(Reader<std::remove_reference_t<decltype(cmd.get_stdout())>>);
 
-	auto exit_code = cmd.wait();
-	CHECK(exit_code);
+	cmd.wait();
 }

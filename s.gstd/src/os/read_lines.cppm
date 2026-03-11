@@ -7,12 +7,12 @@ import :string;
 namespace os {
 	export sequence<string> read_lines(string filename) {
 		auto f = os::open(filename);
-		auto s = f.read_line();
-		while(s && !f.end_of_file()) {
-			co_yield *s;
-			 s = f.read_line();
+		try {
+			while (!f.end_of_file()) {
+				co_yield f.read_line();
+			}
+		} catch (const std::system_error&) {
+			// End of file or error - stop iteration
 		}
-
-		co_yield *s;
 	}
 }

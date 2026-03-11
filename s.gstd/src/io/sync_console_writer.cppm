@@ -8,7 +8,7 @@ private:
     mutable std::mutex write_mutex;
 
 public:
-    std::expected<std::int64_t, std::error_code> write(std::span<const char> data) {
+    std::int64_t write(std::span<const char> data) {
         std::lock_guard<std::mutex> lock(write_mutex);
         std::cout.write(data.data(), data.size());
         return data.size();

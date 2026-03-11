@@ -129,15 +129,15 @@ export namespace os {
 			return static_cast<std::size_t>(end_pos);
 		}
 
-		std::expected<std::int64_t, std::error_code> read(std::span<char> buf) {
+		std::int64_t read(std::span<char> buf) {
 			if (fd < 0) {
-				return std::unexpected(std::make_error_code(std::errc::bad_file_descriptor));
+				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
 
 			ssize_t bytes_read = ::read(fd, buf.data(), buf.size());
 
 			if (bytes_read < 0) {
-				return std::unexpected(std::make_error_code(std::errc::io_error));
+				throw std::system_error(std::make_error_code(std::errc::io_error));
 			}
 
 			if (bytes_read == 0) {
@@ -147,9 +147,9 @@ export namespace os {
 			return static_cast<std::int64_t>(bytes_read);
 		}
 
-		std::expected<string, std::error_code> read_line() {
+		string read_line() {
 			if (fd < 0) {
-				return std::unexpected(std::make_error_code(std::errc::bad_file_descriptor));
+				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
 
 			std::string result;
@@ -160,7 +160,7 @@ export namespace os {
 
 				if (bytes_read < 0) {
 					if (result.empty()) {
-						return std::unexpected(std::make_error_code(std::errc::io_error));
+						throw std::system_error(std::make_error_code(std::errc::io_error));
 					}
 					break;
 				}
@@ -187,36 +187,27 @@ export namespace os {
 				return {result.c_str()};
 			}
 
-			return std::unexpected(std::make_error_code(std::errc::io_error));
+			throw std::system_error(std::make_error_code(std::errc::io_error));
 		}
 
-		std::expected<std::int64_t, std::error_code> write(std::span<const char> buf) {
+		std::int64_t write(std::span<const char> buf) {
 			if (fd < 0) {
-				return std::unexpected(std::make_error_code(std::errc::bad_file_descriptor));
+				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
 
 			ssize_t bytes_written = ::write(fd, buf.data(), buf.size());
 
 			if (bytes_written < 0) {
-				return std::unexpected(std::make_error_code(std::errc::io_error));
+				throw std::system_error(std::make_error_code(std::errc::io_error));
 			}
 
 			return static_cast<std::int64_t>(bytes_written);
 		}
 
-		std::expected<std::int64_t, std::error_code> write_line(string line) {
-			auto result = write(std::span<const char>(line.c_str(), line.size_bytes()));
-			if (!result) {
-				return result;
-			}
-
-			auto written = *result;
+		std::int64_t write_line(string line) {
+			auto written = write(std::span<const char>(line.c_str(), line.size_bytes()));
 			auto newline_result = write(std::span<const char>("\n", 1));
-			if (!newline_result) {
-				return newline_result;
-			}
-
-			return written + *newline_result;
+			return written + newline_result;
 		}
 	};
 
