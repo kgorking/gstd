@@ -1,5 +1,3 @@
-#if !defined(_WIN32) && !defined(_WIN64)
-
 export module gs:exec_impl;
 import std;
 import :file;
@@ -161,5 +159,3 @@ export namespace os {
 export namespace os {
 	using os::exec;
 };
-
-#endif // !defined(_WIN32) && !defined(_WIN64)

@@ -6,8 +6,8 @@ import :file;
 import :LineWriter;
 import :string;
 
-export namespace os {
-	struct pipes {
+namespace os {
+	export struct pipes {
 		file reader;
 		file writer;
 

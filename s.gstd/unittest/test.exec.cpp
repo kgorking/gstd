@@ -10,20 +10,11 @@ TEST_CASE("test.exec.basic_command") {
 	#endif
 	REQUIRE(cmd);
 
-	// Close the write end of stdin since we're not using it
-	// This helps the process terminate properly
-	cmd.get_stdin().close();
-
 	// Read output from the command
 	char buffer[256] = {};
 	auto read_result = cmd.get_stdout().read(std::span<char>(buffer, sizeof(buffer) - 1));
-	if (!read_result) {
-		std::println("Read failed with error: {}", read_result.error().message());
-	}
-	CHECK(read_result);
-	if (read_result) {
-		CHECK(*read_result > 0);  // Should read at least some bytes
-	}
+	REQUIRE(read_result);
+	CHECK(*read_result == 7);
 
 	// Wait for the process to complete
 	auto exit_code = cmd.wait();
