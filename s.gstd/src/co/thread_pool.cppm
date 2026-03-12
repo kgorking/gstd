@@ -4,22 +4,8 @@ import std;
 
 export class thread_pool {
 private:
-    // Base class for type erasure of work items
-    struct work_base {
-        virtual ~work_base() = default;
-        virtual void execute() = 0;
-    };
-
-    // Template work item
-    template<typename Func>
-    struct work_item : work_base {
-        Func fn;
-        explicit work_item(Func&& f) noexcept : fn(std::forward<Func>(f)) {}
-        void execute() override { fn(); }
-    };
-
     std::vector<std::thread> workers;
-    std::queue<std::unique_ptr<work_base>> work_queue;
+    std::queue<std::coroutine_handle<>> work_queue;
     std::mutex queue_mutex;
     std::condition_variable cv;
     std::atomic<bool> shutdown = false;
@@ -45,11 +31,10 @@ public:
     thread_pool& operator=(const thread_pool&) = delete;
 
     // Enqueue a work item to be executed by a thread pool worker
-    template<typename Func>
-    void enqueue(Func&& fn) {
+    void enqueue(std::coroutine_handle<> h) {
         {
             std::lock_guard lock(queue_mutex);
-            work_queue.push(std::make_unique<work_item<Func>>(std::forward<Func>(fn)));
+            work_queue.push(h);
         }
         cv.notify_one();
     }
@@ -63,7 +48,7 @@ public:
 private:
     void worker_loop() {
         while (true) {
-            std::unique_ptr<work_base> item;
+            std::coroutine_handle<> item;
             {
                 std::unique_lock lock(queue_mutex);
                 cv.wait(lock, [this] { return !work_queue.empty() || shutdown; });
@@ -72,13 +57,18 @@ private:
                     break;
 
                 if (!work_queue.empty()) {
-                    item = std::move(work_queue.front());
+                    item = work_queue.front();
                     work_queue.pop();
                 } else {
                     continue;
                 }
             }
-            item->execute();
+            item.resume();
+
+            if (!item.done()) {
+                // If the coroutine is not finished, re-enqueue it for further execution
+                enqueue(item);
+            }
         }
     }
 };

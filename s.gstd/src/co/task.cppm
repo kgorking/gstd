@@ -113,12 +113,7 @@ public:
         if (_handle && !_handle.done()) {
             if (!_handle.promise().is_running) {
                 _handle.promise().is_running = true;
-                auto handle = _handle;
-                thread_pool::instance().enqueue([handle] {
-                    while (!handle.done()) {
-                        handle.resume();
-                    }
-                });
+                thread_pool::instance().enqueue(_handle);
             }
         }
     }
@@ -156,14 +151,7 @@ public:
             // If not already running, schedule on thread pool
             if (!h.promise().is_running) {
                 h.promise().is_running = true;
-                // Explicitly capture h by copying the handle
-                auto task_handle = h;
-                thread_pool::instance().enqueue([task_handle] {
-                    // Run coroutine until completion on thread pool
-                    while (!task_handle.done()) {
-                        task_handle.resume();
-                    }
-                });
+                thread_pool::instance().enqueue(h);
             }
             // Return control and let thread pool work in background
         }
