@@ -198,20 +198,9 @@ auto task_promise<void>::get_return_object() noexcept -> task<void> {
     return task<>{std::coroutine_handle<task_promise>::from_promise(*this)};
 }
 
-// Helper to check if all tasks are done
-namespace detail {
-    template<typename... Tasks>
-    constexpr bool all_done_impl(const Tasks&... tasks) {
-        return (... && tasks.done());
-    }
-}
-
 // Utility to wait for multiple tasks and collect their results
 export template<typename... Tasks>
 auto wait_all(Tasks&... tasks) {
-    // Wait for all tasks to complete
     (tasks.wait(), ...);
-
-    // Collect and return results as a tuple
     return std::make_tuple(tasks.result()...);
 }

@@ -3,19 +3,19 @@ import std;
 import gs;
 
 // Simple CPU-heavy task
-static task<int> cpu_heavy_task(int iterations) {
-	int result = 0;
+static task<double> cpu_heavy_task(int iterations) {
+	double result = 0;
 	for (int i = 0; i < iterations; ++i) {
-		result += i * i;
+		result += i * std::sqrt(i);
 	}
 	co_return result;
 }
 
 // Task that returns void
 static task<void> cpu_heavy_void_task(int iterations) {
-	volatile int result = 0;
+	volatile double result = 0;
 	for (int i = 0; i < iterations; ++i) {
-		result += i * i;
+		result += i * std::sqrt(i);
 	}
 	co_return;
 }
@@ -35,9 +35,9 @@ TEST_CASE("task void return") {
 
 TEST_CASE("task with co_await") {
 	// Define a coroutine that awaits a task
-	auto awaiter_coro = [](task<int> t) -> co<int> {
-		int result = co_await t;
-		co_return result * 2;
+	auto awaiter_coro = [](task<double> t) -> co<double> {
+		double result = co_await t;
+		co_return result / 2;
 	};
 
 	auto t = cpu_heavy_task(100000);
@@ -50,14 +50,14 @@ TEST_CASE("task with co_await") {
 
 TEST_CASE("task multiple parallel computations") {
 	// Helper coroutine to await tasks
-	auto parallel_compute = []() -> co<int> {
+	auto parallel_compute = []() -> co<double> {
 		auto t1 = cpu_heavy_task(500000);
 		auto t2 = cpu_heavy_task(500000);
 		auto t3 = cpu_heavy_task(500000);
 		
-		int r1 = co_await t1;
-		int r2 = co_await t2;
-		int r3 = co_await t3;
+		double r1 = co_await t1;
+		double r2 = co_await t2;
+		double r3 = co_await t3;
 		
 		co_return r1 + r2 + r3;
 	};
