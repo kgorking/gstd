@@ -11,8 +11,8 @@ TEST_CASE("test.exec.basic_command") {
 	REQUIRE(cmd);
 
 	// Read output from the command
-	char buffer[256] = {};
-	auto read_result = cmd.get_stdout().read(std::span<char>(buffer, sizeof(buffer) - 1));
+	std::vector<char> buffer(256);
+	auto read_result = cmd.get_stdout().read(buffer);
 	REQUIRE(read_result == 7);
 
 	// Wait for the process to complete
@@ -30,7 +30,7 @@ TEST_CASE("test.exec.read_multiple_lines") {
 	CHECK(cmd);
 
 	std::vector<char> buffer(256);
-	auto read_result = cmd.get_stdout().read(std::span(buffer.data(), buffer.size()));
+	auto read_result = cmd.get_stdout().read(buffer);
 	CHECK(read_result > 0);
 
 	auto exit_code = cmd.wait();

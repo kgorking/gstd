@@ -2,6 +2,7 @@ export module gs;
 
 export import :concepts;
 export import :co;
+export import :task;
 export import :sequence;
 export import :string;
 

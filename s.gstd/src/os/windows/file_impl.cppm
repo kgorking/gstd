@@ -20,7 +20,7 @@ export namespace os {	// Async read awaiter
 		ULONGLONG* file_position;  // Pointer to file's position tracker
 
 	public:
-		async_read_awaiter(HANDLE h, std::span<char> buf, ULONGLONG* pos) 
+		async_read_awaiter(HANDLE h, Span<char> auto& buf, ULONGLONG* pos) 
 			: file_handle(h), buffer(buf), overlapped(nullptr), file_position(pos) {}
 
 		bool await_ready() const { return false; }  // Always suspend
@@ -76,7 +76,7 @@ export namespace os {	// Async read awaiter
 		ULONGLONG* file_position;  // Pointer to file's position tracker
 
 	public:
-		async_write_awaiter(HANDLE h, std::span<const char> buf, ULONGLONG* pos) 
+		async_write_awaiter(HANDLE h, Span<const char> auto const& buf, ULONGLONG* pos) 
 			: file_handle(h), buffer(buf), overlapped(nullptr), file_position(pos) {}
 
 		bool await_ready() const { return false; }
@@ -270,7 +270,7 @@ export namespace os {	// Async read awaiter
 			return static_cast<std::size_t>(file_size.QuadPart);
 		}
 
-		std::int64_t read(std::span<char> buf) {
+		std::int64_t read(Span<char> auto& buf) {
 			if (handle == INVALID_HANDLE_VALUE) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
@@ -289,7 +289,7 @@ export namespace os {	// Async read awaiter
 			return static_cast<std::int64_t>(bytes_read);
 		}
 
-		co<std::int64_t> read_async(std::span<char> buf) {
+		co<std::int64_t> read_async(Span<char> auto& buf) {
 			if (handle == INVALID_HANDLE_VALUE) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
@@ -297,7 +297,7 @@ export namespace os {	// Async read awaiter
 			co_return co_await async_read_awaiter(handle, buf, &file_position);
 		}
 
-		co<std::int64_t> write_async(Span<const char> auto buf) {
+		co<std::int64_t> write_async(Span<const char> auto const& buf) {
 			if (handle == INVALID_HANDLE_VALUE) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
@@ -347,7 +347,7 @@ export namespace os {	// Async read awaiter
 			throw std::system_error(std::make_error_code(std::errc::io_error));
 		}
 
-		std::int64_t write(Span<const char> auto buf) {
+		std::int64_t write(Span<const char> auto const& buf) {
 			if (handle == INVALID_HANDLE_VALUE) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
@@ -370,8 +370,10 @@ export namespace os {	// Async read awaiter
 
 	static_assert(Reader<file>);
 	static_assert(LineReader<file>);
+	static_assert(AsyncReader<file>);
 	static_assert(Writer<file>);
 	static_assert(LineWriter<file>);
+	static_assert(AsyncWriter<file>);
 
 	file open(string path) {
 		return { path };

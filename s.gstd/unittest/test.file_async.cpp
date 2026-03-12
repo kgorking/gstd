@@ -88,7 +88,6 @@ TEST_CASE("file async read/write sequence") {
 	// Read back and verify
 	{
 		auto file_content = os::read_text(test_file);
-		std::println("{}{}", expected.size(), file_content.size());
 		CHECK(expected == file_content);
 	}
 	

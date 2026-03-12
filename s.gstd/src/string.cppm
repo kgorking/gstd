@@ -162,10 +162,15 @@ public:
         return string(std::move(builder));
     }
 
-    // returns number of characters, not bytes
+    // returns size of characters in bytes
     std::ptrdiff_t size() const { 
+        return end_ - start_; 
+    }
+
+    // returns count of characters, not bytes
+    std::ptrdiff_t count() const { 
         if (!data_) return 0;
-        return count_utf8_chars(data_->data + start_, size_bytes()); 
+        return count_utf8_chars(data(), size_bytes()); 
     }
 
     std::ptrdiff_t size_bytes() const { 
@@ -182,7 +187,7 @@ public:
 
     // Access (checked) - index works with character index, returns the whole UTF-8 character as a view
     string operator[](std::ptrdiff_t char_idx) const {
-        std::ptrdiff_t char_count = size();
+        std::ptrdiff_t char_count = count();
         if (char_idx < 0 || char_idx >= char_count) {
             throw std::out_of_range("string index out of range");
         }
@@ -219,7 +224,7 @@ public:
     // Remove postfix (character count)
     void remove_postfix(std::ptrdiff_t char_count) {
         if (char_count <= 0) return;
-        std::ptrdiff_t char_pos = size() - char_count;
+        std::ptrdiff_t char_pos = count() - char_count;
         if (char_pos <= 0) {
             end_ = start_;
             return;
@@ -255,7 +260,7 @@ public:
     // Find functions
     std::ptrdiff_t find(char c, std::ptrdiff_t pos = 0) const {
         if (pos < 0) pos = 0;
-        for (std::ptrdiff_t i = pos; i < size(); ++i) {
+        for (std::ptrdiff_t i = pos; i < count(); ++i) {
             if (data_->data[start_ + i] == c) {
                 return i;
             }
@@ -265,11 +270,11 @@ public:
 
     std::ptrdiff_t find(string sv, std::ptrdiff_t pos = 0) const {
         if (pos < 0) pos = 0;
-        if (sv.empty()) return pos <= size() ? pos : -1;
-        std::ptrdiff_t len = size();
-        for (std::ptrdiff_t i = pos; i <= len - sv.size(); ++i) {
+        if (sv.empty()) return pos <= count() ? pos : -1;
+        std::ptrdiff_t len = count();
+        for (std::ptrdiff_t i = pos; i <= len - sv.count(); ++i) {
             bool match = true;
-            for (std::ptrdiff_t j = 0; j < sv.size(); ++j) {
+            for (std::ptrdiff_t j = 0; j < sv.count(); ++j) {
                 if ((*this)[i + j] != sv[j]) {
                     match = false;
                     break;
@@ -282,10 +287,10 @@ public:
 
     // Reverse find
     std::ptrdiff_t rfind(char c, std::ptrdiff_t pos = -1) const {
-        std::ptrdiff_t len = size();
+        std::ptrdiff_t len = count();
         if (pos < 0 || pos >= len) pos = len - 1;
         for (std::ptrdiff_t i = pos; i >= 0; --i) {
-            if (data_->data[start_ + i] == c) {
+            if ((*this)[i] == c) {
                 return i;
             }
         }
@@ -294,8 +299,8 @@ public:
 
     // Starts with
     bool starts_with(string sv) const {
-        if (sv.size() > size()) return false;
-        return std::memcmp(data_->data + start_, sv.data(), sv.size()) == 0;
+        if (sv.count() > count()) return false;
+        return std::memcmp(data_->data + start_, sv.data(), sv.size_bytes()) == 0;
     }
 
     bool starts_with(char c) const {
@@ -304,8 +309,8 @@ public:
 
     // Ends with
     bool ends_with(string sv) const {
-        if (sv.size() > size()) return false;
-        return std::memcmp(data_->data + end_ - sv.size(), sv.data(), sv.size()) == 0;
+        if (sv.count() > count()) return false;
+        return std::memcmp(data_->data + end_ - sv.size_bytes(), sv.data(), sv.size_bytes()) == 0;
     }
 
     bool ends_with(char c) const {
