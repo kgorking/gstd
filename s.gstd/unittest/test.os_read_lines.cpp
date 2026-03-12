@@ -6,7 +6,7 @@ TEST_CASE("test.os_read_lines") {
 	auto const w = os::write_text("lines_test.txt", "line1\nline2\nline3\nline4\nline5\nline6\nline7\nline8\nline9\nline10");
 	CHECK(w == 60);
 
-	char8_t buffer[32];
+	char buffer[32];
 	int line_count = 0;
 	for (string line : os::read_lines("lines_test.txt")) {
 		line_count += 1;

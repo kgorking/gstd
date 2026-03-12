@@ -19,3 +19,9 @@ concept IterSeq = Seq<T> && requires(T t) {
     { t.begin() } -> std::same_as<typename T::iterator>;
     { t.end() } -> std::same_as<typename T::iterator>;
 };
+
+export template<typename T, typename ValueType>
+concept Span = requires(T t) {
+    { t.data() } -> std::same_as<std::add_pointer_t<ValueType>>;
+    { t.size() } -> std::convertible_to<std::int64_t>;
+};

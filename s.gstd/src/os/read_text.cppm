@@ -4,14 +4,14 @@ import :file;
 import :string;
 
 namespace os {
-	export auto read_text(string const& filename) -> std::string {
-		std::string text;
+	export string read_text(string const& filename) {
+		string text;
 		std::vector<char> buffer(4096);
 		
 		file f = open(filename);
 		while (std::int64_t r = f.read(buffer)) {
 			if (!r) break;
-			text.append(buffer.data(), r);
+			text = string::fmt("{}{}", text, std::string_view(buffer.data(), r));
 		}
 
 		return text;

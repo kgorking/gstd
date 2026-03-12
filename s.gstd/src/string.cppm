@@ -2,12 +2,12 @@ export module gs:string;
 
 import std;
 
-// Note: This string class stores UTF-8 encoded text as char8_t bytes internally.
+// Note: This string class stores UTF-8 encoded text as char bytes internally.
 // However, all size, indexing, and substring operations work at the CHARACTER level, not byte level.
 // This properly handles multi-byte UTF-8 characters (e.g., é = 1 char/2 bytes, 🚀 = 1 char/4 bytes).
 
 struct StringData {
-    char8_t const* data;
+    char const* data;
     std::ptrdiff_t size;
     ~StringData() { 
         delete[] data; 
@@ -19,8 +19,8 @@ namespace {
     // Helper class for building strings with format
     class StringBuilder {
     public:
-        using value_type = char8_t;
-        char8_t* buffer = nullptr;
+        using value_type = char;
+        char* buffer = nullptr;
         std::ptrdiff_t size = 0;
         std::ptrdiff_t capacity = 0;
         
@@ -29,11 +29,11 @@ namespace {
         }
         
         // Support for std::back_insert_iterator
-        inline void push_back(char8_t c) {
+        inline void push_back(char c) {
             if (size >= capacity) {
                 // Grow capacity exponentially
                 std::ptrdiff_t new_capacity = (capacity == 0) ? 16 : capacity * 2;
-                char8_t* new_buffer = new char8_t[new_capacity];
+                char* new_buffer = new char[new_capacity];
                 if (buffer) {
                     std::memcpy(new_buffer, buffer, size);
                     delete[] buffer;
@@ -46,12 +46,12 @@ namespace {
     };
 
     // Get the byte length of a UTF-8 character from its first byte
-    inline std::ptrdiff_t utf8_char_len(char8_t first_byte) {
+    inline std::ptrdiff_t utf8_char_len(char first_byte) {
         return std::max(1, std::countl_one((std::uint8_t)first_byte));
     }
 
     // Count the number of UTF-8 characters in a byte range
-    inline std::ptrdiff_t count_utf8_chars(const char8_t* data, std::ptrdiff_t byte_len) {
+    inline std::ptrdiff_t count_utf8_chars(const char* data, std::ptrdiff_t byte_len) {
         std::ptrdiff_t char_count = 0;
         std::ptrdiff_t i = 0;
         while (i < byte_len) {
@@ -62,7 +62,7 @@ namespace {
     }
 
     // Find the length of a UTF-8 string
-    inline std::ptrdiff_t utf8_length(const char8_t* data) {
+    inline std::ptrdiff_t utf8_length(const char* data) {
         std::ptrdiff_t char_count = 0;
         std::ptrdiff_t i = 0;
         while (data[i] != 0) {
@@ -73,7 +73,7 @@ namespace {
     }
 
     // Find the byte-length of a UTF-8 string
-    inline std::ptrdiff_t utf8_byte_length(const char8_t* data) {
+    inline std::ptrdiff_t utf8_byte_length(const char* data) {
         std::ptrdiff_t i = 0;
         while (data[i] != 0) {
             i += 1;
@@ -82,7 +82,7 @@ namespace {
     }
 
     // Convert character index to byte offset
-    inline std::ptrdiff_t char_index_to_byte_offset(const char8_t* data, std::ptrdiff_t byte_len, std::ptrdiff_t char_idx) {
+    inline std::ptrdiff_t char_index_to_byte_offset(const char* data, std::ptrdiff_t byte_len, std::ptrdiff_t char_idx) {
         std::ptrdiff_t byte_offset = 0;
         std::ptrdiff_t char_count = 0;
         while (char_count < char_idx) {
@@ -96,7 +96,7 @@ namespace {
     }
 
     // Get byte length of character at given byte offset
-    inline std::ptrdiff_t get_char_byte_len(const char8_t* data, std::ptrdiff_t byte_offset, std::ptrdiff_t byte_len) {
+    inline std::ptrdiff_t get_char_byte_len(const char* data, std::ptrdiff_t byte_offset, std::ptrdiff_t byte_len) {
         if (byte_offset >= byte_len) return 0;
         return utf8_char_len(data[byte_offset]);
     }
@@ -112,48 +112,24 @@ public:
     static constexpr std::ptrdiff_t npos = -1;
 
     string() : data_(nullptr), start_(0), end_(0) {}
-    string(std::u8string_view sv) : start_(0), end_(sv.size()) {
-        if (!sv.empty()) {
-            data_ = std::make_shared<StringData>();
-            char8_t *pdata = new char8_t[sv.size()+1];
-            std::memcpy(pdata, sv.data(), sv.size());
-            pdata[sv.size()] = 0;
-            data_->data = pdata;
-            data_->size = sv.size();
-        }
-    }
     // Constructor from std::string_view (assumes UTF-8 or ASCII-compatible encoding)
     string(std::string_view sv) : start_(0), end_(sv.size()) {
         if (!sv.empty()) {
             data_ = std::make_shared<StringData>();
-            char8_t *pdata = new char8_t[sv.size()+1];
+            char *pdata = new char[sv.size()+1];
             // Safely reinterpret as UTF-8 bytes (std::string is typically UTF-8 in modern C++)
-            std::memcpy(pdata, reinterpret_cast<const char8_t*>(sv.data()), sv.size());
+            std::memcpy(pdata, reinterpret_cast<const char*>(sv.data()), sv.size());
             pdata[sv.size()] = 0;
             data_->data = pdata;
             data_->size = sv.size();
         }
     }
-    string(const char8_t* s) : start_(0), end_(0) {
+    string(const char* s) : start_(0), end_(0) {
         if (s != nullptr) {
             end_ = utf8_byte_length(s);
             data_ = std::make_shared<StringData>();
-            char8_t *pdata = new char8_t[end_ + 1];
+            char *pdata = new char[end_ + 1];
             std::memcpy(pdata, s, end_);
-            pdata[end_] = 0;
-            data_->data = pdata;
-            data_->size = end_;
-        }
-    }
-    // Constructor from char* (assumes UTF-8 or ASCII-compatible encoding)
-    string(const char* s) : start_(0), end_(0) {
-        if (s != nullptr) {
-            std::string_view sv(s);
-            end_ = sv.size();
-            data_ = std::make_shared<StringData>();
-            char8_t *pdata = new char8_t[end_ + 1];
-            // Safely reinterpret as UTF-8 bytes
-            std::memcpy(pdata, reinterpret_cast<const char8_t*>(s), end_);
             pdata[end_] = 0;
             data_->data = pdata;
             data_->size = end_;
@@ -168,36 +144,13 @@ public:
     string& operator=(string&&) = default;
 
     // Assignment from string views and pointers
-    string& operator=(std::u8string_view sv) {
-        *this = string(sv);
-        return *this;
-    }
-
     string& operator=(std::string_view sv) {
         *this = string(sv);
         return *this;
     }
 
-    string& operator=(const char8_t* s) {
-        *this = string(s);
-        return *this;
-    }
-
     string& operator=(const char* s) {
         *this = string(s);
-        return *this;
-    }
-
-    // Template assignment from fixed-size char array
-    template<std::size_t N>
-    string& operator=(const char8_t (&arr)[N]) {
-        *this = string(arr);
-        return *this;
-    }
-
-    template<std::size_t N>
-    string& operator=(const char (&arr)[N]) {
-        *this = string(arr);
         return *this;
     }
 
@@ -212,7 +165,7 @@ public:
     // returns number of characters, not bytes
     std::ptrdiff_t size() const { 
         if (!data_) return 0;
-        return count_utf8_chars(data_->data + start_, end_ - start_); 
+        return count_utf8_chars(data_->data + start_, size_bytes()); 
     }
 
     std::ptrdiff_t size_bytes() const { 
@@ -276,8 +229,13 @@ public:
     }
 
     // Get raw data pointer
-    const char8_t* data() const {
+    const char* data() const {
         return data_->data + start_;
+    }
+
+    // Get C-style string pointer (for compatibility)
+    const char* c_str() const {
+        return data();
     }
 
     // Get last character as a string
@@ -294,18 +252,8 @@ public:
         return string(data_, last_char_start, end_);
     }
 
-    // Get C-style string pointer (for compatibility)
-    const char* c_str() const {
-        return reinterpret_cast<const char*>(data());
-    }
-
-    // Convert to std::string
-    std::string to_string() const {
-        return std::string(data_->data + start_, data_->data + end_);
-    }
-
     // Find functions
-    std::ptrdiff_t find(char8_t c, std::ptrdiff_t pos = 0) const {
+    std::ptrdiff_t find(char c, std::ptrdiff_t pos = 0) const {
         if (pos < 0) pos = 0;
         for (std::ptrdiff_t i = pos; i < size(); ++i) {
             if (data_->data[start_ + i] == c) {
@@ -333,7 +281,7 @@ public:
     }
 
     // Reverse find
-    std::ptrdiff_t rfind(char8_t c, std::ptrdiff_t pos = -1) const {
+    std::ptrdiff_t rfind(char c, std::ptrdiff_t pos = -1) const {
         std::ptrdiff_t len = size();
         if (pos < 0 || pos >= len) pos = len - 1;
         for (std::ptrdiff_t i = pos; i >= 0; --i) {
@@ -350,7 +298,7 @@ public:
         return std::memcmp(data_->data + start_, sv.data(), sv.size()) == 0;
     }
 
-    bool starts_with(char8_t c) const {
+    bool starts_with(char c) const {
         return !empty() && data_->data[start_] == c;
     }
 
@@ -360,14 +308,14 @@ public:
         return std::memcmp(data_->data + end_ - sv.size(), sv.data(), sv.size()) == 0;
     }
 
-    bool ends_with(char8_t c) const {
+    bool ends_with(char c) const {
         return !empty() && data_->data[end_ - 1] == c;
     }
 
     // Concatenation
     string operator+(const string& other) const {
         std::ptrdiff_t total_size = size_bytes() + other.size_bytes();
-        char8_t* new_data = new char8_t[total_size + 1];
+        char* new_data = new char[total_size + 1];
         std::memcpy(new_data, data(), size_bytes());
         std::memcpy(new_data + size_bytes(), other.data(), other.size_bytes());
         new_data[total_size] = 0;
@@ -375,14 +323,6 @@ public:
         block->data = new_data;
         block->size = total_size;
         return string(block, 0, total_size);
-    }
-
-    string operator+(std::u8string_view sv) const {
-        return *this + string(sv);
-    }
-
-    string operator+(const char8_t* s) const {
-        return *this + string(s);
     }
 
     string operator+(const char* s) const {
@@ -403,38 +343,25 @@ public:
         return 0 == std::memcmp(data(), other.data(), size_bytes());
     }
 
-    bool operator==(std::u8string_view sv) const {
-        bool const same_size = size_bytes() == std::ssize(sv);
-        if (!same_size)
-            return false;
-        return 0 == std::memcmp(data_->data + start_, sv.data(), size_bytes());
-    }
-
-    bool operator==(const char8_t* s) const {
-        auto const s_len = utf8_byte_length(s);
-        return size_bytes() == s_len && 0 == std::memcmp(data(), s, s_len);
-    }
-
-    bool operator==(const char8_t c) const {
+    bool operator==(const char c) const {
         return size() > 0 && data_->data[start_] == c;
     }
 
     bool operator==(const char* s) const {
-        auto const s_len = static_cast<std::intptr_t>(std::strlen(s));
-        return size() == s_len && 0 == std::memcmp(c_str(), s, s_len);
+        auto const s_len = (std::intptr_t)std::strlen(s);
+        return size_bytes() == s_len && 0 == std::memcmp(data(), s, s_len);
     }
 
     // Iterator support
-    const char8_t* begin() const { return data_->data + start_; }
-    const char8_t* end() const { return data_->data + end_; }
+    const char* begin() const { return data_->data + start_; }
+    const char* end() const { return data_->data + end_; }
 
 private:
     // Private constructor for substr
     string(std::shared_ptr<StringData> data, std::ptrdiff_t start, std::ptrdiff_t end)
         : data_(data), start_(start), end_(end) {}
 
-    // Private constructor that takes ownership of a StringBuilder
-    string(StringBuilder&& builder) : start_(0) {
+    string(StringBuilder&& builder) : start_(0), data_(nullptr), end_(0) {
         if (builder.size > 0 && builder.buffer) {
             data_ = std::make_shared<StringData>();
             // Add null terminator to the builder's buffer
@@ -454,14 +381,10 @@ private:
 };
 
 // Non-member operators
-export inline bool operator==(std::u8string_view sv, string s) {
-    return s == sv;
+std::ostream& operator<<(std::ostream& os, const string& str) {
+    os << str.data();
+    return os;
 }
-
-export inline bool operator==(const char8_t* sz, string s) {
-    return s == sz;
-}
-
 export inline bool operator==(const char* sz, string s) {
     return s == sz;
 }

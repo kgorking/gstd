@@ -2,6 +2,7 @@ module;
 #include <windows.h>
 export module gs:file_impl;
 import std;
+import :concepts;
 import :Reader;
 import :LineReader;
 import :Writer;
@@ -121,6 +122,7 @@ export namespace os {	// Async read awaiter
 			return res;
 		}
 	};
+
 	constexpr int O_RD = 0x0001; // read
 	constexpr int O_WR = 0x0002; // write
 	constexpr int O_RDWR = O_RD | O_WR; // read/write
@@ -295,7 +297,7 @@ export namespace os {	// Async read awaiter
 			co_return co_await async_read_awaiter(handle, buf, &file_position);
 		}
 
-		co<std::int64_t> write_async(std::span<const char> buf) {
+		co<std::int64_t> write_async(Span<const char> auto buf) {
 			if (handle == INVALID_HANDLE_VALUE) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
@@ -345,7 +347,7 @@ export namespace os {	// Async read awaiter
 			throw std::system_error(std::make_error_code(std::errc::io_error));
 		}
 
-		std::int64_t write(std::span<const char> buf) {
+		std::int64_t write(Span<const char> auto buf) {
 			if (handle == INVALID_HANDLE_VALUE) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}

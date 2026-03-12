@@ -32,19 +32,17 @@ TEST_CASE("test.string") {
 
 TEST_CASE("test.string_utf8") {
     // Test UTF-8 string with multibyte characters
-    // Using explicit byte arrays to ensure proper UTF-8 encoding
-    char8_t hello_world[] = { 
-        u8'h', 0xc3, 0xa9,  // h + é (1 char = 2 bytes)
-        u8'l', u8'l', u8'o', u8' ', u8'w', 
-        0xc3, 0xb6,         // ö (1 char = 2 bytes)
-        u8'r', u8'l', u8'd', 0 
-    };
-    string s(hello_world);
-    // "héllo wörld": 11 characters (13 bytes)
-    CHECK(s.size() == 11);
-    CHECK(s[0] == u8'h');
-    CHECK(s[1] == u8"é");
-    CHECK(s[2] == u8'l');
+    string s("héllo wörld");
+    // "héllo wörld": 11 characters
+    REQUIRE(s.size() == 11);
+    REQUIRE(s.size_bytes() == 13);  // héllo wörld in UTF-8 is 13 bytes
+    CHECK(s[0] == 'h');
+    CHECK(s[1].size() == 1);
+    CHECK(s[1].size_bytes() == 2);
+    CHECK(2 == std::strlen("é"));
+    bool x = s[1] == "é";
+    CHECK(x);
+    CHECK(s[2] == 'l');
     CHECK(!s.empty());
 
     // Test substr with multibyte characters
@@ -53,8 +51,7 @@ TEST_CASE("test.string_utf8") {
     CHECK(sub.size() == 6);
     
     // Test substr result matches expected
-    char8_t expected_sub[] = { u8' ', u8'w', 0xc3, 0xb6, u8'r', u8'l', u8'd', 0 };
-    string expected_sub_str(expected_sub);
+    string expected_sub_str(" wörld");
     CHECK(sub == expected_sub_str);
 
     // Test substr of substr - get "örl" (3 characters)
@@ -62,46 +59,39 @@ TEST_CASE("test.string_utf8") {
     string subsub = sub.substr(2, 3);  // ö, r, l = 3 characters
     CHECK(subsub.size() == 3);
     
-    char8_t expected_subsub[] = { 0xc3, 0xb6, u8'r', u8'l', 0 };
-    string expected_subsub_str(expected_subsub);
+    string expected_subsub_str("örl");
     CHECK(subsub == expected_subsub_str);
 
-    // Test with emoji (1 character = 4 bytes): 🚀 = F0 9F 9A 80
-    char8_t emoji_bytes[] = { 0xf0, 0x9f, 0x9a, 0x80, 0 };
-    string emoji(emoji_bytes);
-    CHECK(emoji.size() == 1);  // Rocket emoji is 1 character (4 bytes)
-    string expected_emoji(emoji_bytes);
+    // Test with emoji (1 character = 4 bytes): 🚀
+    string emoji("🚀");
+    CHECK(emoji.size() == 1);  // Rocket emoji is 1 character
+    CHECK(emoji.size_bytes() == 4);  // But 4 bytes
+    string expected_emoji("🚀");
     CHECK(emoji == expected_emoji);
 
     // Test UTF-8 literal assignment
-    char8_t rocket[] = { 0xf0, 0x9f, 0x9a, 0x80, 0 };
-    string assigned = rocket;
+    string assigned = "🚀";
     CHECK(assigned.size() == 1);
-    string expected_assigned(rocket);
-    CHECK(assigned == expected_assigned);
+    CHECK(4 == std::strlen("🚀"));
+    CHECK(assigned == "🚀");
 }
 
 TEST_CASE("test.string_literals") {
-    string ascii_literal = u8"abcdef";
+    string ascii_literal = "abcdef";
     CHECK(ascii_literal.size() == 6);
 
-    char8_t emoji_bytes[] = { 0xf0, 0x9f, 0x9a, 0x80, 0 };
-    string const expected_emoji(emoji_bytes);
+    string const expected_emoji("🚀");
 
     string emoji_ordinal_literal = "🚀";
     CHECK(emoji_ordinal_literal.size() == 1);
     CHECK(emoji_ordinal_literal == expected_emoji);
 
-    string emoji_utf8_literal = u8"🚀";
-    CHECK(emoji_utf8_literal.size() == 1);
-    CHECK(emoji_utf8_literal == expected_emoji);
-
     // Test UTF-8 escape sequence (should work regardless of source file encoding)
-    string emoji_escape = u8"\U0001F680";  // Rocket emoji using Unicode escape
+    string emoji_escape = "\U0001F680";  // Rocket emoji using Unicode escape
     CHECK(emoji_escape.size() == 1);
     CHECK(emoji_escape == expected_emoji);
 
-    CHECK(expected_emoji == u8"🚀");
+    CHECK(expected_emoji == "🚀");
 }
 
 TEST_CASE("test.string_remove_prefix") {
@@ -123,19 +113,12 @@ TEST_CASE("test.string_remove_prefix") {
     CHECK(ascii3.size() == 0);
 
     // Test remove_prefix with UTF-8 multibyte characters
-    char8_t utf8_bytes[] = { 
-        u8'h', 0xc3, 0xa9,  // h + é (1 char = 2 bytes)
-        u8'l', u8'l', u8'o', u8' ', u8'w', 
-        0xc3, 0xb6,         // ö (1 char = 2 bytes)
-        u8'r', u8'l', u8'd', 0 
-    };
-    string utf8_str(utf8_bytes);
+    string utf8_str("héllo wörld");
     // "héllo wörld": 11 characters
     utf8_str.remove_prefix(5);  // Remove "héllo"
     CHECK(utf8_str.size() == 6);  // Should be " wörld"
     
-    char8_t expected_bytes[] = { u8' ', u8'w', 0xc3, 0xb6, u8'r', u8'l', u8'd', 0 };
-    string expected_str(expected_bytes);
+    string expected_str(" wörld");
     CHECK(utf8_str == expected_str);
 
     // Test with 4-byte emoji character
@@ -165,19 +148,12 @@ TEST_CASE("test.string_remove_postfix") {
     CHECK(ascii3.size() == 0);
 
     // Test remove_postfix with UTF-8 multibyte characters
-    char8_t utf8_bytes[] = { 
-        u8'h', 0xc3, 0xa9,  // h + é (1 char = 2 bytes)
-        u8'l', u8'l', u8'o', u8' ', u8'w', 
-        0xc3, 0xb6,         // ö (1 char = 2 bytes)
-        u8'r', u8'l', u8'd', 0 
-    };
-    string utf8_str(utf8_bytes);
+    string utf8_str("héllo wörld");
     // "héllo wörld": 11 characters
     utf8_str.remove_postfix(6);  // Remove " wörld"
     CHECK(utf8_str.size() == 5);  // Should be "héllo"
     
-    char8_t expected_bytes[] = { u8'h', 0xc3, 0xa9, u8'l', u8'l', u8'o', 0 };
-    string expected_str(expected_bytes);
+    string expected_str("héllo");
     CHECK(utf8_str == expected_str);
 
     // Test with 4-byte emoji character
