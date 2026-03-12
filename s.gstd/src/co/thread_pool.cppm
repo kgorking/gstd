@@ -63,11 +63,10 @@ private:
                     continue;
                 }
             }
-            item.resume();
 
-            if (!item.done()) {
-                // If the coroutine is not finished, re-enqueue it for further execution
-                enqueue(item);
+            // Run coroutine to completion
+            while (!item.done()) {
+                item.resume();
             }
         }
     }
