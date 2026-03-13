@@ -120,7 +120,7 @@ TEST_CASE("task wait_all with sleepy tasks") {
 TEST_CASE("task channel") {
     std::println("task channel");
 
-	channel<int> ch;
+	channel<int, 3> ch;
 
 	// Helper coroutine to await tasks
 	auto parallel_compute = [&ch]() -> task<void> {
