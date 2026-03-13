@@ -2,9 +2,13 @@
 export module gs:task;
 
 import std;
+import :signal;
 import :thread_pool;
+import :sequence;
 
 export template<typename ValueType> class task; // forward declaration for use in promise
+
+static signal<std::uint64_t> task_completion_signal;
 
 // awaiter support - schedules task on thread pool when awaited
 template<typename ValueType, typename PromiseType>
@@ -47,6 +51,8 @@ struct final_awaiter {
     void await_suspend(std::coroutine_handle<PromiseType> h) noexcept {
         h.promise().is_running = false;
         h.promise().is_running.notify_one();
+        task_completion_signal.set(h.promise().task_id);
+
         if (auto cont = h.promise().continuation)
             cont.resume();
     }
@@ -54,11 +60,15 @@ struct final_awaiter {
 };
 
 // promise implementation used by task; runs on thread pool
+template<typename ValueType>
 struct task_promise_base {
+    using value_type = ValueType;
     std::coroutine_handle<> continuation = nullptr;
     std::exception_ptr exception = nullptr;
     std::atomic<bool> is_running = false;
+    std::uint64_t task_id = 0;
 
+    auto get_return_object() noexcept -> task<ValueType>;
     // Suspend initially so we can schedule on thread pool
     auto initial_suspend() noexcept { return std::suspend_always{}; }
     
@@ -68,7 +78,7 @@ struct task_promise_base {
 };
 
 template<typename ValueType>
-struct task_promise : task_promise_base {
+struct task_promise : task_promise_base<ValueType> {
     std::optional<ValueType> returned_value;
 
     auto final_suspend() noexcept -> final_awaiter<task_promise> { return {}; }
@@ -80,7 +90,7 @@ struct task_promise : task_promise_base {
 
 // Promise for void-returning task coroutines
 template<>
-struct task_promise<void> : task_promise_base {
+struct task_promise<void> : task_promise_base<void> {
     auto final_suspend() noexcept -> final_awaiter<task_promise> { return {}; }
     auto get_return_object() noexcept -> task<void>;
     void return_void() noexcept {}
@@ -94,18 +104,28 @@ public:
 
 private:
     std::coroutine_handle<promise_type> _handle = nullptr;
+    std::uint64_t _id = 0;
+    inline static std::atomic<std::uint64_t> _id_counter{1};
 
 public:
     // constructors / destructor
     task() noexcept = default;
-    explicit task(std::coroutine_handle<promise_type> h) noexcept : _handle(h) {}
-    task(task&& other) noexcept : _handle(other._handle) { other._handle = nullptr; }
+    explicit task(std::coroutine_handle<promise_type> h) noexcept : _handle(h) {
+        if (h) {
+            _id = _id_counter++;
+            h.promise().task_id = _id;
+        }
+    }
+    task(task&& other) noexcept : _handle(other._handle), _id(other._id) { other._handle = nullptr; }
     task& operator=(task&& other) noexcept {
         if (this != &other) {
             if (_handle)
                 _handle.destroy();
             _handle = other._handle;
+            _id = other._id;
             other._handle = nullptr;
+            if (_handle)
+                _handle.promise().task_id = _id;
         }
         return *this;
     }
@@ -116,6 +136,8 @@ public:
         if (_handle)
             _handle.destroy();
     }
+
+    std::uint64_t id() const noexcept { return _id; }
 
     // Get the current status
     bool done() const noexcept { return !_handle || _handle.done(); }
@@ -179,6 +201,28 @@ auto task_promise<void>::get_return_object() noexcept -> task<void> {
 // Utility to wait for multiple tasks and collect their results
 export template<typename... Tasks>
 auto wait_all(Tasks&... tasks) {
-    (tasks.wait(), ...);
-    return std::make_tuple(tasks.result()...);
+    return std::make_tuple(tasks.wait().result()...);
+}
+
+export template<template<typename, auto...> typename Container, typename T, auto... Rest>
+requires (Span<Container<task<T>, Rest...>, task<T>>)
+sequence<T> wait_each(Container<task<T>, Rest...>& tasks) {
+    std::map<std::uint64_t, task<T>*> task_map;
+    for (task<T>& task : tasks){
+        task_map[task.id()] = &task;
+    }
+
+    auto remaining = tasks.size();
+
+    while (remaining > 0) {
+        auto completed_task_id = task_completion_signal.get();
+
+        if (task_map.contains(completed_task_id)) {
+            --remaining;
+            task<T>* completed_task = task_map[completed_task_id];
+            task_map.erase(completed_task_id);
+            if (completed_task->result())
+                co_yield *completed_task->result();
+        }
+    }
 }

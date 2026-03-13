@@ -26,6 +26,16 @@ static task<void> cpu_heavy_void_task(int iterations) {
 	co_return;
 }
 
+// Task that sleeps for a specified duration
+static task<int> cpu_sleep_task(int milliseconds) {
+	int const count = ++test_counter;
+	sync_console_writer.write(string::fmt("{} Starting sleep task for {} milliseconds...\n", count, milliseconds));
+	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
+	sync_console_writer.write(string::fmt("{} Done with sleep task\n", count));
+	co_return milliseconds;
+
+}
+
 TEST_CASE("task cpu-heavy computation") {
     std::println("task cpu-heavy computation");
 	auto t = cpu_heavy_task(1000000);
@@ -60,7 +70,7 @@ TEST_CASE("task with co_await") {
 TEST_CASE("task multiple parallel computations") {
     std::println("task multiple parallel computations");
 	// Helper coroutine to await tasks
-	auto parallel_compute = []() -> co<int> {
+	auto parallel_compute = []() -> task<int> {
 		auto t1 = cpu_heavy_task(500000);
 		auto t2 = cpu_heavy_task(500000);
 		auto t3 = cpu_heavy_task(500000);
@@ -77,15 +87,12 @@ TEST_CASE("task multiple parallel computations") {
 	CHECK(result.value() > 0);
 }
 
-TEST_CASE("task wait_all") {
-    std::println("task wait_all");
+TEST_CASE("task wait_all with vector") {
 	auto t1 = cpu_heavy_task(100000);
 	auto t2 = cpu_heavy_task(100000);
 	auto t3 = cpu_heavy_task(100000);
-	
-	// Wait for all tasks at once and get results as a tuple
+
 	auto [r1, r2, r3] = wait_all(t1, t2, t3);
-	
 	REQUIRE(r1.has_value());
 	REQUIRE(r2.has_value());
 	REQUIRE(r3.has_value());
@@ -94,17 +101,18 @@ TEST_CASE("task wait_all") {
 	CHECK(r3.value() > 0);
 }
 
-/*TEST_CASE("task wait_all with vector") {
-	
-	// Wait for all tasks at once and get results as a vector
-	auto results = wait_all(std::vector{
-        cpu_heavy_task(100000),
-        cpu_heavy_task(100000),
-        cpu_heavy_task(100000)
-    });
-	
-	REQUIRE(results.size() == 3);
-	CHECK(results[0] > 0);
-	CHECK(results[1] > 0);
-	CHECK(results[2] > 0);
-}*/
+TEST_CASE("task wait_all with sleepy tasks") {
+	auto t1 = cpu_sleep_task(500);
+	auto t2 = cpu_sleep_task(400);
+	auto t3 = cpu_sleep_task(300);
+	auto t4 = cpu_sleep_task(200);
+	auto t5 = cpu_sleep_task(100);
+
+	std::array<task<int>, 5> tasks{std::move(t1), std::move(t2), std::move(t3), std::move(t4), std::move(t5)};
+
+	int last_ms = 0;
+	for (int ms : wait_each(tasks)) {
+    	CHECK(ms > last_ms);
+		last_ms = ms;
+	}
+}
