@@ -4,22 +4,25 @@ import std;
 // Single-value signal for synchronizing between threads or coroutines
 export template<typename T>
 class signal {
-    std::mutex m{};
-    std::condition_variable cv{};
-    std::optional<T> value{};
+    mutable std::mutex mutex;
+    std::condition_variable cv;
+    T value{};
+    bool value_ready = false;
 
 public:
     void set(T val) {
         {
-            std::lock_guard lock(m);
+            std::lock_guard lock(mutex);
             value = std::move(val);
+            value_ready = true;
         }
-        cv.notify_all();
+        cv.notify_one(); // wake up waiting consumer
     }
 
     T get() {
-        std::unique_lock lock(m);
-        cv.wait(lock, [this] { return value.has_value(); });
-        return *std::exchange(value, {});
+        std::unique_lock lock(mutex);
+        cv.wait(lock, [this] { return value_ready; });
+        value_ready = false;
+        return std::move(value);
     }
 };

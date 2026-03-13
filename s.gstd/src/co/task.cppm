@@ -51,7 +51,11 @@ struct final_awaiter {
     void await_suspend(std::coroutine_handle<PromiseType> h) noexcept {
         h.promise().is_running = false;
         h.promise().is_running.notify_one();
-        task_completion_signal.set(h.promise().task_id);
+        if (h.promise().task_id) {
+            std::println("signaling ID: {}", *h.promise().task_id);
+            task_completion_signal.set(*h.promise().task_id);
+            std::println("signaled ID: {}", *h.promise().task_id);
+        }
 
         if (auto cont = h.promise().continuation)
             cont.resume();
@@ -66,7 +70,7 @@ struct task_promise_base {
     std::coroutine_handle<> continuation = nullptr;
     std::exception_ptr exception = nullptr;
     std::atomic<bool> is_running = false;
-    std::uint64_t task_id = 0;
+    std::optional<std::uint64_t> task_id{};
 
     auto get_return_object() noexcept -> task<ValueType>;
     // Suspend initially so we can schedule on thread pool
@@ -113,7 +117,7 @@ public:
     explicit task(std::coroutine_handle<promise_type> h) noexcept : _handle(h) {
         if (h) {
             _id = _id_counter++;
-            h.promise().task_id = _id;
+            //h.promise().task_id = _id;
         }
     }
     task(task&& other) noexcept : _handle(other._handle), _id(other._id) { other._handle = nullptr; }
@@ -124,8 +128,8 @@ public:
             _handle = other._handle;
             _id = other._id;
             other._handle = nullptr;
-            if (_handle)
-                _handle.promise().task_id = _id;
+            //if (_handle)
+            //    _handle.promise().task_id = _id;
         }
         return *this;
     }
@@ -147,6 +151,11 @@ public:
             _handle.resume();
     }
    
+    void signal_on_completion() noexcept {
+        if (_handle && !_handle.done())
+            _handle.promise().task_id = _id;
+    }
+
     // Execute on thread pool and wait for completion
     task& wait() noexcept {
         if (_handle && !_handle.done() && _handle.promise().is_running) {
@@ -209,13 +218,19 @@ requires (Span<Container<task<T>, Rest...>, task<T>>)
 sequence<T> wait_each(Container<task<T>, Rest...>& tasks) {
     std::map<std::uint64_t, task<T>*> task_map;
     for (task<T>& task : tasks){
-        task_map[task.id()] = &task;
+        if (!task.done()) {
+            std::println("Task signaling completion: {}", task.id());
+            task.signal_on_completion();
+            task_map[task.id()] = &task;
+        }
     }
 
     auto remaining = tasks.size();
 
     while (remaining > 0) {
+        std::println("Waiting for task completion...");
         auto completed_task_id = task_completion_signal.get();
+        std::println("Task completed: {}", completed_task_id);
 
         if (task_map.contains(completed_task_id)) {
             --remaining;

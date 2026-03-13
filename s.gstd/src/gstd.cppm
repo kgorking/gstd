@@ -5,6 +5,7 @@ export import :co;
 export import :task;
 export import :sequence;
 export import :string;
+export import :channel;
 
 // io
 export import :Reader;

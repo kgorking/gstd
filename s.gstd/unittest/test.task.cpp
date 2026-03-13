@@ -116,3 +116,25 @@ TEST_CASE("task wait_all with sleepy tasks") {
 		last_ms = ms;
 	}
 }
+
+TEST_CASE("task channel") {
+    std::println("task channel");
+
+	channel<int> ch;
+
+	// Helper coroutine to await tasks
+	auto parallel_compute = [&ch]() -> task<void> {
+	    std::println("sending 1 2 3");
+		ch << 1 << 2 << 3; // Send values to the channel
+		co_return;
+	};
+
+	parallel_compute().wait();
+
+	int v1, v2, v3;
+	ch >> v1 >> v2 >> v3; // Read values from the channel
+	std::println("received {} {} {}", v1, v2, v3);
+	REQUIRE(v1 == 1);
+	REQUIRE(v2 == 2);
+	REQUIRE(v3 == 3);
+}
