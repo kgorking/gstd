@@ -2,13 +2,13 @@
 export module gs:task;
 
 import std;
-import :signal;
+import :channel;
 import :thread_pool;
 import :sequence;
 
 export template<typename ValueType> class task; // forward declaration for use in promise
 
-static signal<std::uint64_t> task_completion_signal;
+static channel<int> task_completion_signal;
 
 // awaiter support - schedules task on thread pool when awaited
 template<typename ValueType, typename PromiseType>
@@ -52,9 +52,7 @@ struct final_awaiter {
         h.promise().is_running = false;
         h.promise().is_running.notify_one();
         if (h.promise().task_id) {
-            std::println("signaling ID: {}", *h.promise().task_id);
-            task_completion_signal.set(*h.promise().task_id);
-            std::println("signaled ID: {}", *h.promise().task_id);
+            task_completion_signal << *h.promise().task_id;
         }
 
         if (auto cont = h.promise().continuation)
@@ -70,7 +68,7 @@ struct task_promise_base {
     std::coroutine_handle<> continuation = nullptr;
     std::exception_ptr exception = nullptr;
     std::atomic<bool> is_running = false;
-    std::optional<std::uint64_t> task_id{};
+    std::optional<int> task_id{};
 
     auto get_return_object() noexcept -> task<ValueType>;
     // Suspend initially so we can schedule on thread pool
@@ -108,8 +106,8 @@ public:
 
 private:
     std::coroutine_handle<promise_type> _handle = nullptr;
-    std::uint64_t _id = 0;
-    inline static std::atomic<std::uint64_t> _id_counter{1};
+    int _id = 0;
+    inline static std::atomic<int> _id_counter{1};
 
 public:
     // constructors / destructor
@@ -117,7 +115,6 @@ public:
     explicit task(std::coroutine_handle<promise_type> h) noexcept : _handle(h) {
         if (h) {
             _id = _id_counter++;
-            //h.promise().task_id = _id;
         }
     }
     task(task&& other) noexcept : _handle(other._handle), _id(other._id) { other._handle = nullptr; }
@@ -128,8 +125,6 @@ public:
             _handle = other._handle;
             _id = other._id;
             other._handle = nullptr;
-            //if (_handle)
-            //    _handle.promise().task_id = _id;
         }
         return *this;
     }
@@ -141,7 +136,7 @@ public:
             _handle.destroy();
     }
 
-    std::uint64_t id() const noexcept { return _id; }
+    int id() const noexcept { return _id; }
 
     // Get the current status
     bool done() const noexcept { return !_handle || _handle.done(); }
@@ -157,7 +152,7 @@ public:
     }
 
     // Execute on thread pool and wait for completion
-    task& wait() noexcept {
+    void wait() const noexcept {
         if (_handle && !_handle.done() && _handle.promise().is_running) {
             // Wait until the coroutine completes
             _handle.promise().is_running.wait(true);
@@ -166,15 +161,15 @@ public:
             if (_handle.promise().exception)
                 std::rethrow_exception(_handle.promise().exception);
         }
-        return *this;
     }
 
-    // return value retrieval (only for non-void types)
+    // Get the result of the task, if it has one.
+    // Returns std::nullopt if the task threw an exception or if the result is not available.
+    // Blocks until the task is complete.
     template<typename T = ValueType>
-    std::optional<T> result() const noexcept requires (!std::is_void_v<T>) {
-        if (_handle && _handle.promise().exception)
-            return std::nullopt;
-        return std::move(_handle.promise().returned_value);
+    T result() const noexcept requires (!std::is_void_v<T>) {
+        wait();
+        return std::move(*_handle.promise().returned_value);
     }
 
     // lvalue overload: the caller retains ownership of the handle
@@ -210,16 +205,15 @@ auto task_promise<void>::get_return_object() noexcept -> task<void> {
 // Utility to wait for multiple tasks and collect their results
 export template<typename... Tasks>
 auto wait_all(Tasks&... tasks) {
-    return std::make_tuple(tasks.wait().result()...);
+    return std::make_tuple(tasks.result()...);
 }
 
 export template<template<typename, auto...> typename Container, typename T, auto... Rest>
 requires (Span<Container<task<T>, Rest...>, task<T>>)
 sequence<T> wait_each(Container<task<T>, Rest...>& tasks) {
-    std::map<std::uint64_t, task<T>*> task_map;
+    std::map<int, task<T>*> task_map;
     for (task<T>& task : tasks){
         if (!task.done()) {
-            std::println("Task signaling completion: {}", task.id());
             task.signal_on_completion();
             task_map[task.id()] = &task;
         }
@@ -228,16 +222,17 @@ sequence<T> wait_each(Container<task<T>, Rest...>& tasks) {
     auto remaining = tasks.size();
 
     while (remaining > 0) {
-        std::println("Waiting for task completion...");
-        auto completed_task_id = task_completion_signal.get();
-        std::println("Task completed: {}", completed_task_id);
-
+        int completed_task_id = task_completion_signal.get();
         if (task_map.contains(completed_task_id)) {
             --remaining;
             task<T>* completed_task = task_map[completed_task_id];
             task_map.erase(completed_task_id);
-            if (completed_task->result())
-                co_yield *completed_task->result();
+            co_yield completed_task->result();
         }
     }
+}
+
+export template<typename... Args>
+auto as_task(auto&& fn, Args&&... args) -> task<std::invoke_result_t<decltype(fn), Args...>> {
+    co_return fn(std::forward<Args>(args)...);
 }

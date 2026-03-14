@@ -9,24 +9,28 @@ export template<typename ValueType> class co; // forward declaration for use in 
 template<typename ValueType>
 struct co_promise {
     std::coroutine_handle<> continuation = nullptr;
-    std::optional<ValueType> returned_value;
+    ValueType returned_value;
+    bool completed = false;
 
     auto get_return_object() noexcept -> co<ValueType>;
     auto initial_suspend() noexcept { return std::suspend_always{}; }
     struct final_awaiter {
         bool await_ready() const noexcept { return false; }
-        void await_suspend(std::coroutine_handle<co_promise> h) noexcept {
-            if (auto cont = h.promise().continuation)
-                cont.resume();
+        std::coroutine_handle<> await_suspend(std::coroutine_handle<co_promise> h) noexcept {
+            h.promise().completed = true;
+            if (h.promise().continuation) {
+                return h.promise().continuation;
+            }
+            return std::noop_coroutine();
         }
         void await_resume() const noexcept {}
     };
     auto final_suspend() noexcept -> final_awaiter { return {}; }
 
     void return_value(ValueType v) noexcept {
-        returned_value = v;
+        returned_value = std::move(v);
     }
-    
+
     void unhandled_exception() noexcept { std::terminate(); }
 };
 
@@ -34,13 +38,18 @@ struct co_promise {
 template<>
 struct co_promise<void> {
     std::coroutine_handle<> continuation = nullptr;
+    bool completed = false;
+
     auto get_return_object() noexcept -> co<void>;
     auto initial_suspend() noexcept { return std::suspend_always{}; }
     struct final_awaiter {
         bool await_ready() const noexcept { return false; }
-        void await_suspend(std::coroutine_handle<co_promise> h) noexcept {
-            if (auto cont = h.promise().continuation)
-                cont.resume();
+        std::coroutine_handle<> await_suspend(std::coroutine_handle<co_promise> h) noexcept {
+            h.promise().completed = true;
+            if (h.promise().continuation) {
+                return h.promise().continuation;
+            }
+            return std::noop_coroutine();
         }
         void await_resume() const noexcept {}
     };
@@ -80,14 +89,15 @@ public:
     }
 
     // manual control helpers
-    bool done() const noexcept { return !_handle || _handle.done(); }
+    bool done() const noexcept { return !_handle || _handle.promise().completed; }
     void resume() noexcept { if (_handle) _handle.resume(); }
     co& wait() noexcept { while (!done()) resume(); return *this; }
     
 
     // return value retrieval (only for non-void types)
     template<typename T = ValueType>
-    std::optional<T> result() const noexcept requires (!std::is_void_v<T>) {
+    T result() noexcept requires (!std::is_void_v<T>) {
+        wait();
         return _handle.promise().returned_value;
     }
 
@@ -107,10 +117,7 @@ public:
         void await_resume() noexcept requires (std::is_void_v<ValueType>) {}
         
         ValueType await_resume() noexcept requires (!std::is_void_v<ValueType>) {
-            // return stored return value, or default-constructed if absent
-            if (h.promise().returned_value.has_value())
-                return *h.promise().returned_value;
-            return ValueType{};
+            return h.promise().returned_value;
         }
     };
 

@@ -12,7 +12,6 @@ co<int> test() {
 }
 
 TEST_CASE("test.co") {
-    auto result = test().wait().result();
-	CHECK(result);
-    CHECK(*result == 50);
+    auto result = test().result();
+    CHECK(result == 50);
 }

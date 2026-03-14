@@ -26,9 +26,8 @@ TEST_CASE("file async read") {
 	
 	auto result = test_async_read_impl(f, std::span(buf)).wait().result();
 	
-	REQUIRE(result.has_value());
-	CHECK(result.value() == test_content.size());
-	CHECK(std::string_view(buf, result.value()) == test_content);
+	CHECK(result == test_content.size());
+	CHECK(std::string_view(buf, result) == test_content);
 	
 	f.close();
 	
@@ -44,8 +43,7 @@ TEST_CASE("file async write") {
 
 	auto result = test_async_write_impl(f, std::span<const char>(test_content.c_str(), test_content.size())).wait().result();
 	
-	REQUIRE(result.has_value());
-	CHECK(result.value() == test_content.size());
+	CHECK(result == test_content.size());
 	
 	f.close();
 
@@ -68,16 +66,14 @@ TEST_CASE("file async read/write sequence") {
 	os::file f{test_file, os::O_CREATE | os::O_WR | os::O_BIN};
 	
 	auto result1 = test_async_write_impl(f, std::span<const char>(data1.c_str(), data1.size())).wait().result();
-	REQUIRE(result1.has_value());
-	CHECK(result1.value() == data1.size());
+	CHECK(result1 == data1.size());
 	
 	// Debug: check file position after first write
 	auto file_size1 = f.size();
 	CHECK(file_size1 == data1.size());
 
 	auto result2 = test_async_write_impl(f, std::span<const char>(data2.c_str(), data2.size())).wait().result();
-	REQUIRE(result2.has_value());
-	CHECK(result2.value() == data2.size());
+	CHECK(result2 == data2.size());
 	
 	// Debug: check file size after second write
 	auto file_size2 = f.size();
