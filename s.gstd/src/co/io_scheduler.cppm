@@ -20,14 +20,7 @@ private:
 
 public:
     io_scheduler() {
-        // Create the I/O Completion Port
-        iocp_handle = CreateIoCompletionPort(
-            INVALID_HANDLE_VALUE,
-            nullptr,
-            0,
-            0  // Let system choose concurrency level
-        );
-        
+        iocp_handle = CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, 0);
         if (!iocp_handle) {
             throw std::system_error(std::make_error_code(std::errc::resource_unavailable_try_again));
         }
@@ -103,11 +96,15 @@ private:
                 &bytes_transferred,
                 &completion_key,
                 &overlapped,
-                500  // 500ms timeout
+                25  // 25ms timeout
             );
 
-            if (!overlapped) continue;  // Timeout or shutdown signal
-
+            if (!overlapped) {
+                // Timeout or shutdown signal
+                std::this_thread::yield();
+                continue;
+            }
+            
             {
                 std::lock_guard lock(pending_ops_mutex);
                 if (auto it = pending_ops.find(overlapped); it != pending_ops.end()) {

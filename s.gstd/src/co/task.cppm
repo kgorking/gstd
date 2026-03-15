@@ -8,7 +8,7 @@ import :sequence;
 
 export template<typename ValueType> class task; // forward declaration for use in promise
 
-static channel<int> task_completion_signal;
+inline channel<int> task_completion_signal;
 
 // awaiter support - schedules task on thread pool when awaited
 template<typename ValueType, typename PromiseType>
@@ -30,14 +30,17 @@ struct awaiter {
     }
     
     // Different return types based on ValueType
-    void await_resume() noexcept requires (std::is_void_v<ValueType>) {
-        if (h && h.promise().exception)
+    void await_resume() requires (std::is_void_v<ValueType>) {
+        if (h && h.promise().exception) {
             std::rethrow_exception(h.promise().exception);
+        }
     }
     
-    ValueType await_resume() noexcept requires (!std::is_void_v<ValueType>) {
-        if (h && h.promise().exception)
+    ValueType await_resume() requires (!std::is_void_v<ValueType>) {
+        if (h && h.promise().exception) {
             std::rethrow_exception(h.promise().exception);
+        }
+
         // return stored return value, or default-constructed if absent
         if (h && h.promise().returned_value.has_value())
             return *h.promise().returned_value;
@@ -113,9 +116,7 @@ public:
     // constructors / destructor
     task() noexcept = default;
     explicit task(std::coroutine_handle<promise_type> h) noexcept : _handle(h) {
-        if (h) {
-            _id = _id_counter++;
-        }
+        _id = _id_counter++;
     }
     task(task&& other) noexcept : _handle(other._handle), _id(other._id) { other._handle = nullptr; }
     task& operator=(task&& other) noexcept {
@@ -132,6 +133,7 @@ public:
     task& operator=(const task&) = delete;
 
     ~task() {
+        wait(); // Ensure task is complete before destruction
         if (_handle)
             _handle.destroy();
     }
@@ -145,30 +147,37 @@ public:
         if (_handle && !_handle.done())
             _handle.resume();
     }
-   
+
     void signal_on_completion() noexcept {
         if (_handle && !_handle.done())
             _handle.promise().task_id = _id;
     }
 
     // Execute on thread pool and wait for completion
-    void wait() const noexcept {
-        if (_handle && !_handle.done() && _handle.promise().is_running) {
-            // Wait until the coroutine completes
-            _handle.promise().is_running.wait(true);
+    void wait() const {
+        if (_handle) {
+            if (!_handle.done() && _handle.promise().is_running) {
+                // Wait until the coroutine completes
+                _handle.promise().is_running.wait(true);
+            }
 
             // If there was an exception, rethrow it
-            if (_handle.promise().exception)
+            if (_handle.promise().exception) {
                 std::rethrow_exception(_handle.promise().exception);
+            }
         }
     }
 
     // Get the result of the task, if it has one.
-    // Returns std::nullopt if the task threw an exception or if the result is not available.
     // Blocks until the task is complete.
     template<typename T = ValueType>
-    T result() const noexcept requires (!std::is_void_v<T>) {
+    T result() const requires (!std::is_void_v<T>) {
         wait();
+
+        if (!_handle.promise().returned_value.has_value()) {
+            throw std::runtime_error("Task completed without returning a value");
+        }
+
         return std::move(*_handle.promise().returned_value);
     }
 
@@ -230,9 +239,4 @@ sequence<T> wait_each(Container<task<T>, Rest...>& tasks) {
             co_yield completed_task->result();
         }
     }
-}
-
-export template<typename... Args>
-auto as_task(auto&& fn, Args&&... args) -> task<std::invoke_result_t<decltype(fn), Args...>> {
-    co_return fn(std::forward<Args>(args)...);
 }

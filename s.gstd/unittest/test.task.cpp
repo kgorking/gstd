@@ -44,11 +44,15 @@ TEST_CASE("task with co_await") {
 		co_return result;
 	};
 
-	auto t = cpu_heavy_task(100000);
-	auto awaiter = awaiter_coro(std::move(t));
-	int result = awaiter.result();
-
-	CHECK(result > 0);
+	try {
+		auto t = cpu_heavy_task(1000000);
+		auto awaiter = awaiter_coro(std::move(t));
+		int result = awaiter.result();
+		CHECK(result > 0);
+	} catch (const std::exception& ex) {
+		std::println("Exception in test: {}", ex.what());
+		throw;
+	}
 }
 
 TEST_CASE("task multiple parallel computations") {
@@ -99,7 +103,7 @@ TEST_CASE("task wait_all with sleepy tasks") {
 TEST_CASE("task channel unbuffered") {
 	channel<int> ch;
 
-	auto parallel_compute = [&ch]() -> task<void> {
+	auto message_sender = [&ch]() -> task<void> {
 		for (int i=1; i<=3; ++i) {
 			ch << i;
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -107,14 +111,12 @@ TEST_CASE("task channel unbuffered") {
 		co_return;
 	};
 
-	auto t = parallel_compute();
+	auto t = message_sender();
 
 	for (int i=1; i<=3; ++i) {
 		int const v = ch.get();
 		REQUIRE(v == i);
 	}
-
-	t.wait();
 }
 
 TEST_CASE("task channel buffered") {
@@ -134,6 +136,4 @@ TEST_CASE("task channel buffered") {
 		int const v = ch.get();
 		REQUIRE(v == i);
 	}
-
-	t.wait();
 }

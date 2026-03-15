@@ -14,40 +14,40 @@ struct StringData {
     }
 };
 
+// Helper class for building strings with format
+class StringBuilder {
+public:
+    using value_type = char;
+    char* buffer = nullptr;
+    std::ptrdiff_t size = 0;
+    std::ptrdiff_t capacity = 0;
+    
+    inline ~StringBuilder() {
+        delete[] buffer;
+    }
+    
+    // Support for std::back_insert_iterator
+    inline void push_back(char c) {
+        if (size >= capacity) {
+            // Grow capacity exponentially
+            std::ptrdiff_t new_capacity = (capacity == 0) ? 16 : capacity * 2;
+            char* new_buffer = new char[new_capacity];
+            if (buffer) {
+                std::memcpy(new_buffer, buffer, size);
+                delete[] buffer;
+            }
+            buffer = new_buffer;
+            capacity = new_capacity;
+        }
+        buffer[size++] = c;
+    }
+};
+
 // helper functions for the string class
 namespace {
-    // Helper class for building strings with format
-    class StringBuilder {
-    public:
-        using value_type = char;
-        char* buffer = nullptr;
-        std::ptrdiff_t size = 0;
-        std::ptrdiff_t capacity = 0;
-        
-        inline ~StringBuilder() {
-            delete[] buffer;
-        }
-        
-        // Support for std::back_insert_iterator
-        inline void push_back(char c) {
-            if (size >= capacity) {
-                // Grow capacity exponentially
-                std::ptrdiff_t new_capacity = (capacity == 0) ? 16 : capacity * 2;
-                char* new_buffer = new char[new_capacity];
-                if (buffer) {
-                    std::memcpy(new_buffer, buffer, size);
-                    delete[] buffer;
-                }
-                buffer = new_buffer;
-                capacity = new_capacity;
-            }
-            buffer[size++] = c;
-        }
-    };
-
     // Get the byte length of a UTF-8 character from its first byte
     inline std::ptrdiff_t utf8_char_len(char first_byte) {
-        return std::max(1, std::countl_one((std::uint8_t)first_byte));
+        return std::max(1, std::countl_one(static_cast<std::uint8_t>(first_byte)));
     }
 
     // Count the number of UTF-8 characters in a byte range
@@ -118,7 +118,7 @@ public:
             data_ = std::make_shared<StringData>();
             char *pdata = new char[sv.size()+1];
             // Safely reinterpret as UTF-8 bytes (std::string is typically UTF-8 in modern C++)
-            std::memcpy(pdata, reinterpret_cast<const char*>(sv.data()), sv.size());
+            std::memcpy(pdata, sv.data(), sv.size());
             pdata[sv.size()] = 0;
             data_->data = pdata;
             data_->size = sv.size();
@@ -353,7 +353,7 @@ public:
     }
 
     bool operator==(const char* s) const {
-        auto const s_len = (std::intptr_t)std::strlen(s);
+        auto const s_len = static_cast<std::intptr_t>(std::strlen(s));
         return size_bytes() == s_len && 0 == std::memcmp(data(), s, s_len);
     }
 
@@ -366,7 +366,7 @@ private:
     string(std::shared_ptr<StringData> data, std::ptrdiff_t start, std::ptrdiff_t end)
         : data_(data), start_(start), end_(end) {}
 
-    string(StringBuilder&& builder) : start_(0), data_(nullptr), end_(0) {
+    string(StringBuilder&& builder) : data_(nullptr), start_(0), end_(0) {
         if (builder.size > 0 && builder.buffer) {
             data_ = std::make_shared<StringData>();
             // Add null terminator to the builder's buffer
@@ -395,8 +395,7 @@ export inline bool operator==(const char* sz, string s) {
 }
 
 // Formatter specialization for std::format support
-export template <>
-struct std::formatter<::string, char> {
+template <> struct std::formatter<::string, char> {
     constexpr auto parse(std::format_parse_context& ctx) {
         return ctx.begin();
     }
