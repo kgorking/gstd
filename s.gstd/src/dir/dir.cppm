@@ -19,9 +19,9 @@ namespace os {
     export class DirectoryEntry {
     public:
         string name;
+        std::chrono::system_clock::time_point last_write_time;
         bool is_directory = false;
         bool is_symlink = false;
-        std::chrono::system_clock::time_point last_write_time;
 
         DirectoryEntry() = default;
         

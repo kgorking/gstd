@@ -6,69 +6,56 @@ std::atomic_int test_counter = 0;
 
 // Simple CPU-heavy task
 static task<int> cpu_heavy_task(int iterations) {
-    int const count = ++test_counter;
-    sync_console_writer.write(string::fmt("{} Starting CPU-heavy task...\n", count));
-
     int result = 100 + std::rand()%1024;
     std::this_thread::sleep_for(std::chrono::milliseconds(result));
-
-    sync_console_writer.write(string::fmt("{} Done with CPU-heavy task\n", count));
     co_return result;
 }
 
 // Task that returns void
 static task<void> cpu_heavy_void_task(int iterations) {
-    int const count = ++test_counter;
-    sync_console_writer.write(string::fmt("{} Starting CPU-heavy task...\n", count));
     int result = 100 + std::rand()%400;
     std::this_thread::sleep_for(std::chrono::milliseconds(result));
-    sync_console_writer.write(string::fmt("{} Done with CPU-heavy task\n", count));
 	co_return;
 }
 
 // Task that sleeps for a specified duration
 static task<int> cpu_sleep_task(int milliseconds) {
-	int const count = ++test_counter;
-	sync_console_writer.write(string::fmt("{} Starting sleep task for {} milliseconds...\n", count, milliseconds));
 	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
-	sync_console_writer.write(string::fmt("{} Done with sleep task\n", count));
 	co_return milliseconds;
 
 }
 
 TEST_CASE("task cpu-heavy computation") {
-    std::println("task cpu-heavy computation");
 	auto t = cpu_heavy_task(1000000);
-	auto result = t.wait().result();
-	REQUIRE(result.has_value());
-	CHECK(result.value() > 0);
+	auto result = t.result();
+	CHECK(result > 0);
 }
 
 TEST_CASE("task void return") {
-    std::println("task void return");
 	auto t = cpu_heavy_void_task(1000000);
 	t.wait();
 	CHECK(t.done());
 }
 
 TEST_CASE("task with co_await") {
-    std::println("task with co_await");
 	// Define a coroutine that awaits a task
 	auto awaiter_coro = [](task<int> t) -> co<int> {
 		int result = co_await t;
 		co_return result;
 	};
 
-	auto t = cpu_heavy_task(100000);
-	auto awaiter = awaiter_coro(std::move(t));
-	auto result = awaiter.wait().result();
-
-	REQUIRE(result.has_value());
-	CHECK(result.value() > 0);
+	try {
+		auto t = cpu_heavy_task(1000000);
+		auto awaiter = awaiter_coro(std::move(t));
+		int result = awaiter.result();
+		CHECK(result > 0);
+	} catch (const std::exception& ex) {
+		std::println("Exception in test: {}", ex.what());
+		throw;
+	}
 }
 
 TEST_CASE("task multiple parallel computations") {
-    std::println("task multiple parallel computations");
 	// Helper coroutine to await tasks
 	auto parallel_compute = []() -> task<int> {
 		auto t1 = cpu_heavy_task(500000);
@@ -82,9 +69,8 @@ TEST_CASE("task multiple parallel computations") {
 		co_return r1 + r2 + r3;
 	};
 
-	auto result = parallel_compute().wait().result();
-	REQUIRE(result.has_value());
-	CHECK(result.value() > 0);
+	auto result = parallel_compute().result();
+	CHECK(result > 0);
 }
 
 TEST_CASE("task wait_all with vector") {
@@ -93,12 +79,9 @@ TEST_CASE("task wait_all with vector") {
 	auto t3 = cpu_heavy_task(100000);
 
 	auto [r1, r2, r3] = wait_all(t1, t2, t3);
-	REQUIRE(r1.has_value());
-	REQUIRE(r2.has_value());
-	REQUIRE(r3.has_value());
-	CHECK(r1.value() > 0);
-	CHECK(r2.value() > 0);
-	CHECK(r3.value() > 0);
+	CHECK(r1 > 0);
+	CHECK(r2 > 0);
+	CHECK(r3 > 0);
 }
 
 TEST_CASE("task wait_all with sleepy tasks") {
@@ -117,24 +100,40 @@ TEST_CASE("task wait_all with sleepy tasks") {
 	}
 }
 
-TEST_CASE("task channel") {
-    std::println("task channel");
+TEST_CASE("task channel unbuffered") {
+	channel<int> ch;
 
-	channel<int, 3> ch;
-
-	// Helper coroutine to await tasks
-	auto parallel_compute = [&ch]() -> task<void> {
-	    std::println("sending 1 2 3");
-		ch << 1 << 2 << 3; // Send values to the channel
+	auto message_sender = [&ch]() -> task<void> {
+		for (int i=1; i<=3; ++i) {
+			ch << i;
+			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		}
 		co_return;
 	};
 
-	parallel_compute().wait();
+	auto t = message_sender();
 
-	int v1, v2, v3;
-	ch >> v1 >> v2 >> v3; // Read values from the channel
-	std::println("received {} {} {}", v1, v2, v3);
-	REQUIRE(v1 == 1);
-	REQUIRE(v2 == 2);
-	REQUIRE(v3 == 3);
+	for (int i=1; i<=3; ++i) {
+		int const v = ch.get();
+		REQUIRE(v == i);
+	}
+}
+
+TEST_CASE("task channel buffered") {
+	channel<int, 3> ch;
+
+	// Helper coroutine to await tasks
+	auto message_sender = [&ch]() -> task<void> {
+		for (int i=1; i<=3; ++i) {
+			ch << i;
+		}
+		co_return;
+	};
+
+	auto t = message_sender();
+
+	for (int i=1; i<=3; ++i) {
+		int const v = ch.get();
+		REQUIRE(v == i);
+	}
 }
