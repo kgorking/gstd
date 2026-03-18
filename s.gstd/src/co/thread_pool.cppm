@@ -6,7 +6,6 @@ import :channel;
 export class thread_pool {
 private:
     channel<std::coroutine_handle<>, std::numeric_limits<int>::max()> work_queue;
-    std::atomic<bool> shutdown = false;
     std::vector<std::thread> workers;
 
 public:
@@ -17,7 +16,6 @@ public:
     }
 
     ~thread_pool() {
-        shutdown = true;
         work_queue.close();
         for (auto& w : workers) {
             if (w.joinable())
@@ -34,16 +32,21 @@ public:
     }
 
     void enqueue(std::coroutine_handle<> h) {
+        if (h.done())
+            throw std::invalid_argument("Cannot enqueue a completed coroutine");
         work_queue << h;
     }
 
 private:
     void worker_loop() {
-        while (!shutdown) {
+        for (;;) {
             if (std::coroutine_handle<> h = work_queue.get(); h) {
                 h.resume();
                 if (!h.done())
                     enqueue(h);
+            } else {
+                // Queue is closed and empty; exit worker loop.
+                break;
             }
         }
     }

@@ -10,7 +10,7 @@ export template<typename ValueType> class task; // forward declaration for use i
 
 inline channel<int> task_completion_signal;
 
-// awaiter support - schedules task on thread pool when awaited
+// awaiter support
 template<typename ValueType, typename PromiseType>
 struct awaiter {
     std::coroutine_handle<PromiseType> h;
@@ -133,7 +133,8 @@ public:
     task& operator=(const task&) = delete;
 
     ~task() {
-        wait(); // Ensure task is complete before destruction
+        wait();
+
         if (_handle)
             _handle.destroy();
     }
@@ -228,7 +229,7 @@ sequence<T> wait_each(Container<task<T>, Rest...>& tasks) {
         }
     }
 
-    auto remaining = tasks.size();
+    auto remaining = task_map.size();
 
     while (remaining > 0) {
         int completed_task_id = task_completion_signal.get();
@@ -237,6 +238,8 @@ sequence<T> wait_each(Container<task<T>, Rest...>& tasks) {
             task<T>* completed_task = task_map[completed_task_id];
             task_map.erase(completed_task_id);
             co_yield completed_task->result();
+        } else {
+            task_completion_signal << completed_task_id; // put it back if it's not in our map (could be from another wait_each)
         }
     }
 }

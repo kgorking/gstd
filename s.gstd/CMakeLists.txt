@@ -13,10 +13,6 @@ endif()
 # Create the main library with modules
 add_library(gstd)
 
-if(MSVC)
-    add_compile_options(/utf-8)
-endif()
-
 # Add module files with proper dependency handling
 target_sources(gstd
     PUBLIC
@@ -35,10 +31,9 @@ target_sources(gstd_tests PRIVATE ${UNITTEST_SOURCES})
 target_compile_features(gstd_tests PRIVATE cxx_std_23)
 target_link_libraries(gstd_tests PRIVATE gstd Threads::Threads)
 
-# For MSVC, ensure proper module scanning for tests
 if(MSVC)
-    target_compile_options(gstd       PRIVATE /EHsc)
-    target_compile_options(gstd_tests PRIVATE /EHsc)
+    target_compile_options(gstd       PRIVATE /EHsc /utf-8)
+    target_compile_options(gstd_tests PRIVATE /EHsc /utf-8)
 endif()
 
 # Enable testing

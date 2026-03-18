@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.28)
 
+if (MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 # Enable C++20 modules
 set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
 #set(CMAKE_EXPERIMENTAL_CXX_MODULE_MAP_FORMAT "gcc")
@@ -14,10 +18,6 @@ project(gstd LANGUAGES CXX)
 
 # Find required packages
 find_package(Threads REQUIRED)
-
-if (MSVC)
-    add_compile_options(/utf-8)
-endif()
 
 # Set output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

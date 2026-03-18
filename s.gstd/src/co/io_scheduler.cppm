@@ -105,16 +105,19 @@ private:
                 continue;
             }
             
+            std::coroutine_handle<> cont;
             {
                 std::lock_guard lock(pending_ops_mutex);
                 if (auto it = pending_ops.find(overlapped); it != pending_ops.end()) {
                     it->second.result = success ? static_cast<std::int64_t>(bytes_transferred) : 0;
                     it->second.is_error = !success;
-                    
-                    // Resume the waiting coroutine
-                    it->second.continuation.resume();
+                    cont = it->second.continuation;
                 }
             }
+
+            // Resume outside the lock to avoid deadlock: await_resume() also
+            // acquires pending_ops_mutex via get_operation_result().
+            if (cont) cont.resume();
         }
     }
 };
