@@ -7,6 +7,10 @@ export import :sequence;
 export import :string;
 export import :channel;
 
+// dir
+export import :path;
+export import :dir;
+
 // io
 export import :Reader;
 export import :LineReader;

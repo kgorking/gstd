@@ -1,5 +1,6 @@
 export module gs:string;
-
+import :utf8;
+import :sequence;
 import std;
 
 // Note: This string class stores UTF-8 encoded text as char bytes internally.
@@ -14,93 +15,35 @@ struct StringData {
     }
 };
 
-// helper functions for the string class
-namespace {
-    // Helper class for building strings with format
-    class StringBuilder {
-    public:
-        using value_type = char;
-        char* buffer = nullptr;
-        std::ptrdiff_t size = 0;
-        std::ptrdiff_t capacity = 0;
-        
-        inline ~StringBuilder() {
-            delete[] buffer;
-        }
-        
-        // Support for std::back_insert_iterator
-        inline void push_back(char c) {
-            if (size >= capacity) {
-                // Grow capacity exponentially
-                std::ptrdiff_t new_capacity = (capacity == 0) ? 16 : capacity * 2;
-                char* new_buffer = new char[new_capacity];
-                if (buffer) {
-                    std::memcpy(new_buffer, buffer, size);
-                    delete[] buffer;
-                }
-                buffer = new_buffer;
-                capacity = new_capacity;
+// Helper class for building strings with format
+class StringBuilder {
+public:
+    using value_type = char;
+    char* buffer = nullptr;
+    std::ptrdiff_t size = 0;
+    std::ptrdiff_t capacity = 0;
+    
+    inline ~StringBuilder() {
+        delete[] buffer;
+    }
+    
+    // Support for std::back_insert_iterator
+    inline void push_back(char c) {
+        if (size >= capacity) {
+            // Grow capacity exponentially
+            std::ptrdiff_t new_capacity = (capacity == 0) ? 16 : capacity * 2;
+            char* new_buffer = new char[new_capacity+1];
+            if (buffer) {
+                std::memcpy(new_buffer, buffer, size);
+                new_buffer[size] = 0;
+                delete[] buffer;
             }
-            buffer[size++] = c;
+            buffer = new_buffer;
+            capacity = new_capacity;
         }
-    };
-
-    // Get the byte length of a UTF-8 character from its first byte
-    inline std::ptrdiff_t utf8_char_len(char first_byte) {
-        return std::max(1, std::countl_one((std::uint8_t)first_byte));
+        buffer[size++] = c;
     }
-
-    // Count the number of UTF-8 characters in a byte range
-    inline std::ptrdiff_t count_utf8_chars(const char* data, std::ptrdiff_t byte_len) {
-        std::ptrdiff_t char_count = 0;
-        std::ptrdiff_t i = 0;
-        while (i < byte_len) {
-            i += utf8_char_len(data[i]);
-            char_count++;
-        }
-        return char_count;
-    }
-
-    // Find the length of a UTF-8 string
-    inline std::ptrdiff_t utf8_length(const char* data) {
-        std::ptrdiff_t char_count = 0;
-        std::ptrdiff_t i = 0;
-        while (data[i] != 0) {
-            i += utf8_char_len(data[i]);
-            char_count++;
-        }
-        return char_count;
-    }
-
-    // Find the byte-length of a UTF-8 string
-    inline std::ptrdiff_t utf8_byte_length(const char* data) {
-        std::ptrdiff_t i = 0;
-        while (data[i] != 0) {
-            i += 1;
-        }
-        return i;
-    }
-
-    // Convert character index to byte offset
-    inline std::ptrdiff_t char_index_to_byte_offset(const char* data, std::ptrdiff_t byte_len, std::ptrdiff_t char_idx) {
-        std::ptrdiff_t byte_offset = 0;
-        std::ptrdiff_t char_count = 0;
-        while (char_count < char_idx) {
-            auto const char_len = utf8_char_len(data[byte_offset]);
-            if (byte_offset + char_len > byte_len)
-                return byte_offset;
-            byte_offset += char_len;
-            char_count++;
-        }
-        return byte_offset;
-    }
-
-    // Get byte length of character at given byte offset
-    inline std::ptrdiff_t get_char_byte_len(const char* data, std::ptrdiff_t byte_offset, std::ptrdiff_t byte_len) {
-        if (byte_offset >= byte_len) return 0;
-        return utf8_char_len(data[byte_offset]);
-    }
-}
+};
 
 // An immutable UTF-8 string class with efficient slicing (substring) and character-level indexing.
 export class string {
@@ -118,7 +61,7 @@ public:
             data_ = std::make_shared<StringData>();
             char *pdata = new char[sv.size()+1];
             // Safely reinterpret as UTF-8 bytes (std::string is typically UTF-8 in modern C++)
-            std::memcpy(pdata, reinterpret_cast<const char*>(sv.data()), sv.size());
+            std::memcpy(pdata, sv.data(), sv.size());
             pdata[sv.size()] = 0;
             data_->data = pdata;
             data_->size = sv.size();
@@ -126,7 +69,7 @@ public:
     }
     string(const char* s) : start_(0), end_(0) {
         if (s != nullptr) {
-            end_ = utf8_byte_length(s);
+            end_ = utf8::byte_length(s);
             data_ = std::make_shared<StringData>();
             char *pdata = new char[end_ + 1];
             std::memcpy(pdata, s, end_);
@@ -170,7 +113,7 @@ public:
     // returns count of characters, not bytes
     std::ptrdiff_t count() const { 
         if (!data_) return 0;
-        return count_utf8_chars(data(), size_bytes()); 
+        return utf8::count_chars(data(), size_bytes()); 
     }
 
     std::ptrdiff_t size_bytes() const { 
@@ -191,21 +134,31 @@ public:
         if (char_idx < 0 || char_idx >= char_count) {
             throw std::out_of_range("string index out of range");
         }
-        std::ptrdiff_t const byte_offset = char_index_to_byte_offset(data(), size_bytes(), char_idx);
-        std::ptrdiff_t const char_byte_len = get_char_byte_len(data(), byte_offset, size_bytes());
+        std::ptrdiff_t const byte_offset = utf8::char_index_to_byte_offset(data(), size_bytes(), char_idx);
+        std::ptrdiff_t const char_byte_len = utf8::get_char_byte_len(data(), byte_offset, size_bytes());
         return string(data_, start_ + byte_offset, start_ + byte_offset + char_byte_len);
+    }
+
+    // Returns a generator of characters in the string
+    sequence<string> chars() const {
+        std::ptrdiff_t byte_offset = 0;
+        while (byte_offset < size_bytes()) {
+            std::ptrdiff_t char_byte_len = utf8::get_char_byte_len(data(), byte_offset, size_bytes());
+            co_yield string(data_, start_ + byte_offset, start_ + byte_offset + char_byte_len);
+            byte_offset += char_byte_len;
+        }
     }
 
     // Substring - works with character positions, not byte positions
     string substr(std::ptrdiff_t char_pos, std::ptrdiff_t char_len = -1) const {
-        std::ptrdiff_t byte_pos = char_index_to_byte_offset(data_->data + start_, end_ - start_, char_pos);
+        std::ptrdiff_t byte_pos = utf8::char_index_to_byte_offset(data_->data + start_, end_ - start_, char_pos);
         std::ptrdiff_t new_start = start_ + byte_pos;
         
         std::ptrdiff_t new_end;
         if (char_len < 0) {
             new_end = end_;
         } else {
-            std::ptrdiff_t byte_len_needed = char_index_to_byte_offset(data_->data + new_start, end_ - new_start, char_len);
+            std::ptrdiff_t byte_len_needed = utf8::char_index_to_byte_offset(data_->data + new_start, end_ - new_start, char_len);
             new_end = std::min(end_, new_start + byte_len_needed);
         }
         
@@ -215,10 +168,14 @@ public:
     // Remove prefix (character count)
     void remove_prefix(std::ptrdiff_t char_count) {
         if (char_count <= 0) return;
-        std::ptrdiff_t byte_offset = char_index_to_byte_offset(data_->data + start_, end_ - start_, char_count);
+        std::ptrdiff_t byte_offset = utf8::char_index_to_byte_offset(data_->data + start_, end_ - start_, char_count);
         start_ += byte_offset;
         if (start_ > end_)
             start_ = end_;
+    }
+
+    void pop_front() {
+        remove_prefix(1);
     }
 
     // Remove postfix (character count)
@@ -229,8 +186,12 @@ public:
             end_ = start_;
             return;
         }
-        std::ptrdiff_t byte_offset = char_index_to_byte_offset(data_->data + start_, end_ - start_, char_pos);
+        std::ptrdiff_t byte_offset = utf8::char_index_to_byte_offset(data_->data + start_, end_ - start_, char_pos);
         end_ = start_ + byte_offset;
+    }
+
+    void pop_back() {
+        remove_postfix(1);
     }
 
     // Get raw data pointer
@@ -297,9 +258,39 @@ public:
         return -1;
     }
 
+    // Find last occurrence of any character from the given string
+    std::ptrdiff_t find_last_of(string sv, std::ptrdiff_t pos = -1) const {
+        std::ptrdiff_t len = count();
+        if (sv.empty()) return -1;
+        if (pos < 0 || pos >= len) pos = len - 1;
+
+        for (std::ptrdiff_t i = pos; i >= 0; --i) {
+            string const c = (*this)[i];
+            for (std::ptrdiff_t j = 0; j < sv.count(); ++j) {
+                if (sv[j] == c) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    // Find last occurrence of any character from the given string
+    std::ptrdiff_t find_last_of(char c, std::ptrdiff_t pos = -1) const {
+        std::ptrdiff_t len = count();
+        if (pos < 0 || pos >= len) pos = len - 1;
+
+        for (std::ptrdiff_t i = pos; i >= 0; --i) {
+            if ((*this)[i] == c) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     // Starts with
     bool starts_with(string sv) const {
-        if (sv.count() > count()) return false;
+        if (sv.size_bytes() > size_bytes()) return false;
         return std::memcmp(data_->data + start_, sv.data(), sv.size_bytes()) == 0;
     }
 
@@ -309,7 +300,7 @@ public:
 
     // Ends with
     bool ends_with(string sv) const {
-        if (sv.count() > count()) return false;
+        if (sv.size_bytes() > size_bytes()) return false;
         return std::memcmp(data_->data + end_ - sv.size_bytes(), sv.data(), sv.size_bytes()) == 0;
     }
 
@@ -330,13 +321,25 @@ public:
         return string(block, 0, total_size);
     }
 
+    string operator+(char c) const {
+        std::ptrdiff_t total_size = size_bytes() + 1;
+        char* new_data = new char[total_size + 1];
+        std::memcpy(new_data, data(), size_bytes());
+        new_data[size_bytes()] = c;
+        new_data[total_size] = 0;
+        auto block = std::make_shared<StringData>();
+        block->data = new_data;
+        block->size = total_size;
+        return string(block, 0, total_size);
+    }
+
     string operator+(const char* s) const {
         return *this + string(s);
     }
 
     // Comparison
     bool operator==(string const& other) const {
-        if (data_->data == other.data_->data) {
+        if (data_ && other.data_ && data_->data == other.data_->data) {
             bool const same_slice = start_ == other.start_ && end_ == other.end_;
             if (same_slice)
                 return true;
@@ -353,24 +356,24 @@ public:
     }
 
     bool operator==(const char* s) const {
-        auto const s_len = (std::intptr_t)std::strlen(s);
+        auto const s_len = static_cast<std::intptr_t>(std::strlen(s));
         return size_bytes() == s_len && 0 == std::memcmp(data(), s, s_len);
     }
 
     // Iterator support
-    const char* begin() const { return data_->data + start_; }
-    const char* end() const { return data_->data + end_; }
+    sequence<string> begin() const { return chars(); }
+    std::default_sentinel_t end() const noexcept { return {}; }
 
 private:
     // Private constructor for substr
     string(std::shared_ptr<StringData> data, std::ptrdiff_t start, std::ptrdiff_t end)
         : data_(data), start_(start), end_(end) {}
 
-    string(StringBuilder&& builder) : start_(0), data_(nullptr), end_(0) {
+    string(StringBuilder&& builder) : data_(nullptr), start_(0), end_(0) {
         if (builder.size > 0 && builder.buffer) {
             data_ = std::make_shared<StringData>();
             // Add null terminator to the builder's buffer
-            //builder.buffer[builder.size] = 0;
+            builder.buffer[builder.size] = 0;
             // Transfer ownership of the buffer directly
             data_->data = builder.buffer;
             data_->size = builder.size;
@@ -395,8 +398,7 @@ export inline bool operator==(const char* sz, string s) {
 }
 
 // Formatter specialization for std::format support
-export template <>
-struct std::formatter<::string, char> {
+export template <> struct std::formatter<::string, char> {
     constexpr auto parse(std::format_parse_context& ctx) {
         return ctx.begin();
     }

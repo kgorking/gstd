@@ -2,11 +2,15 @@
 import std;
 import gs;
 
+const string source_dir{__FILE__};
+const string project_root = path::go_up_levels(source_dir, 1);
+const string os_src_dir = string::fmt("{}/src/os", project_root);
+
 TEST_CASE("test.os_list_dir") {
     bool saw_file = false;
     bool saw_directory = false;
 
-    for (const auto& entry : os::list_dir("s.gstd/src/os")) {
+    for (const auto& entry : os::list_dir(os_src_dir)) {
         if (entry.name == "read_lines.cppm") {
             saw_file = true;
             CHECK(!entry.is_directory);
@@ -25,7 +29,7 @@ TEST_CASE("test.os_list_dir") {
 }
 
 TEST_CASE("test.os_exists") {
-    CHECK(os::exists("s.gstd/src/os"));
-    CHECK(os::exists("s.gstd/src/os/read_lines.cppm"));
+    CHECK(os::exists(os_src_dir));
+    CHECK(os::exists(os_src_dir + "/read_lines.cppm"));
     CHECK(!os::exists("nonexistent/path"));
 }
