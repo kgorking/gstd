@@ -84,22 +84,6 @@ TEST_CASE("task wait_all with vector") {
 	CHECK(r3 > 0);
 }
 
-TEST_CASE("task wait_all with sleepy tasks") {
-	auto t1 = cpu_sleep_task(500);
-	auto t2 = cpu_sleep_task(400);
-	auto t3 = cpu_sleep_task(300);
-	auto t4 = cpu_sleep_task(200);
-	auto t5 = cpu_sleep_task(100);
-
-	std::array<task<int>, 5> tasks{std::move(t1), std::move(t2), std::move(t3), std::move(t4), std::move(t5)};
-
-	int last_ms = 0;
-	for (int ms : wait_each(tasks)) {
-    	CHECK(ms > last_ms);
-		last_ms = ms;
-	}
-}
-
 TEST_CASE("task channel unbuffered") {
 	channel<int> ch;
 

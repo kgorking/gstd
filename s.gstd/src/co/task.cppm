@@ -8,7 +8,6 @@ import :sequence;
 
 export template<typename ValueType> class task; // forward declaration for use in promise
 
-inline channel<int> task_completion_signal;
 
 // awaiter support
 template<typename ValueType, typename PromiseType>
@@ -54,9 +53,6 @@ struct final_awaiter {
     void await_suspend(std::coroutine_handle<PromiseType> h) noexcept {
         h.promise().is_running = false;
         h.promise().is_running.notify_one();
-        if (h.promise().task_id) {
-            task_completion_signal << *h.promise().task_id;
-        }
 
         if (auto cont = h.promise().continuation)
             cont.resume();
@@ -71,7 +67,6 @@ struct task_promise_base {
     std::coroutine_handle<> continuation = nullptr;
     std::exception_ptr exception = nullptr;
     std::atomic<bool> is_running = false;
-    std::optional<int> task_id{};
 
     auto get_return_object() noexcept -> task<ValueType>;
     // Suspend initially so we can schedule on thread pool
@@ -149,11 +144,6 @@ public:
             _handle.resume();
     }
 
-    void signal_on_completion() noexcept {
-        if (_handle && !_handle.done())
-            _handle.promise().task_id = _id;
-    }
-
     // Execute on thread pool and wait for completion
     void wait() const {
         if (_handle) {
@@ -216,30 +206,4 @@ auto task_promise<void>::get_return_object() noexcept -> task<void> {
 export template<typename... Tasks>
 auto wait_all(Tasks&... tasks) {
     return std::make_tuple(tasks.result()...);
-}
-
-export template<template<typename, auto...> typename Container, typename T, auto... Rest>
-requires (Span<Container<task<T>, Rest...>, task<T>>)
-sequence<T> wait_each(Container<task<T>, Rest...>& tasks) {
-    std::map<int, task<T>*> task_map;
-    for (task<T>& task : tasks){
-        if (!task.done()) {
-            task.signal_on_completion();
-            task_map[task.id()] = &task;
-        }
-    }
-
-    auto remaining = task_map.size();
-
-    while (remaining > 0) {
-        int completed_task_id = task_completion_signal.get();
-        if (task_map.contains(completed_task_id)) {
-            --remaining;
-            task<T>* completed_task = task_map[completed_task_id];
-            task_map.erase(completed_task_id);
-            co_yield completed_task->result();
-        } else {
-            task_completion_signal << completed_task_id; // put it back if it's not in our map (could be from another wait_each)
-        }
-    }
 }
