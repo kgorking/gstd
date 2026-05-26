@@ -1,11 +1,7 @@
-cmake_minimum_required(VERSION 3.28)
-
-if (MSVC)
-    add_compile_options(/utf-8)
-endif()
+cmake_minimum_required(VERSION 4.0)
 
 # Enable C++20 modules
-set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
+set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "451f2fe2-a8a2-47c3-bc32-94786d8fc91b")
 #set(CMAKE_EXPERIMENTAL_CXX_MODULE_MAP_FORMAT "gcc")
 
 # Set C++ standard for C++20 modules
@@ -15,6 +11,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 project(gstd LANGUAGES CXX)
+
+if (MSVC)
+    add_compile_options(/utf-8)
+endif()
 
 # Find required packages
 find_package(Threads REQUIRED)

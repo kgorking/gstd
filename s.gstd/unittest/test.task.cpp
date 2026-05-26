@@ -25,6 +25,19 @@ static task<int> cpu_sleep_task(int milliseconds) {
 
 }
 
+static task<int> nested_tasks_1() { co_return co_await cpu_sleep_task(5) + co_await cpu_sleep_task(5); }
+static task<int> nested_tasks_2() { co_return co_await nested_tasks_1(); }
+static task<int> nested_tasks_3() { co_return co_await nested_tasks_2(); }
+static task<int> nested_tasks_4() { co_return co_await nested_tasks_3(); }
+static task<int> nested_tasks_5() { co_return co_await nested_tasks_4(); }
+
+TEST_CASE("many tasks") {
+	auto t = nested_tasks_5();
+	auto result = t.result();
+	CHECK(result == 10);
+}
+
+
 TEST_CASE("task cpu-heavy computation") {
 	auto t = cpu_heavy_task(1000000);
 	auto result = t.result();

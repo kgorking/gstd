@@ -2,9 +2,7 @@
 export module gs:task;
 
 import std;
-import :channel;
 import :thread_pool;
-import :sequence;
 
 export template<typename ValueType> class task; // forward declaration for use in promise
 
@@ -50,6 +48,7 @@ struct awaiter {
 template<typename PromiseType>
 struct final_awaiter {
     bool await_ready() const noexcept { return false; }
+    void await_resume() const noexcept {}
     void await_suspend(std::coroutine_handle<PromiseType> h) noexcept {
         h.promise().is_running = false;
         h.promise().is_running.notify_one();
@@ -57,7 +56,6 @@ struct final_awaiter {
         if (auto cont = h.promise().continuation)
             cont.resume();
     }
-    void await_resume() const noexcept {}
 };
 
 // promise implementation used by task; runs on thread pool
@@ -104,22 +102,17 @@ public:
 
 private:
     std::coroutine_handle<promise_type> _handle = nullptr;
-    int _id = 0;
-    inline static std::atomic<int> _id_counter{1};
 
 public:
     // constructors / destructor
     task() noexcept = default;
-    explicit task(std::coroutine_handle<promise_type> h) noexcept : _handle(h) {
-        _id = _id_counter++;
-    }
-    task(task&& other) noexcept : _handle(other._handle), _id(other._id) { other._handle = nullptr; }
+    explicit task(std::coroutine_handle<promise_type> h) noexcept : _handle(h) {}
+    task(task&& other) noexcept : _handle(other._handle) { other._handle = nullptr; }
     task& operator=(task&& other) noexcept {
         if (this != &other) {
             if (_handle)
                 _handle.destroy();
             _handle = other._handle;
-            _id = other._id;
             other._handle = nullptr;
         }
         return *this;
@@ -133,8 +126,6 @@ public:
         if (_handle)
             _handle.destroy();
     }
-
-    int id() const noexcept { return _id; }
 
     // Get the current status
     bool done() const noexcept { return !_handle || _handle.done(); }
