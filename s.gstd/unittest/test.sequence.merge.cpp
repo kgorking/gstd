@@ -1,7 +1,6 @@
-#include "doctest.h"
-
 import std;
 import gs;
+import gs.testing;
 
 sequence<int> odds() {
     for (int i = 1; ; i += 2) {
@@ -15,7 +14,7 @@ sequence<int> evens() {
     }
 }
 
-TEST_CASE("test.sequence.merge") {
+auto sequence_merge = [] -> test {
     std::vector<int> const expected{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     std::vector<int> actual;
 
@@ -24,5 +23,5 @@ TEST_CASE("test.sequence.merge") {
         actual.push_back(i);
         if (i==9) break;
     }
-    CHECK(expected == actual);
-}
+    test::assert_eq(expected, actual, "merged sequence should match expected");
+};

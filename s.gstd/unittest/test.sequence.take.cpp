@@ -1,7 +1,8 @@
-#include "doctest.h"
+#include <vector>
 
 import std;
 import gs;
+import gs.testing;
 
 sequence<int> numbers(int count) {
     for (int i = 0; i < count; ++i) {
@@ -9,11 +10,11 @@ sequence<int> numbers(int count) {
     }
 }
 
-TEST_CASE("test.sequence.take") {
+auto sequence_take = [] -> test {
     std::vector<int> const expected{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
 
     for (auto it = expected.begin(); int i : numbers(100).take(10)) {
-        CHECK(*it == i);
+        test::assert_eq(*it, i, "taken sequence should match expected");
         ++it;
     }
-}
+};

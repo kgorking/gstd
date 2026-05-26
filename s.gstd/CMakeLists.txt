@@ -1,3 +1,6 @@
+# Testing configuration
+option(GSTD_TESTING "Enable coroutine-based testing framework" ON)
+
 file(GLOB_RECURSE GSTD_SOURCES "src/*.cppm")
 file(GLOB_RECURSE UNITTEST_SOURCES "unittest/*.cpp")
 

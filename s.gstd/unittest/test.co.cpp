@@ -1,17 +1,17 @@
-#include "doctest.h"
 import std;
 import gs;
+import gs.testing;
 
 co<> test_void() {
 	co_await std::suspend_always{};
 }
 
-co<int> test() {
+co<int> simple_test() {
 	co_await test_void();
-    co_return 50;
+	co_return 50;
 }
 
-TEST_CASE("test.co") {
-    auto result = test().result();
-    CHECK(result == 50);
-}
+auto test_co_result = [] -> test {
+	auto result = simple_test().result();
+	test::assert_eq(result, 50, "coroutine result should be 50");
+};

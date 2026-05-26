@@ -1,65 +1,65 @@
-#include "doctest.h"
 import gs;
+import gs.testing;
 import std;
 
-TEST_CASE("test.exec.basic_command") {
+auto exec_basic_command = [] -> test {
 	#ifdef _WIN32
 		auto cmd = os::exec("cmd /c echo hello");
 	#else
 		auto cmd = os::exec("echo hello");
 	#endif
-	REQUIRE(cmd);
+	test::assert(cmd, "exec should succeed");
 
 	// Read output from the command
 	auto read_result = cmd.get_stdout().read_line();
-	REQUIRE(read_result == "hello");
+	test::assert_eq(read_result, string("hello"), "output should be 'hello'");
 
 	// Wait for the process to complete
 	auto exit_code = cmd.wait();
-	CHECK(exit_code == 0);
-}
+	test::assert_eq(exit_code, 0, "exit code should be 0");
+};
 
-TEST_CASE("test.exec.read_multiple_lines") {
+auto exec_read_multiple_lines = [] -> test {
 	#ifdef _WIN32
 		auto cmd = os::exec("cmd /c echo line1&& echo line2&& echo line3");
 	#else
 		auto cmd = os::exec("printf 'line1\\nline2\\nline3\\n'");
 	#endif
-	
-	CHECK(cmd);
+
+	test::assert(cmd, "exec should succeed");
 
 	auto& out = cmd.get_stdout();
-	REQUIRE(out.read_line() == "line1");
-	REQUIRE(out.read_line() == "line2");
-	REQUIRE(out.read_line() == "line3");
+	test::assert_eq(out.read_line(), string("line1"), "first line should match");
+	test::assert_eq(out.read_line(), string("line2"), "second line should match");
+	test::assert_eq(out.read_line(), string("line3"), "third line should match");
 
 	auto exit_code = cmd.wait();
-	CHECK(exit_code == 0);
-}
+	test::assert_eq(exit_code, 0, "exit code should be 0");
+};
 
-TEST_CASE("test.exec.nonzero_exit_code") {
+auto exec_nonzero_exit_code = [] -> test {
 	#ifdef _WIN32
 		auto cmd = os::exec("cmd /c exit 42");
 	#else
 		auto cmd = os::exec("exit 42");
 	#endif
-	
-	CHECK(cmd);
+
+	test::assert(cmd, "exec should succeed");
 
 	auto exit_code = cmd.wait();
-	CHECK(exit_code == 42);
-}
+	test::assert_eq(exit_code, 42, "exit code should be 42");
+};
 
-TEST_CASE("test.exec.reader_concept") {
+auto exec_reader_concept = [] -> test {
 	#ifdef _WIN32
 		auto cmd = os::exec("cmd /c echo test");
 	#else
 		auto cmd = os::exec("echo test");
 	#endif
-	CHECK(cmd);
+	test::assert(cmd, "exec should succeed");
 
 	string stdout = cmd.get_stdout().read_line();
-	CHECK("test" == stdout);
+	test::assert_eq(string("test"), stdout, "output should match");
 
 	cmd.wait();
-}
+};

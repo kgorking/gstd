@@ -6,6 +6,7 @@ export import :task;
 export import :sequence;
 export import :string;
 export import :channel;
+//export import :testing;
 
 // dir
 export import :path;

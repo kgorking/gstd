@@ -1,74 +1,74 @@
-#include "doctest.h"
 import gs;
+import gs.testing;
 import std;
 
-TEST_CASE("test.pipes.creation_and_validity") {
+auto pipes_creation_and_validity = [] -> test {
 	auto p = os::pipes();
-	CHECK(p.reader);
-	CHECK(p.writer);
-}
+	test::assert(p.reader, "reader should be valid");
+	test::assert(p.writer, "writer should be valid");
+};
 
-TEST_CASE("test.pipes.write_and_read_small_data") {
+auto pipes_write_and_read_small_data = [] -> test {
 	auto p = os::pipes();
-	
+
 	const char test_data[] = "Hello";
 	auto write_result = p.writer.write(std::span<const char>(test_data, 5));
-	CHECK(write_result == 5);
-	
+	test::assert_eq(write_result, 5UZ, "write should return 5 bytes");
+
 	std::vector<char> buffer(32);
 	auto read_result = p.reader.read(buffer);
-	CHECK(read_result == 5);
-	CHECK(std::string_view(buffer.data(), 5) == "Hello");
-}
+	test::assert_eq(read_result, 5UZ, "read should return 5 bytes");
+	bool b = std::memcmp(buffer.data(), "Hello", 5) == 0;
+	test::assert(b, "buffer content should match");
+};
 
-TEST_CASE("test.pipes.reader_concept") {
+auto pipes_reader_concept = [] -> test {
 	auto p = os::pipes();
-	
+
 	string data = "test";
 	auto w = p.writer.write(data);
-	CHECK(w == 4);
-	
+	test::assert_eq(w, 4UZ, "write should return 4 bytes");
+
 	// Verify reader satisfies Reader concept
 	static_assert(Reader<std::remove_reference_t<decltype(p.reader)>>);
-	
+
 	std::vector<char> buf(32);
 	auto result = p.reader.read(buf);
-	CHECK(result == 4);
-}
+	test::assert_eq(result, 4UZ, "read should return 4 bytes");
+};
 
-TEST_CASE("test.pipes.writer_concept") {
+auto pipes_writer_concept = [] -> test {
 	auto p = os::pipes();
-	
+
 	// Verify writer satisfies Writer concept
 	static_assert(Writer<std::remove_reference_t<decltype(p.writer)>>);
-	
+
 	string data = "test";
 	auto result = p.writer.write(data);
-	CHECK(result == 4);
-}
+	test::assert_eq(result, 4UZ, "write should return 4 bytes");
+};
 
-TEST_CASE("test.pipes.line_reader_concept") {
+auto pipes_line_reader_concept = [] -> test {
 	auto p = os::pipes();
-	
+
 	// Verify reader satisfies LineReader concept
 	static_assert(LineReader<std::remove_reference_t<decltype(p.reader)>>);
-	
+
 	string line_data = "test line\n";
 	auto write_result = p.writer.write(line_data);
-	CHECK(write_result == 10);
-	
-	auto line_result = p.reader.read_line();
-	CHECK(line_result == "test line");
-}
+	test::assert_eq(write_result, 10UZ, "write should return 10 bytes");
 
-TEST_CASE("test.pipes.line_writer_concept") {
+	auto line_result = p.reader.read_line();
+	test::assert_eq(line_result, string("test line"), "line content should match");
+};
+
+auto pipes_line_writer_concept = [] -> test {
 	auto p = os::pipes();
-	
+
 	// Verify writer satisfies LineWriter concept
 	static_assert(LineWriter<std::remove_reference_t<decltype(p.writer)>>);
-	
+
 	string test_line = "test line";
 	auto result = p.writer.write_line(test_line);
-	// Should include line content + newline
-	CHECK(result >= 9);
-}
+	test::assert(result >= 9, "write_line should write at least 9 bytes");
+};

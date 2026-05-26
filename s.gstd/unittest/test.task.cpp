@@ -1,20 +1,20 @@
-#include "doctest.h"
 import std;
 import gs;
+import gs.testing;
 
 std::atomic_int test_counter = 0;
 
 // Simple CPU-heavy task
 static task<int> cpu_heavy_task(int iterations) {
-    int result = 100 + std::rand()%1024;
-    std::this_thread::sleep_for(std::chrono::milliseconds(result));
-    co_return result;
+	int result = 100 + std::rand()%1024;
+	std::this_thread::sleep_for(std::chrono::milliseconds(result));
+	co_return result;
 }
 
 // Task that returns void
 static task<void> cpu_heavy_void_task(int iterations) {
-    int result = 100 + std::rand()%400;
-    std::this_thread::sleep_for(std::chrono::milliseconds(result));
+	int result = 100 + std::rand()%400;
+	std::this_thread::sleep_for(std::chrono::milliseconds(result));
 	co_return;
 }
 
@@ -31,26 +31,25 @@ static task<int> nested_tasks_3() { co_return co_await nested_tasks_2(); }
 static task<int> nested_tasks_4() { co_return co_await nested_tasks_3(); }
 static task<int> nested_tasks_5() { co_return co_await nested_tasks_4(); }
 
-TEST_CASE("many tasks") {
+auto task_many_tasks = [] -> test {
 	auto t = nested_tasks_5();
 	auto result = t.result();
-	CHECK(result == 10);
-}
+	test::assert_eq(result, 10, "nested tasks should return 10");
+};
 
-
-TEST_CASE("task cpu-heavy computation") {
+auto task_cpu_heavy_computation = [] -> test {
 	auto t = cpu_heavy_task(1000000);
 	auto result = t.result();
-	CHECK(result > 0);
-}
+	test::assert(result > 0, "result should be positive");
+};
 
-TEST_CASE("task void return") {
+auto task_void_return = [] -> test {
 	auto t = cpu_heavy_void_task(1000000);
 	t.wait();
-	CHECK(t.done());
-}
+	test::assert(t.done(), "task should be done");
+};
 
-TEST_CASE("task with co_await") {
+auto task_with_co_await = [] -> test {
 	// Define a coroutine that awaits a task
 	auto awaiter_coro = [](task<int> t) -> co<int> {
 		int result = co_await t;
@@ -61,43 +60,43 @@ TEST_CASE("task with co_await") {
 		auto t = cpu_heavy_task(1000000);
 		auto awaiter = awaiter_coro(std::move(t));
 		int result = awaiter.result();
-		CHECK(result > 0);
+		test::assert(result > 0, "awaited result should be positive");
 	} catch (const std::exception& ex) {
 		std::println("Exception in test: {}", ex.what());
 		throw;
 	}
-}
+};
 
-TEST_CASE("task multiple parallel computations") {
+auto task_multiple_parallel_computations = [] -> test {
 	// Helper coroutine to await tasks
 	auto parallel_compute = []() -> task<int> {
 		auto t1 = cpu_heavy_task(500000);
 		auto t2 = cpu_heavy_task(500000);
 		auto t3 = cpu_heavy_task(500000);
-		
+
 		int r1 = co_await t1;
 		int r2 = co_await t2;
 		int r3 = co_await t3;
-		
+
 		co_return r1 + r2 + r3;
 	};
 
 	auto result = parallel_compute().result();
-	CHECK(result > 0);
-}
+	test::assert(result > 0, "parallel computation result should be positive");
+};
 
-TEST_CASE("task wait_all with vector") {
+auto task_wait_all_with_vector = [] -> test {
 	auto t1 = cpu_heavy_task(100000);
 	auto t2 = cpu_heavy_task(100000);
 	auto t3 = cpu_heavy_task(100000);
 
 	auto [r1, r2, r3] = wait_all(t1, t2, t3);
-	CHECK(r1 > 0);
-	CHECK(r2 > 0);
-	CHECK(r3 > 0);
-}
+	test::assert(r1 > 0, "r1 should be positive");
+	test::assert(r2 > 0, "r2 should be positive");
+	test::assert(r3 > 0, "r3 should be positive");
+};
 
-TEST_CASE("task channel unbuffered") {
+auto task_channel_unbuffered = [] -> test {
 	channel<int> ch;
 
 	auto message_sender = [&ch]() -> task<void> {
@@ -112,11 +111,11 @@ TEST_CASE("task channel unbuffered") {
 
 	for (int i=1; i<=3; ++i) {
 		int const v = ch.get();
-		REQUIRE(v == i);
+		test::assert_eq(v, i, "channel value should match");
 	}
-}
+};
 
-TEST_CASE("task channel buffered") {
+auto task_channel_buffered = [] -> test {
 	channel<int, 3> ch;
 
 	// Helper coroutine to await tasks
@@ -131,6 +130,6 @@ TEST_CASE("task channel buffered") {
 
 	for (int i=1; i<=3; ++i) {
 		int const v = ch.get();
-		REQUIRE(v == i);
+		test::assert_eq(v, i, "channel value should match");
 	}
-}
+};
