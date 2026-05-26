@@ -16,7 +16,7 @@ sequence<int> evens() {
 }
 
 TEST_CASE("test.sequence.merge") {
-    std::vector<int> const excpected{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+    std::vector<int> const expected{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
     std::vector<int> actual;
 
     sequence<int> merged = odds().merge(evens());
@@ -24,5 +24,5 @@ TEST_CASE("test.sequence.merge") {
         actual.push_back(i);
         if (i==9) break;
     }
-    CHECK(excpected == actual);
+    CHECK(expected == actual);
 }

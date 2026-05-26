@@ -55,12 +55,10 @@ public:
     static constexpr std::ptrdiff_t npos = -1;
 
     string() : data_(nullptr), start_(0), end_(0) {}
-    // Constructor from std::string_view (assumes UTF-8 or ASCII-compatible encoding)
     string(std::string_view sv) : start_(0), end_(sv.size()) {
         if (!sv.empty()) {
             data_ = std::make_shared<StringData>();
             char *pdata = new char[sv.size()+1];
-            // Safely reinterpret as UTF-8 bytes (std::string is typically UTF-8 in modern C++)
             std::memcpy(pdata, sv.data(), sv.size());
             pdata[sv.size()] = 0;
             data_->data = pdata;
