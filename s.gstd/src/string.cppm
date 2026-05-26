@@ -31,7 +31,7 @@ public:
     inline void push_back(char c) {
         if (size >= capacity) {
             // Grow capacity exponentially
-            std::ptrdiff_t new_capacity = (capacity == 0) ? 16 : capacity * 2;
+            std::ptrdiff_t new_capacity = (capacity == 0) ? 8 : capacity * 2;
             char* new_buffer = new char[new_capacity+1];
             if (buffer) {
                 std::memcpy(new_buffer, buffer, size);
@@ -43,6 +43,16 @@ public:
         }
         buffer[size++] = c;
     }
+
+	inline void pop_back() {
+		if (size > 0) {
+			size--;
+			buffer[size] = 0;
+		}
+	}
+	inline bool empty() const {
+		return size == 0;
+	}
 };
 
 // An immutable UTF-8 string class with efficient slicing (substring) and character-level indexing.
@@ -362,7 +372,6 @@ public:
     sequence<string> begin() const { return chars(); }
     std::default_sentinel_t end() const noexcept { return {}; }
 
-private:
     // Private constructor for substr
     string(std::shared_ptr<StringData> data, std::ptrdiff_t start, std::ptrdiff_t end)
         : data_(data), start_(start), end_(end) {}
@@ -379,7 +388,6 @@ private:
             // Clear the builder's buffer so its destructor doesn't delete it
             builder.buffer = nullptr;
         } else {
-            if (builder.buffer) delete[] builder.buffer;
             data_ = nullptr;
             end_ = 0;
         }

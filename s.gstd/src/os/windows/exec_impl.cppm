@@ -88,7 +88,7 @@ export namespace os {
 		HANDLE stdin_read, stdin_write;
 
 		// Set up SECURITY_ATTRIBUTES to make handles inheritable
-		SECURITY_ATTRIBUTES sa;
+		SECURITY_ATTRIBUTES sa{};
 		sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 		sa.bInheritHandle = TRUE;
 		sa.lpSecurityDescriptor = nullptr;

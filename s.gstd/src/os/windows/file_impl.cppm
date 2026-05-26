@@ -20,14 +20,14 @@ export namespace os {	// Async read awaiter
 		ULONGLONG* file_position;  // Pointer to file's position tracker
 
 	public:
-		async_read_awaiter(HANDLE h, Span<char> auto& buf, ULONGLONG* pos) 
+		async_read_awaiter(HANDLE h, Span<char> auto& buf, ULONGLONG* pos)
 			: file_handle(h), buffer(buf), overlapped(nullptr), file_position(pos) {}
 
 		bool await_ready() const { return false; }  // Always suspend
 
 		void await_suspend(std::coroutine_handle<> cont) {
 			overlapped = get_scheduler().register_operation(cont);
-			
+
 			// Set the file position in the OVERLAPPED structure
 			overlapped->Offset = static_cast<DWORD>(*file_position & 0xFFFFFFFF);
 			overlapped->OffsetHigh = static_cast<DWORD>((*file_position >> 32) & 0xFFFFFFFF);
@@ -45,7 +45,8 @@ export namespace os {	// Async read awaiter
 				// Synchronous completion - bytes_read is valid, set result only (position updated in await_resume)
 				get_scheduler().set_operation_result(overlapped, static_cast<std::int64_t>(bytes_read), false);
 				cont.resume();
-			} else if (GetLastError() != ERROR_IO_PENDING) {
+			}
+			else if (GetLastError() != ERROR_IO_PENDING) {
 				// Error occurred
 				get_scheduler().set_operation_result(overlapped, 0, true);
 				cont.resume();
@@ -56,11 +57,11 @@ export namespace os {	// Async read awaiter
 		std::int64_t await_resume() {
 			auto [res, err] = get_scheduler().get_operation_result(overlapped);
 			if (overlapped) delete overlapped;
-			
+
 			if (err) {
 				throw std::system_error(std::make_error_code(std::errc::io_error));
 			}
-			
+
 			// Update file position based on bytes read
 			*file_position += res;
 			return res;
@@ -76,14 +77,14 @@ export namespace os {	// Async read awaiter
 		ULONGLONG* file_position;  // Pointer to file's position tracker
 
 	public:
-		async_write_awaiter(HANDLE h, Span<const char> auto const& buf, ULONGLONG* pos) 
+		async_write_awaiter(HANDLE h, Span<const char> auto const& buf, ULONGLONG* pos)
 			: file_handle(h), buffer(buf), overlapped(nullptr), file_position(pos) {}
 
 		bool await_ready() const { return false; }
 
 		void await_suspend(std::coroutine_handle<> cont) {
 			overlapped = get_scheduler().register_operation(cont);
-			
+
 			// Set the file position in the OVERLAPPED structure
 			overlapped->Offset = static_cast<DWORD>(*file_position & 0xFFFFFFFF);
 			overlapped->OffsetHigh = static_cast<DWORD>((*file_position >> 32) & 0xFFFFFFFF);
@@ -101,7 +102,8 @@ export namespace os {	// Async read awaiter
 				// Synchronous completion - bytes_written is valid, set result only (position updated in await_resume)
 				get_scheduler().set_operation_result(overlapped, static_cast<std::int64_t>(bytes_written), false);
 				cont.resume();
-			} else if (GetLastError() != ERROR_IO_PENDING) {
+			}
+			else if (GetLastError() != ERROR_IO_PENDING) {
 				// Error occurred
 				get_scheduler().set_operation_result(overlapped, 0, true);
 				cont.resume();
@@ -112,11 +114,11 @@ export namespace os {	// Async read awaiter
 		std::int64_t await_resume() {
 			auto [res, err] = get_scheduler().get_operation_result(overlapped);
 			if (overlapped) delete overlapped;
-			
+
 			if (err) {
 				throw std::system_error(std::make_error_code(std::errc::io_error));
 			}
-			
+
 			// Update file position based on bytes written
 			*file_position += res;
 			return res;
@@ -209,7 +211,8 @@ export namespace os {	// Async read awaiter
 
 			if (flags & O_CREATE) {
 				creation_disposition = CREATE_ALWAYS;
-			} else if (flags & O_TRUNC) {
+			}
+			else if (flags & O_TRUNC) {
 				creation_disposition = TRUNCATE_EXISTING;
 			}
 
@@ -231,7 +234,8 @@ export namespace os {	// Async read awaiter
 			if (flags & O_ATE) {
 				SetFilePointer(handle, 0, nullptr, FILE_END);
 				file_position = size();
-			} else {
+			}
+			else {
 				file_position = 0;
 			}
 
@@ -282,7 +286,8 @@ export namespace os {	// Async read awaiter
 
 			if (bytes_read == 0) {
 				eof_flag = true;
-			} else {
+			}
+			else {
 				file_position += bytes_read;
 			}
 
@@ -293,7 +298,7 @@ export namespace os {	// Async read awaiter
 			if (handle == INVALID_HANDLE_VALUE) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
-			
+
 			co_return co_await async_read_awaiter(handle, buf, &file_position);
 		}
 
@@ -301,7 +306,7 @@ export namespace os {	// Async read awaiter
 			if (handle == INVALID_HANDLE_VALUE) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
-			
+
 			co_return co_await async_write_awaiter(handle, buf, &file_position);
 		}
 
@@ -310,7 +315,7 @@ export namespace os {	// Async read awaiter
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
 
-			std::string result;
+			StringBuilder result;
 			char buffer[256];
 
 			while (true) {
@@ -330,21 +335,20 @@ export namespace os {	// Async read awaiter
 				for (DWORD i = 0; i < bytes_read; ++i) {
 					if (buffer[i] == '\n') {
 						// Found newline - don't include it, move file pointer back to after the newline
+						if (i > 0 && buffer[i - 1] == '\r')
+							result.pop_back();
+
 						LONG move_back = static_cast<LONG>(bytes_read - i - 1);
 						if (move_back > 0) {
 							SetFilePointer(handle, -move_back, nullptr, FILE_CURRENT);
 						}
-						return {result.c_str()};
+						return { std::move(result) };
 					}
-					result += buffer[i];
+					result.push_back(buffer[i]);
 				}
 			}
 
-			if (!result.empty()) {
-				return {result.c_str()};
-			}
-
-			throw std::system_error(std::make_error_code(std::errc::io_error));
+			return { std::move(result) };
 		}
 
 		std::int64_t write(Span<const char> auto const& buf) {
