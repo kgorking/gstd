@@ -2,13 +2,13 @@ import gs;
 import gs.testing;
 import std;
 
-auto pipes_creation_and_validity = [] -> test {
+test pipes_creation_and_validity = [] {
 	auto p = os::pipes();
 	test::assert(p.reader, "reader should be valid");
 	test::assert(p.writer, "writer should be valid");
 };
 
-auto pipes_write_and_read_small_data = [] -> test {
+test pipes_write_and_read_small_data = [] {
 	auto p = os::pipes();
 
 	const char test_data[] = "Hello";
@@ -22,7 +22,7 @@ auto pipes_write_and_read_small_data = [] -> test {
 	test::assert(b, "buffer content should match");
 };
 
-auto pipes_reader_concept = [] -> test {
+test pipes_reader_concept = [] {
 	auto p = os::pipes();
 
 	string data = "test";
@@ -37,7 +37,7 @@ auto pipes_reader_concept = [] -> test {
 	test::assert_eq(result, 4UZ, "read should return 4 bytes");
 };
 
-auto pipes_writer_concept = [] -> test {
+test pipes_writer_concept = [] {
 	auto p = os::pipes();
 
 	// Verify writer satisfies Writer concept
@@ -48,7 +48,7 @@ auto pipes_writer_concept = [] -> test {
 	test::assert_eq(result, 4UZ, "write should return 4 bytes");
 };
 
-auto pipes_line_reader_concept = [] -> test {
+test pipes_line_reader_concept = [] {
 	auto p = os::pipes();
 
 	// Verify reader satisfies LineReader concept
@@ -62,7 +62,7 @@ auto pipes_line_reader_concept = [] -> test {
 	test::assert_eq(line_result, string("test line"), "line content should match");
 };
 
-auto pipes_line_writer_concept = [] -> test {
+test pipes_line_writer_concept = [] {
 	auto p = os::pipes();
 
 	// Verify writer satisfies LineWriter concept

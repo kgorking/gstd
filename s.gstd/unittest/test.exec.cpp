@@ -2,7 +2,7 @@ import gs;
 import gs.testing;
 import std;
 
-auto exec_basic_command = [] -> test {
+test exec_basic_command = [] {
 	#ifdef _WIN32
 		auto cmd = os::exec("cmd /c echo hello");
 	#else
@@ -19,7 +19,7 @@ auto exec_basic_command = [] -> test {
 	test::assert_eq(exit_code, 0, "exit code should be 0");
 };
 
-auto exec_read_multiple_lines = [] -> test {
+test exec_read_multiple_lines = [] {
 	#ifdef _WIN32
 		auto cmd = os::exec("cmd /c echo line1&& echo line2&& echo line3");
 	#else
@@ -37,7 +37,7 @@ auto exec_read_multiple_lines = [] -> test {
 	test::assert_eq(exit_code, 0, "exit code should be 0");
 };
 
-auto exec_nonzero_exit_code = [] -> test {
+test exec_nonzero_exit_code = [] {
 	#ifdef _WIN32
 		auto cmd = os::exec("cmd /c exit 42");
 	#else
@@ -50,7 +50,7 @@ auto exec_nonzero_exit_code = [] -> test {
 	test::assert_eq(exit_code, 42, "exit code should be 42");
 };
 
-auto exec_reader_concept = [] -> test {
+test exec_reader_concept = [] {
 	#ifdef _WIN32
 		auto cmd = os::exec("cmd /c echo test");
 	#else

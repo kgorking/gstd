@@ -1,4 +1,3 @@
-import gs;
 import gs.testing;
 
 int main() {

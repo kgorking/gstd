@@ -9,7 +9,7 @@ sequence<int> gen_with_elements_of() {
     co_yield std::ranges::elements_of(a);
 }
 
-auto sequence_elements_of = [] -> test {
+test sequence_elements_of = [] {
     auto gen = gen_with_elements_of();
 
     std::vector<int> results;

@@ -6,7 +6,7 @@ const string source_dir{__FILE__};
 const string project_root = path::go_up_levels(source_dir, 1);
 const string os_src_dir = string::fmt("{}/src/os", project_root);
 
-auto os_list_dir_test = [] -> test {
+test os_list_dir_test = [] {
     bool saw_file = false;
     bool saw_directory = false;
 
@@ -28,7 +28,7 @@ auto os_list_dir_test = [] -> test {
     test::assert(saw_directory, "should have seen windows directory");
 };
 
-auto os_exists_test = [] -> test {
+test os_exists_test = [] {
     test::assert(os::exists(os_src_dir), "os_src_dir should exist");
     test::assert(os::exists(os_src_dir + "/read_lines.cppm"), "read_lines.cppm should exist");
     test::assert(!os::exists("nonexistent/path"), "nonexistent path should not exist");

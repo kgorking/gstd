@@ -1,7 +1,7 @@
 import gs;
 import gs.testing;
 
-auto string_basic = [] -> test {
+test string_basic = [] {
     string s("hello world");
     test::assert_eq(s.size(), 11UZ, "size should be 11");
     test::assert_eq(s[0], 'h', "first char should be 'h'");
@@ -30,7 +30,7 @@ auto string_basic = [] -> test {
     test::assert_eq(assigned, string("test"), "assigned should be 'test'");
 };
 
-auto string_utf8 = [] -> test {
+test string_utf8 = [] {
     // Test UTF-8 string with multibyte characters
     string s("héllo wörld");
     // "héllo wörld": 11 characters
@@ -71,7 +71,7 @@ auto string_utf8 = [] -> test {
     test::assert_eq(assigned, string("🚀"), "assigned emoji should match");
 };
 
-auto string_literals = [] -> test {
+test string_literals = [] {
     string ascii_literal = "abcdef";
     test::assert_eq(ascii_literal.count(), 6UZ, "ascii count should be 6");
 
@@ -89,7 +89,7 @@ auto string_literals = [] -> test {
     test::assert_eq(expected_emoji, string("🚀"), "emoji comparison should work");
 };
 
-auto string_remove_prefix = [] -> test {
+test string_remove_prefix = [] {
     // Test remove_prefix with ASCII
     string ascii("hello world");
     ascii.remove_prefix(6);
@@ -123,7 +123,7 @@ auto string_remove_prefix = [] -> test {
     test::assert_eq(rocket_emoji, expected_rocket, "emoji after remove_prefix should match");
 };
 
-auto string_remove_postfix = [] -> test {
+test string_remove_postfix = [] {
     // Test remove_postfix with ASCII
     string ascii("hello world");
     ascii.remove_postfix(6);
@@ -158,7 +158,7 @@ auto string_remove_postfix = [] -> test {
     test::assert_eq(rocket_emoji, expected_rocket, "emoji after remove_postfix should match");
 };
 
-auto string_format = [] -> test {
+test string_format = [] {
     string text = "world";
     string formatted = string::fmt("Hello, {}!", text);
     test::assert_eq(formatted, string("Hello, world!"), "formatted string should match");

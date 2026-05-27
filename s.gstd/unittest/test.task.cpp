@@ -31,25 +31,25 @@ static task<int> nested_tasks_3() { co_return co_await nested_tasks_2(); }
 static task<int> nested_tasks_4() { co_return co_await nested_tasks_3(); }
 static task<int> nested_tasks_5() { co_return co_await nested_tasks_4(); }
 
-auto task_many_tasks = [] -> test {
+test task_many_tasks = [] {
 	auto t = nested_tasks_5();
 	auto result = t.result();
 	test::assert_eq(result, 10, "nested tasks should return 10");
 };
 
-auto task_cpu_heavy_computation = [] -> test {
+test task_cpu_heavy_computation = [] {
 	auto t = cpu_heavy_task(1000000);
 	auto result = t.result();
 	test::assert(result > 0, "result should be positive");
 };
 
-auto task_void_return = [] -> test {
+test task_void_return = [] {
 	auto t = cpu_heavy_void_task(1000000);
 	t.wait();
 	test::assert(t.done(), "task should be done");
 };
 
-auto task_with_co_await = [] -> test {
+test task_with_co_await = [] {
 	// Define a coroutine that awaits a task
 	auto awaiter_coro = [](task<int> t) -> co<int> {
 		int result = co_await t;
@@ -67,7 +67,7 @@ auto task_with_co_await = [] -> test {
 	}
 };
 
-auto task_multiple_parallel_computations = [] -> test {
+test task_multiple_parallel_computations = [] {
 	// Helper coroutine to await tasks
 	auto parallel_compute = []() -> task<int> {
 		auto t1 = cpu_heavy_task(500000);
@@ -85,7 +85,7 @@ auto task_multiple_parallel_computations = [] -> test {
 	test::assert(result > 0, "parallel computation result should be positive");
 };
 
-auto task_wait_all_with_vector = [] -> test {
+test task_wait_all_with_vector = [] {
 	auto t1 = cpu_heavy_task(100000);
 	auto t2 = cpu_heavy_task(100000);
 	auto t3 = cpu_heavy_task(100000);
@@ -96,7 +96,7 @@ auto task_wait_all_with_vector = [] -> test {
 	test::assert(r3 > 0, "r3 should be positive");
 };
 
-auto task_channel_unbuffered = [] -> test {
+test task_channel_unbuffered = [] {
 	channel<int> ch;
 
 	auto message_sender = [&ch]() -> task<void> {
@@ -115,7 +115,7 @@ auto task_channel_unbuffered = [] -> test {
 	}
 };
 
-auto task_channel_buffered = [] -> test {
+test task_channel_buffered = [] {
 	channel<int, 3> ch;
 
 	// Helper coroutine to await tasks

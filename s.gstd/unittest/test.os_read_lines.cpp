@@ -1,7 +1,7 @@
 import gs;
 import gs.testing;
 
-auto os_read_lines_test = [] -> test {
+test os_read_lines_test = [] {
 	string const file_content("line1\nline2\nline3\nline4\nline5\nline6\nline7\nline8\nline9\nline10");
 	auto const w = os::write_text("lines_test.txt", file_content);
 	test::assert_eq(w, 60UZ, "write should return 60 bytes");

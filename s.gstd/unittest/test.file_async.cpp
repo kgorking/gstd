@@ -12,7 +12,7 @@ static co<std::int64_t> test_async_write_impl(os::file& f, std::span<const char>
 	co_return co_await f.write_async(buf);
 }
 
-auto file_async_read = [] -> test {
+test file_async_read = [] {
 	// Create a temporary test file
 	string test_file = "test_async_read.txt";
 	string test_content = "Hello, async world!";
@@ -36,7 +36,7 @@ auto file_async_read = [] -> test {
 	std::remove(test_file.c_str());
 };
 
-auto file_async_write = [] -> test {
+test file_async_write = [] {
 	string test_file = "test_async_write.txt";
 	string test_content = "Async write test";
 
@@ -58,7 +58,7 @@ auto file_async_write = [] -> test {
 	std::remove(test_file.c_str());
 };
 
-auto file_async_read_write_sequence = [] -> test {
+test file_async_read_write_sequence = [] {
 	string test_file = "test_async_sequence.txt";
 	string expected = "First write - Second write";
 	string data1 = expected.substr(0, 11); // "First write"
