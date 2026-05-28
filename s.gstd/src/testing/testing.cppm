@@ -18,15 +18,17 @@ public:
 
 	template<typename T, typename U>
 		requires requires(T t, U u) { t == u; }
-	static void assert_eq(T&& actual, U&& expected, std::string_view message = "",
-							std::source_location loc = std::source_location::current()) {
-		if (!(actual == expected)) {
-			std::string failure_msg;
-			if constexpr (std::is_integral_v<T> && std::is_integral_v<U>) {
-				failure_msg = std::format("Expected {}, got {} on line {}", expected, actual, loc.line());
-			} else {
-				failure_msg = std::format("Equality assertion failed on line {}", loc.line());
-			}
+	static void assert_eq(T&& actual, U&& expected, std::string_view message = "", std::source_location loc = std::source_location::current()) {
+		bool cmp = false;
+		if constexpr (std::integral<std::decay_t<T>> && std::integral<std::decay_t<U>>) {
+			cmp = std::cmp_equal(actual, expected);
+		}
+		else {
+			cmp = (actual == expected);
+		}
+
+		if (!cmp) {
+			std::string failure_msg = std::format("{} != {} on line {}", actual, expected, loc.line());
 			if (!message.empty()) {
 				failure_msg += " - ";
 				failure_msg += message;

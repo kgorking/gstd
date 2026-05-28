@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\Debug\\write_text.obj",
+            "outputs": [
+                "x64\\Debug\\write_text.cppm.ifc.dt.module.json",
+                "x64\\Debug\\write_text.cppm.ifc.dt.d.json",
+                "x64\\Debug\\gs-write_text.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:write_text",
+                    "source-path": "e:\\source\\repos\\gstd\\s.gstd\\src\\os\\write_text.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:file"
+                },
+                {
+                    "logical-name": "gs:string"
+                },
+                {
+                    "logical-name": "gs:concepts"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,26 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\Debug\\exec.obj",
+            "outputs": [
+                "x64\\Debug\\exec.cppm.ifc.dt.module.json",
+                "x64\\Debug\\exec.cppm.ifc.dt.d.json",
+                "x64\\Debug\\gs-exec.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:exec",
+                    "source-path": "e:\\source\\repos\\gstd\\s.gstd\\src\\os\\exec.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "gs:exec_impl"
+                }
+            ]
+        }
+    ]
+}

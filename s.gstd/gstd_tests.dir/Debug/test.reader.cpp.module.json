@@ -1,0 +1,21 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "gstd_tests.dir\\Debug\\test.reader.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\s.gstd\\gstd_tests.dir\\Debug\\vc145.pdb",
+                "gstd_tests.dir\\Debug\\"
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs"
+                }
+            ]
+        }
+    ]
+}

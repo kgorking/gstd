@@ -1,0 +1,32 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\Debug\\lines.obj",
+            "outputs": [
+                "x64\\Debug\\lines.cppm.ifc.dt.module.json",
+                "x64\\Debug\\lines.cppm.ifc.dt.d.json",
+                "x64\\Debug\\gs-lines.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:lines",
+                    "source-path": "e:\\source\\repos\\gstd\\s.gstd\\src\\strutil\\lines.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:sequence"
+                },
+                {
+                    "logical-name": "gs:string"
+                }
+            ]
+        }
+    ]
+}

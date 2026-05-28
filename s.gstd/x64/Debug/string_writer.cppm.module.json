@@ -1,0 +1,32 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\Debug\\string_writer.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\Debug\\gstd.pdb",
+                "x64\\Debug\\",
+                "x64\\Debug\\gs-string_writer.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:string_writer",
+                    "source-path": "e:\\source\\repos\\gstd\\s.gstd\\src\\strutil\\string_writer.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:string"
+                },
+                {
+                    "logical-name": "gs:Writer"
+                }
+            ]
+        }
+    ]
+}

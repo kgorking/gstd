@@ -1,0 +1,23 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\source\\repos\\gstd\\s.gstd\\src\\co\\task.cppm",
+        "ProvidedModule": "gs:task",
+        "Includes": [],
+        "ImportedModules": [
+            {
+                "Name": "std",
+                "BMI": "E:\\source\\repos\\gstd\\s.gstd\\x64\\Debug\\microsoft\\STL\\std.ixx.ifc"
+            },
+            {
+                "Name": "gs:thread_pool",
+                "BMI": "E:\\source\\repos\\gstd\\s.gstd\\x64\\Debug\\thread_pool.cppm.ifc"
+            },
+            {
+                "Name": "gs:channel",
+                "BMI": "E:\\source\\repos\\gstd\\s.gstd\\x64\\Debug\\channel.cppm.ifc"
+            }
+        ],
+        "ImportedHeaderUnits": []
+    }
+}

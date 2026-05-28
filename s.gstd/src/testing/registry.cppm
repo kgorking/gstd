@@ -1,4 +1,3 @@
-// Test registry and runner for the coroutine-based testing framework.
 export module gs.testing:registry;
 
 import std;
@@ -38,30 +37,31 @@ export namespace gs::testing {
 			reg.tests[loc.file_name()].emplace_back(test_entry{lambda_name, loc.line(), std::move(test_fn)});
 		}
 
-		static std::string parse_stacktrace_description_for_name(std::string desc) {
-#ifdef _MSC_VER
+		static std::string parse_stacktrace_description_for_name(std::string_view desc) {
+#if defined(_MSC_VER)
 			// gstd_tests!`dynamic initializer for 'exec_basic_command''+0x5C
-			auto start = desc.find("dynamic initializer for '") + 25;
-			if (start != std::string::npos) {
-				auto end = desc.find('\'', start);
-				if (end != std::string::npos && end > start) {
-					return desc.substr(start, end - start);
-				}
+			// test_os_read_lines+0x10AC
+			auto start = desc.find("dynamic initializer for '");
+			start = (start != std::string::npos) ? start + 25 : 0;
+
+			auto end = desc.find_first_of("\'+", start);
+			if (end != std::string::npos && end > start) {
+				desc = desc.substr(start, end - start);
 			}
-#elifdef __GNUC__
+#elif defined(__GNUC__)
 			// test::test<turbo_lussing::{lambda()#1}>(turbo_lussing::{lambda()#1}&&)
 			auto start = desc.find("test::test<") + 11;
 			if (start != std::string::npos) {
 				auto end = desc.find("::", start);
 				if (start != std::string::npos && end != std::string::npos && end > start) {
-					return desc.substr(start, end - start);
+					desc = desc.substr(start, end - start);
 				}
 			}
-#elifdef __clang__
+#elif defined(__clang__)
 			// Clang's stacktrace descriptions are not consistent enough to parse reliably
 #else
 #endif
-			return desc;
+			return std::string(desc);
 		}
 
 		static void run_all_tests() {
@@ -72,14 +72,10 @@ export namespace gs::testing {
 			int passed = 0;
 			int failed = 0;
 
-			std::println("\n========================================");
-			std::println("Test Results");
-			std::println("========================================");
-
 			for (const auto& [filename, tests] : reg.tests) {
-				std::println("\n{}", filename);
+				std::println("{}", filename);
 
-				for (const auto& entry : tests) {
+				std::for_each (std::execution::par, tests.begin(), tests.end(), [&](const auto& entry) {
 					test_result result;
 					result.test_name = entry.name;
 					result.source_line = entry.source_line;
@@ -120,12 +116,12 @@ export namespace gs::testing {
 
 					current_test_context = nullptr;
 					reg.results[filename].push_back(result);
-				}
+				});
 			}
 
-			std::println("\n========================================");
+			std::println("========================================");
 			std::println("Total: {} passed, {} failed", passed, failed);
-			std::println("========================================\n");
+			std::println("========================================");
 		}
 
 		static thread_local test_result* current_test_context;

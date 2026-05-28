@@ -1,0 +1,32 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\Debug\\read_text.obj",
+            "outputs": [
+                "x64\\Debug\\read_text.cppm.ifc.dt.module.json",
+                "x64\\Debug\\read_text.cppm.ifc.dt.d.json",
+                "x64\\Debug\\gs-read_text.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:read_text",
+                    "source-path": "e:\\source\\repos\\gstd\\s.gstd\\src\\os\\read_text.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:file"
+                },
+                {
+                    "logical-name": "gs:string"
+                }
+            ]
+        }
+    ]
+}

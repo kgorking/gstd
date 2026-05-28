@@ -1,0 +1,26 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\Debug\\co.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\Debug\\gstd.pdb",
+                "x64\\Debug\\",
+                "x64\\Debug\\gs-co.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:co",
+                    "source-path": "e:\\source\\repos\\gstd\\s.gstd\\src\\co\\co.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                }
+            ]
+        }
+    ]
+}

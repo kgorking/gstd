@@ -1,0 +1,26 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\Debug\\registry.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\Debug\\gstd.pdb",
+                "x64\\Debug\\",
+                "x64\\Debug\\gs.testing-registry.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs.testing:registry",
+                    "source-path": "e:\\source\\repos\\gstd\\s.gstd\\src\\testing\\registry.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                }
+            ]
+        }
+    ]
+}

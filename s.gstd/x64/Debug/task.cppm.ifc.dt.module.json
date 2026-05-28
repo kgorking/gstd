@@ -1,0 +1,29 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\Debug\\task.obj",
+            "outputs": [
+                "x64\\Debug\\task.cppm.ifc.dt.module.json",
+                "x64\\Debug\\task.cppm.ifc.dt.d.json",
+                "x64\\Debug\\gs-task.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:task",
+                    "source-path": "e:\\source\\repos\\gstd\\s.gstd\\src\\co\\task.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:thread_pool"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\main_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.co.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.exec.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.file_async.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.os_list_dir.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.os_read_lines.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.pipes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.reader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.sequence.elements_of.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.sequence.merge.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.sequence.take.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.string.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.strutil.lines.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.task.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.testing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{21673906-8170-3F9C-9A29-2A4A44E70536}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

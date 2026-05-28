@@ -1,0 +1,27 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\source\\repos\\gstd\\s.gstd\\src\\io\\sync_console_writer.cppm",
+        "ProvidedModule": "gs:sync_console_writer",
+        "Includes": [],
+        "ImportedModules": [
+            {
+                "Name": "std",
+                "BMI": "E:\\source\\repos\\gstd\\s.gstd\\x64\\Debug\\microsoft\\STL\\std.ixx.ifc"
+            },
+            {
+                "Name": "gs:Writer",
+                "BMI": "E:\\source\\repos\\gstd\\s.gstd\\x64\\Debug\\Writer.cppm.ifc"
+            },
+            {
+                "Name": "gs:co",
+                "BMI": "E:\\source\\repos\\gstd\\s.gstd\\x64\\Debug\\co.cppm.ifc"
+            },
+            {
+                "Name": "gs:concepts",
+                "BMI": "E:\\source\\repos\\gstd\\s.gstd\\x64\\Debug\\concepts.cppm.ifc"
+            }
+        ],
+        "ImportedHeaderUnits": []
+    }
+}

@@ -1,0 +1,29 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\Debug\\strconv.obj",
+            "outputs": [
+                "x64\\Debug\\strconv.cppm.ifc.dt.module.json",
+                "x64\\Debug\\strconv.cppm.ifc.dt.d.json",
+                "x64\\Debug\\gs-strconv.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:strconv",
+                    "source-path": "e:\\source\\repos\\gstd\\s.gstd\\src\\strconv\\strconv.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:string"
+                }
+            ]
+        }
+    ]
+}

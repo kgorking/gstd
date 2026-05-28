@@ -1,0 +1,26 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\Debug\\path.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\Debug\\gstd.pdb",
+                "x64\\Debug\\",
+                "x64\\Debug\\gs-path.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:path",
+                    "source-path": "e:\\source\\repos\\gstd\\s.gstd\\src\\dir\\path.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "gs:string"
+                }
+            ]
+        }
+    ]
+}

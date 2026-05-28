@@ -1,0 +1,15 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\source\\repos\\gstd\\s.gstd\\src\\co\\channel.cppm",
+        "ProvidedModule": "gs:channel",
+        "Includes": [],
+        "ImportedModules": [
+            {
+                "Name": "std",
+                "BMI": "E:\\source\\repos\\gstd\\s.gstd\\x64\\Debug\\microsoft\\STL\\std.ixx.ifc"
+            }
+        ],
+        "ImportedHeaderUnits": []
+    }
+}

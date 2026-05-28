@@ -1,0 +1,24 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "gstd_tests.dir\\Debug\\test.co.obj",
+            "outputs": [
+                "gstd_tests.dir\\Debug\\test.co.cpp.ifc.dt.module.json",
+                "gstd_tests.dir\\Debug\\test.co.cpp.ifc.dt.d.json"
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs"
+                },
+                {
+                    "logical-name": "gs.testing"
+                }
+            ]
+        }
+    ]
+}

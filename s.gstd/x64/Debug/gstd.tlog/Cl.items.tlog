@@ -1,0 +1,35 @@
+E:\source\repos\gstd\s.gstd\src\co\channel.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\channel.obj
+E:\source\repos\gstd\s.gstd\src\co\co.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\co.obj
+E:\source\repos\gstd\s.gstd\src\co\io_scheduler.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\io_scheduler.obj
+E:\source\repos\gstd\s.gstd\src\co\sequence.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\sequence.obj
+E:\source\repos\gstd\s.gstd\src\co\task.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\task.obj
+E:\source\repos\gstd\s.gstd\src\co\thread_pool.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\thread_pool.obj
+E:\source\repos\gstd\s.gstd\src\concepts.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\concepts.obj
+E:\source\repos\gstd\s.gstd\src\dir\list_dir.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\list_dir.obj
+E:\source\repos\gstd\s.gstd\src\dir\path.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\path.obj
+E:\source\repos\gstd\s.gstd\src\gstd.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\gstd.obj
+E:\source\repos\gstd\s.gstd\src\io\LineReader.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\LineReader.obj
+E:\source\repos\gstd\s.gstd\src\io\LineWriter.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\LineWriter.obj
+E:\source\repos\gstd\s.gstd\src\io\Reader.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\Reader.obj
+E:\source\repos\gstd\s.gstd\src\io\Writer.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\Writer.obj
+E:\source\repos\gstd\s.gstd\src\io\sync_console_writer.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\sync_console_writer.obj
+E:\source\repos\gstd\s.gstd\src\os\exec.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\exec.obj
+E:\source\repos\gstd\s.gstd\src\os\file.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\file.obj
+E:\source\repos\gstd\s.gstd\src\os\pipes.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\pipes.obj
+E:\source\repos\gstd\s.gstd\src\os\read_file.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\read_file.obj
+E:\source\repos\gstd\s.gstd\src\os\read_lines.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\read_lines.obj
+E:\source\repos\gstd\s.gstd\src\os\read_text.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\read_text.obj
+E:\source\repos\gstd\s.gstd\src\os\windows\exec_impl.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\exec_impl.obj
+E:\source\repos\gstd\s.gstd\src\os\windows\file_impl.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\file_impl.obj
+E:\source\repos\gstd\s.gstd\src\os\windows\pipes_impl.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\pipes_impl.obj
+E:\source\repos\gstd\s.gstd\src\os\write_text.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\write_text.obj
+E:\source\repos\gstd\s.gstd\src\strconv\strconv.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\strconv.obj
+E:\source\repos\gstd\s.gstd\src\string.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\string.obj
+E:\source\repos\gstd\s.gstd\src\strutil\lines.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\lines.obj
+E:\source\repos\gstd\s.gstd\src\strutil\string_reader.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\string_reader.obj
+E:\source\repos\gstd\s.gstd\src\strutil\string_writer.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\string_writer.obj
+E:\source\repos\gstd\s.gstd\src\strutil\utf8.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\utf8.obj
+E:\source\repos\gstd\s.gstd\src\testing\registry.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\registry.obj
+E:\source\repos\gstd\s.gstd\src\testing\testing.cppm;E:\source\repos\gstd\s.gstd\x64\Debug\testing.obj
+C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.51.36231\modules\std.ixx;E:\source\repos\gstd\s.gstd\x64\Debug\microsoft\STL\std.ixx.obj
+C:\Program Files\Microsoft Visual Studio\18\Insiders\VC\Tools\MSVC\14.51.36231\modules\std.compat.ixx;E:\source\repos\gstd\s.gstd\x64\Debug\microsoft\STL\std.compat.ixx.obj

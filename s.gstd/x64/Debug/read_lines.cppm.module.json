@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\Debug\\read_lines.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\Debug\\gstd.pdb",
+                "x64\\Debug\\",
+                "x64\\Debug\\gs-read_lines.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:read_lines",
+                    "source-path": "e:\\source\\repos\\gstd\\s.gstd\\src\\os\\read_lines.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:file"
+                },
+                {
+                    "logical-name": "gs:sequence"
+                },
+                {
+                    "logical-name": "gs:string"
+                }
+            ]
+        }
+    ]
+}
