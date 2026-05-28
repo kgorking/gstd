@@ -11,7 +11,7 @@ test strutil_lines_test = [] {
 	for (int i = 1; string line : lines(text)) {
 		auto result = std::format_to_n(buffer, 31, "Line {}", i);
 		*result.out = 0;  // Null-terminate the formatted string
-		test::assert_eq(line, string(buffer), "line should match formatted text");
+		test::equals(line, string(buffer), "line should match formatted text");
 		i += 1;
 	}
 };

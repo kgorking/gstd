@@ -13,5 +13,5 @@ co<int> simple_test() {
 
 test test_co_result = [] {
 	auto result = simple_test().result();
-	test::assert_eq(result, 50, "coroutine result should be 50");
+	test::equals(result, 50, "coroutine result should be 50");
 };

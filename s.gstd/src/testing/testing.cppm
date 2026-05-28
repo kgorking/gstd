@@ -1,4 +1,3 @@
-// Coroutine-based testing framework.
 export module gs.testing;
 
 import std;
@@ -16,11 +15,31 @@ public:
 		gs::testing::test_registry::register_test(std::forward<decltype(fn)>(fn), loc);
 	}
 
-	template<typename T, typename U>
-		requires requires(T t, U u) { t == u; }
-	static void assert_eq(T&& actual, U&& expected, std::string_view message = "", std::source_location loc = std::source_location::current()) {
+	template<auto Expected, typename ActualType>
+	static void equals(ActualType&& actual, const char* message = nullptr, std::source_location loc = std::source_location::current()) {
 		bool cmp = false;
-		if constexpr (std::integral<std::decay_t<T>> && std::integral<std::decay_t<U>>) {
+		if constexpr (std::integral<std::decay_t<ActualType>> && std::integral<std::decay_t<decltype(Expected)>>) {
+			cmp = std::cmp_equal(actual, Expected);
+		}
+		else {
+			cmp = (actual == Expected);
+		}
+
+		if (!cmp) {
+			std::string failure_msg = std::format("{} != {} on line {}", actual, Expected, loc.line());
+			if (message && *message) {
+				failure_msg += " - ";
+				failure_msg += message;
+			}
+			gs::testing::record_assertion_failure(failure_msg);
+		}
+	}
+
+	template<typename ActualType, typename ExpectedType>
+		requires requires(ActualType t, ExpectedType u) { t == u; }
+	static void equals(ActualType const actual, ExpectedType const expected, const char* message = nullptr, std::source_location loc = std::source_location::current()) {
+		bool cmp = false;
+		if constexpr (std::integral<std::decay_t<ActualType>> && std::integral<std::decay_t<ExpectedType>>) {
 			cmp = std::cmp_equal(actual, expected);
 		}
 		else {
@@ -29,7 +48,7 @@ public:
 
 		if (!cmp) {
 			std::string failure_msg = std::format("{} != {} on line {}", actual, expected, loc.line());
-			if (!message.empty()) {
+			if (message && *message) {
 				failure_msg += " - ";
 				failure_msg += message;
 			}
@@ -37,8 +56,7 @@ public:
 		}
 	}
 
-	static void assert(bool condition, std::string_view message = "",
-					std::source_location loc = std::source_location::current()) {
+	static void is_true(bool condition, std::string_view message = "", std::source_location loc = std::source_location::current()) {
 		if (!condition) {
 			std::string failure_msg;
 			if (!message.empty()) {

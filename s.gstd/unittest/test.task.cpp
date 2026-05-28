@@ -34,19 +34,19 @@ static task<int> nested_tasks_5() { co_return co_await nested_tasks_4(); }
 test task_many_tasks = [] {
 	auto t = nested_tasks_5();
 	auto result = t.result();
-	test::assert_eq(result, 10, "nested tasks should return 10");
+	test::equals(result, 10, "nested tasks should return 10");
 };
 
 test task_cpu_heavy_computation = [] {
 	auto t = cpu_heavy_task(1000000);
 	auto result = t.result();
-	test::assert(result > 0, "result should be positive");
+	test::is_true(result > 0, "result should be positive");
 };
 
 test task_void_return = [] {
 	auto t = cpu_heavy_void_task(1000000);
 	t.wait();
-	test::assert(t.done(), "task should be done");
+	test::is_true(t.done(), "task should be done");
 };
 
 test task_with_co_await = [] {
@@ -60,7 +60,7 @@ test task_with_co_await = [] {
 		auto t = cpu_heavy_task(1000000);
 		auto awaiter = awaiter_coro(std::move(t));
 		int result = awaiter.result();
-		test::assert(result > 0, "awaited result should be positive");
+		test::is_true(result > 0, "awaited result should be positive");
 	} catch (const std::exception& ex) {
 		std::println("Exception in test: {}", ex.what());
 		throw;
@@ -82,7 +82,7 @@ test task_multiple_parallel_computations = [] {
 	};
 
 	auto result = parallel_compute().result();
-	test::assert(result > 0, "parallel computation result should be positive");
+	test::is_true(result > 0, "parallel computation result should be positive");
 };
 
 test task_wait_all_with_vector = [] {
@@ -91,9 +91,9 @@ test task_wait_all_with_vector = [] {
 	auto t3 = cpu_heavy_task(100000);
 
 	auto [r1, r2, r3] = wait_all(t1, t2, t3);
-	test::assert(r1 > 0, "r1 should be positive");
-	test::assert(r2 > 0, "r2 should be positive");
-	test::assert(r3 > 0, "r3 should be positive");
+	test::is_true(r1 > 0, "r1 should be positive");
+	test::is_true(r2 > 0, "r2 should be positive");
+	test::is_true(r3 > 0, "r3 should be positive");
 };
 
 test task_channel_unbuffered = [] {
@@ -111,7 +111,7 @@ test task_channel_unbuffered = [] {
 
 	for (int i=1; i<=3; ++i) {
 		int const v = ch.get();
-		test::assert_eq(v, i, "channel value should match");
+		test::equals(v, i, "channel value should match");
 	}
 };
 
@@ -130,6 +130,6 @@ test task_channel_buffered = [] {
 
 	for (int i=1; i<=3; ++i) {
 		int const v = ch.get();
-		test::assert_eq(v, i, "channel value should match");
+		test::equals(v, i, "channel value should match");
 	}
 };

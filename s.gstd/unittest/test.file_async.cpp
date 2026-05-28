@@ -27,8 +27,8 @@ test file_async_read = [] {
 	auto result = test_async_read_impl(f, std::span(buf)).result();
 	buf[result] = '\0'; // Null-terminate the buffer
 
-	test::assert_eq(result, test_content.size(), "read size should match");
-	test::assert_eq(string(buf), test_content, "read content should match");
+	test::equals(result, test_content.size(), "read size should match");
+	test::equals(string(buf), test_content, "read content should match");
 
 	f.close();
 
@@ -44,14 +44,14 @@ test file_async_write = [] {
 
 	auto result = test_async_write_impl(f, std::span<const char>(test_content.c_str(), test_content.size())).result();
 
-	test::assert_eq(result, test_content.size(), "write size should match");
+	test::equals(result, test_content.size(), "write size should match");
 
 	f.close();
 
 	// Verify the written content
 	{
 		auto file_content = os::read_text(test_file);
-		test::assert_eq(file_content, test_content, "file content should match");
+		test::equals(file_content, test_content, "file content should match");
 	}
 
 	// Clean up
@@ -67,23 +67,23 @@ test file_async_read_write_sequence = [] {
 	os::file f{test_file, os::O_CREATE | os::O_WR | os::O_BIN};
 
 	auto result1 = test_async_write_impl(f, std::span<const char>(data1.c_str(), data1.size())).result();
-	test::assert_eq(result1, data1.size(), "first write size should match");
+	test::equals(result1, data1.size(), "first write size should match");
 
 	auto file_size1 = f.size();
-	test::assert_eq(file_size1, data1.size(), "file size after first write");
+	test::equals(file_size1, data1.size(), "file size after first write");
 
 	auto result2 = test_async_write_impl(f, std::span<const char>(data2.c_str(), data2.size())).result();
-	test::assert_eq(result2, data2.size(), "second write size should match");
+	test::equals(result2, data2.size(), "second write size should match");
 
 	auto file_size2 = f.size();
-	test::assert_eq(file_size2, data1.size() + data2.size(), "file size after second write");
+	test::equals(file_size2, data1.size() + data2.size(), "file size after second write");
 
 	f.close();
 
 	// Read back and verify
 	{
 		auto file_content = os::read_text(test_file);
-		test::assert_eq(expected, file_content, "final content should match");
+		test::equals(expected, file_content, "final content should match");
 	}
 
 	// Clean up

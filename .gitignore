@@ -1,6 +1,12 @@
+**/x64/
+**/*.dir/
+/.vs
 gbs.out/
 build/
+out/
 vc140.pdb
-/.vs
-/bin/Debug
-/x64/Debug
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+[Ll]og/

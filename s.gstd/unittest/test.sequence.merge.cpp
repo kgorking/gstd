@@ -23,5 +23,5 @@ test sequence_merge = [] {
         actual.push_back(i);
         if (i==9) break;
     }
-    test::assert_eq(expected, actual, "merged sequence should match expected");
+    test::equals(expected, actual, "merged sequence should match expected");
 };
