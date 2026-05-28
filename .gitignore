@@ -2,3 +2,5 @@ gbs.out/
 build/
 vc140.pdb
 /.vs
+/bin/Debug
+/x64/Debug
