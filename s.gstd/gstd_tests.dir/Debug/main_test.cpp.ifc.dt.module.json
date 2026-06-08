@@ -11,6 +11,9 @@
             "requires": [
                 {
                     "logical-name": "gs.testing"
+                },
+                {
+                    "logical-name": "std"
                 }
             ]
         }

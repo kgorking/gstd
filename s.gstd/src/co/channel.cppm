@@ -8,9 +8,9 @@ export template<typename T, std::signed_integral auto Capacity = 0>
     requires (Capacity >= 0)
 class channel {
     using data_type = std::conditional_t<Capacity == 0, std::optional<T>, std::queue<T>>;
-    std::mutex m{};
-    std::condition_variable cv{};
     data_type data{};
+    std::condition_variable cv{};
+    std::mutex m{};
     bool stopped = false;
 
 public:

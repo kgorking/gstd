@@ -2,7 +2,7 @@
     "Version": "1.2",
     "Data": {
         "Source": "e:\\source\\repos\\gstd\\s.gstd\\src\\os\\windows\\exec_impl.cppm",
-        "ProvidedModule": "",
+        "ProvidedModule": "gs:exec_impl",
         "Includes": [
             "c:\\program files (x86)\\windows kits\\10\\include\\10.0.26100.0\\um\\windows.h",
             "c:\\program files (x86)\\windows kits\\10\\include\\10.0.26100.0\\shared\\winapifamily.h",

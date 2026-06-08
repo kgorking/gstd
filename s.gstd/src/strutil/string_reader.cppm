@@ -16,7 +16,7 @@ namespace strutil {
                 return 0;
 
             std::size_t to_read = std::min(buf.size(), static_cast<std::size_t>(s.size()));
-            std::memcpy(buf.data(), s.data(), to_read);
+            std::memcpy(buf.data(), s.c_str(), to_read);
             s.remove_prefix(to_read);
             return static_cast<std::int64_t>(to_read);
         }

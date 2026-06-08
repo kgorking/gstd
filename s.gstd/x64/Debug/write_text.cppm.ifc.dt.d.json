@@ -2,7 +2,7 @@
     "Version": "1.2",
     "Data": {
         "Source": "e:\\source\\repos\\gstd\\s.gstd\\src\\os\\write_text.cppm",
-        "ProvidedModule": "",
+        "ProvidedModule": "gs:write_text",
         "Includes": [],
         "ImportedModules": [],
         "ImportedHeaderUnits": []

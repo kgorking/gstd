@@ -66,16 +66,15 @@ export namespace gs::testing {
 
 		static void run_all_tests() {
 			auto& reg = instance();
-			std::lock_guard<std::mutex> lock(reg.registry_mutex);
-
 			reg.results.clear();
+
 			int passed = 0;
 			int failed = 0;
 
 			for (const auto& [filename, tests] : reg.tests) {
 				std::println("{}", filename);
 
-				std::for_each (std::execution::par, tests.begin(), tests.end(), [&](const auto& entry) {
+				std::for_each (std::execution::seq, tests.begin(), tests.end(), [&](const auto& entry) {
 					test_result result;
 					result.test_name = entry.name;
 					result.source_line = entry.source_line;
@@ -104,6 +103,7 @@ export namespace gs::testing {
 						failed++;
 					}
 
+					std::lock_guard<std::mutex> lock(reg.registry_mutex);
 					if (result.passed) {
 						std::println("\t\033[32m✓\033[0m {}", result.test_name);
 					}

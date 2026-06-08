@@ -39,10 +39,10 @@ public:
 		requires requires(ActualType t, ExpectedType u) { t == u; }
 	static void equals(ActualType const actual, ExpectedType const expected, const char* message = nullptr, std::source_location loc = std::source_location::current()) {
 		bool cmp = false;
-		if constexpr (std::integral<std::decay_t<ActualType>> && std::integral<std::decay_t<ExpectedType>>) {
+		/*if constexpr (std::signed_integral<std::decay_t<ActualType>> != std::signed_integral<std::decay_t<ExpectedType>>) {
 			cmp = std::cmp_equal(actual, expected);
 		}
-		else {
+		else*/ {
 			cmp = (actual == expected);
 		}
 

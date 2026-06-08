@@ -2,7 +2,7 @@
     "Version": "1.2",
     "Data": {
         "Source": "e:\\source\\repos\\gstd\\s.gstd\\src\\os\\read_lines.cppm",
-        "ProvidedModule": "",
+        "ProvidedModule": "gs:read_lines",
         "Includes": [],
         "ImportedModules": [],
         "ImportedHeaderUnits": []

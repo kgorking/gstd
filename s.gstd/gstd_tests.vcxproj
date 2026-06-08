@@ -377,7 +377,7 @@
     <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.string.cpp" />
     <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.strutil.lines.cpp" />
     <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.task.cpp" />
-    <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.testing.cpp" />
+    <ClCompile Include="unittest\x.test.testing.cpp" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>

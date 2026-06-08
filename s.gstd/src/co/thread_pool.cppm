@@ -34,17 +34,21 @@ public:
     void enqueue(std::coroutine_handle<> h) {
         if (h.done())
             throw std::invalid_argument("Cannot enqueue a completed coroutine");
-        work_queue << h;
+		enqueue_unchecked(h);
     }
 
 private:
+    void enqueue_unchecked(std::coroutine_handle<> h) {
+        work_queue << h;
+    }
+
     void worker_loop() {
         for (;;) {
             if (std::coroutine_handle<> h = work_queue.get(); h) {
                 h.resume();
                 if (!h.done())
-                    enqueue(h);
-            } else {
+					enqueue_unchecked(h);
+			} else {
                 // Queue is closed and empty; exit worker loop.
                 break;
             }

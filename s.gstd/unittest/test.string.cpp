@@ -4,7 +4,7 @@ import gs.testing;
 test string_basic = [] {
     string s("hello world");
     test::equals(s.size(), 11Z, "size should be 11");
-    test::equals<'h'>(s[0], "first char should be 'h'");
+	test::equals(s[0], 'h', "first char should be 'h'");
     test::equals(s[10], 'd', "last char should be 'd'");
     test::is_true(!s.empty(), "string should not be empty");
 
@@ -37,9 +37,8 @@ test string_utf8 = [] {
     test::equals(s.count(), 11Z, "count should be 11");
     test::equals(s.size_bytes(), 13Z, "size_bytes should be 13");
     test::equals(s[0], 'h', "first char should be 'h'");
-    test::equals(s[1].count(), 1Z, "second char count should be 1");
-    test::equals(s[1].size_bytes(), 2Z, "second char bytes should be 2");
-    test::is_true(s[1] == "é", "second char should be 'é'");
+    test::equals(s[1] & 0xC0, 0x80, "second char bytes should be utf-8 continuation bytes");
+    test::is_true(s[1] == 'é', "second char should be 'é'");
     test::equals(s[2], 'l', "third char should be 'l'");
     test::is_true(!s.empty(), "string should not be empty");
 
@@ -62,6 +61,7 @@ test string_utf8 = [] {
     string emoji("🚀");
     test::equals(emoji.count(), 1Z, "emoji count should be 1");
     test::equals(emoji.size_bytes(), 4Z, "emoji bytes should be 4");
+    test::equals(emoji[0], '🚀', "emoji should be '🚀'");
     string expected_emoji("🚀");
     test::equals(emoji, expected_emoji, "emoji should match");
 

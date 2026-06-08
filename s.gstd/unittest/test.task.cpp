@@ -51,14 +51,14 @@ test task_void_return = [] {
 
 test task_with_co_await = [] {
 	// Define a coroutine that awaits a task
-	auto awaiter_coro = [](task<int> t) -> co<int> {
+	auto awaiter_helper = [](task<int> t) -> task<int> {
 		int result = co_await t;
 		co_return result;
 	};
 
 	try {
 		auto t = cpu_heavy_task(1000000);
-		auto awaiter = awaiter_coro(std::move(t));
+		auto awaiter = awaiter_helper(std::move(t));
 		int result = awaiter.result();
 		test::is_true(result > 0, "awaited result should be positive");
 	} catch (const std::exception& ex) {
@@ -99,19 +99,21 @@ test task_wait_all_with_vector = [] {
 test task_channel_unbuffered = [] {
 	channel<int> ch;
 
+	// BUG HERE
 	auto message_sender = [&ch]() -> task<void> {
 		for (int i=1; i<=3; ++i) {
 			ch << i;
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 		}
 		co_return;
 	};
 
-	auto t = message_sender();
-
-	for (int i=1; i<=3; ++i) {
-		int const v = ch.get();
-		test::equals(v, i, "channel value should match");
+	for (int runs = 0; runs < 100'000; ++runs) {
+		auto t = message_sender();
+		for (int i = 1; i <= 3; ++i) {
+			int const v = ch.get();
+			test::equals(v, i, "channel value should match");
+		}
+		t.wait();
 	}
 };
 

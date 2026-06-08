@@ -2,14 +2,9 @@
     "Version": "1.2",
     "Data": {
         "Source": "e:\\source\\repos\\gstd\\s.gstd\\src\\testing\\testing.cppm",
-        "ProvidedModule": "",
+        "ProvidedModule": "gs.testing",
         "Includes": [],
-        "ImportedModules": [
-            {
-                "Name": "std",
-                "BMI": "E:\\source\\repos\\gstd\\s.gstd\\gstd.dir\\Debug\\microsoft\\stl\\std.ixx.ifc.dt"
-            }
-        ],
+        "ImportedModules": [],
         "ImportedHeaderUnits": []
     }
 }

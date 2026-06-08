@@ -50,11 +50,17 @@ struct final_awaiter {
     bool await_ready() const noexcept { return false; }
     void await_resume() const noexcept {}
     void await_suspend(std::coroutine_handle<PromiseType> h) noexcept {
-        h.promise().is_running = false;
-        h.promise().is_running.notify_one();
+		// If there was an exception, rethrow it
+		if (auto ex = h.promise().exception) {
+			std::rethrow_exception(ex);
+		}
 
-        if (auto cont = h.promise().continuation)
+		auto cont = h.promise().continuation;
+        if (cont && !cont.done())
             cont.resume();
+
+		h.promise().is_running = false;
+        h.promise().is_running.notify_all();
     }
 };
 
@@ -110,8 +116,8 @@ public:
     task(task&& other) noexcept : _handle(other._handle) { other._handle = nullptr; }
     task& operator=(task&& other) noexcept {
         if (this != &other) {
-            if (_handle)
-                _handle.destroy();
+            //if (_handle)
+            //    _handle.destroy();
             _handle = other._handle;
             other._handle = nullptr;
         }
@@ -121,10 +127,10 @@ public:
     task& operator=(const task&) = delete;
 
     ~task() {
-        wait();
-
-        if (_handle)
-            _handle.destroy();
+		if (_handle) {
+			_handle.promise().is_running.wait(true);
+			_handle.destroy();
+		}
     }
 
     // Get the current status
@@ -137,16 +143,9 @@ public:
 
     // Execute on thread pool and wait for completion
     void wait() const {
-        if (_handle) {
-            if (!_handle.done() && _handle.promise().is_running) {
-                // Wait until the coroutine completes
-                _handle.promise().is_running.wait(true);
-            }
-
-            // If there was an exception, rethrow it
-            if (_handle.promise().exception) {
-                std::rethrow_exception(_handle.promise().exception);
-            }
+        if (_handle && !_handle.done()) {
+            // Wait until the coroutine completes
+			_handle.promise().is_running.wait(true);
         }
     }
 

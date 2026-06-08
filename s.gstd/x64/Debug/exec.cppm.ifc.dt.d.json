@@ -2,7 +2,7 @@
     "Version": "1.2",
     "Data": {
         "Source": "e:\\source\\repos\\gstd\\s.gstd\\src\\os\\exec.cppm",
-        "ProvidedModule": "",
+        "ProvidedModule": "gs:exec",
         "Includes": [],
         "ImportedModules": [],
         "ImportedHeaderUnits": []
