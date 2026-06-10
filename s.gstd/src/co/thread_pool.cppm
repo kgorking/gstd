@@ -32,7 +32,7 @@ public:
     }
 
     void enqueue(std::coroutine_handle<> h) {
-        if (h.done())
+        if (!h || h.done())
             throw std::invalid_argument("Cannot enqueue a completed coroutine");
 		enqueue_unchecked(h);
     }

@@ -437,7 +437,7 @@ public:
             data_->data = builder.buffer;
             data_->size = builder.size;
             end_ = builder.size;
-            // Clear the builder's buffer so its destructor doesn't delete it
+            // Clear the builder's buffer so its destructor doesn'y delete it
             builder.buffer = nullptr;
         } else {
             data_ = nullptr;

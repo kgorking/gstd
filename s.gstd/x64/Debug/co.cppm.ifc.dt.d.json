@@ -4,7 +4,12 @@
         "Source": "e:\\source\\repos\\gstd\\s.gstd\\src\\co\\co.cppm",
         "ProvidedModule": "gs:co",
         "Includes": [],
-        "ImportedModules": [],
+        "ImportedModules": [
+            {
+                "Name": "std",
+                "BMI": "E:\\source\\repos\\gstd\\s.gstd\\x64\\Debug\\microsoft\\STL\\std.ixx.ifc.dt"
+            }
+        ],
         "ImportedHeaderUnits": []
     }
 }
