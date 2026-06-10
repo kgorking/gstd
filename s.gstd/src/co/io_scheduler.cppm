@@ -31,7 +31,8 @@ public:
 
     ~io_scheduler() {
         running = false;
-        if (dispatcher_thread.joinable()) {
+		PostQueuedCompletionStatus(iocp_handle, 0, 0, nullptr); // Wake up the dispatcher thread
+		if (dispatcher_thread.joinable()) {
             dispatcher_thread.join();
         }
         if (iocp_handle) {
@@ -43,7 +44,7 @@ public:
     io_scheduler(const io_scheduler&) = delete;
     io_scheduler& operator=(const io_scheduler&) = delete;
 
-    // Associate a file handle with this scheduler's IOCP
+	// Associate a file handle with this scheduler's IOCP
     bool associate_handle(HANDLE file_handle) {
         HANDLE result = CreateIoCompletionPort(
             file_handle,
@@ -96,13 +97,11 @@ private:
                 &bytes_transferred,
                 &completion_key,
                 &overlapped,
-                25  // 25ms timeout
+                INFINITE
             );
 
             if (!overlapped) {
-                // Timeout or shutdown signal
-                std::this_thread::yield();
-                continue;
+				continue;
             }
             
             std::coroutine_handle<> cont;

@@ -1,3 +1,10 @@
+/.vs
 gbs.out/
 build/
+out/
 vc140.pdb
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+[Ll]og/

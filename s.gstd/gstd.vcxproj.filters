@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="18.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\co\channel.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\co\co.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\co\io_scheduler.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\co\sequence.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\co\task.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\co\thread_pool.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\concepts.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\dir\list_dir.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\dir\path.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\gstd.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\io\LineReader.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\io\LineWriter.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\io\Reader.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\io\Writer.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\io\sync_console_writer.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\os\exec.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\os\file.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\os\pipes.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\os\read_file.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\os\read_lines.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\os\read_text.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\os\windows\exec_impl.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\os\windows\file_impl.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\os\windows\pipes_impl.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\os\write_text.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\strconv\strconv.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\string.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\strutil\lines.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\strutil\string_reader.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\strutil\string_writer.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\strutil\utf8.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\testing\registry.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\source\repos\gstd\s.gstd\src\testing\testing.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{21673906-8170-3F9C-9A29-2A4A44E70536}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

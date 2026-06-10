@@ -145,7 +145,7 @@ public:
     }
 
     // rvalue overload: transfer ownership to the awaiter so that the
-    // temporary object won't destroy the handle before the coroutine
+    // temporary object won'y destroy the handle before the coroutine
     // finishes
     auto operator co_await() && noexcept {
         awaiter<ValueType, promise_type> a{_handle};

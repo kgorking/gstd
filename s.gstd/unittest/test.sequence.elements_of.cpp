@@ -1,6 +1,6 @@
 import std;
 import gs;
-#include "doctest.h"
+import gs.testing;
 
 sequence<int> gen_with_elements_of() {
     std::vector<int> v = {1, 2, 3};
@@ -9,18 +9,18 @@ sequence<int> gen_with_elements_of() {
     co_yield std::ranges::elements_of(a);
 }
 
-TEST_CASE("test.sequence.elements_of") {
+test sequence_elements_of = [] {
     auto gen = gen_with_elements_of();
-    
+
     std::vector<int> results;
     for (int val : gen) {
         results.push_back(val);
     }
-    
-    CHECK(results.size() == 5);
-    CHECK(results[0] == 1);
-    CHECK(results[1] == 2);
-    CHECK(results[2] == 3);
-    CHECK(results[3] == 4);
-    CHECK(results[4] == 5);
-}
+
+    test::equals<5>(results.size(), "results should have 5 elements");
+	test::equals<1>(results[0], "first element should be 1");
+	test::equals<2>(results[1], "second element should be 2");
+	test::equals<3>(results[2], "third element should be 3");
+	test::equals<4>(results[3], "fourth element should be 4");
+	test::equals<5>(results[4], "fifth element should be 5");
+};

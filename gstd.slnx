@@ -1,0 +1,14 @@
+
+<Solution>
+	<Configurations>
+		<BuildType Name="Debug" />
+		<BuildType Name="Release" />
+		<BuildType Name="MinSizeRel" />
+		<BuildType Name="RelWithDebInfo" />
+		<Platform Name="x64" />
+	</Configurations>
+	<Project Path="s.gstd/gstd.vcxproj" Id="9311f981-1eef-36b2-b01c-fab4045b43a7" />
+	<Project Path="s.gstd/gstd_tests.vcxproj" Id="4c73622e-623d-3c9c-8613-9f71744a3ec9">
+		<BuildDependency Project="s.gstd/gstd.vcxproj" />
+	</Project>
+</Solution>
