@@ -1,5 +1,3 @@
-/s.gstd/x64/**
-/s.gstd/gstd.dir/x64/*
 **/x64/
 **/*.dir/
 /.vs
@@ -12,3 +10,4 @@ vc140.pdb
 [Bb]in/
 [Oo]bj/
 [Ll]og/
+/s.gstd/x64/Debug/*
