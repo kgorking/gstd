@@ -90,8 +90,8 @@ export namespace utf8 {
 
 	// Fast lead-byte length calculation. Valid only for well-formed UTF-8 lead bytes.
 	inline constexpr std::ptrdiff_t char_len_from_lead(char first_byte) noexcept {
-#if !defined(NDEBUG)
 		auto const b = static_cast<std::uint8_t>(first_byte);
+#if !defined(NDEBUG)
 		// Continuation bytes (10xxxxxx) are invalid here; lead bytes must be 0xxxxxxx or start with >=2 ones.
 		if ((b & 0x80) && ~b != 0x7Fu) { /* valid lead or continuation */ }
 #endif
