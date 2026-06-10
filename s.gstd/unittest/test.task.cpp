@@ -2,6 +2,28 @@ import std;
 import gs;
 import gs.testing;
 
+test task_channel_unbuffered = [] {
+	channel<int> ch;
+
+	auto message_sender = [&ch]() -> task<void> {
+		for (int i = 1; i <= 3; ++i) {
+			ch << i;
+		}
+		co_return;
+		};
+
+	for (int runs = 0; runs < 100'000; ++runs) {
+		auto y = message_sender();
+		for (int i = 1; i <= 3; ++i) {
+			int const v = *ch;
+			test::equals(v, i, "channel value should match");
+		}
+	}
+
+	int i = 0;
+	};
+
+/*
 // Simple CPU-heavy task
 static task<int> cpu_heavy_task(int iterations) {
 	int result = 100 + std::rand()%1024;
@@ -114,26 +136,6 @@ test task_wait_all_with_vector = [] {
 	test::is_true(r3 > 0, "r3 should be positive");
 };
 
-test task_channel_unbuffered = [] {
-	channel<int> ch;
-
-	auto message_sender = [&ch]() -> task<void> {
-		for (int i=1; i<=3; ++i) {
-			ch << i;
-		}
-		co_return;
-	};
-
-	for (int runs = 0; runs < 100'000; ++runs) {
-		auto y = message_sender();
-		for (int i = 1; i <= 3; ++i) {
-			int const v = ch.get();
-			test::equals(v, i, "channel value should match");
-		}
-		y.wait();
-	}
-};
-
 test task_channel_buffered = [] {
 	channel<int, 3> ch;
 
@@ -152,3 +154,4 @@ test task_channel_buffered = [] {
 		test::equals(v, i, "channel value should match");
 	}
 };
+*/

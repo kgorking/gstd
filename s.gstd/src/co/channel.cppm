@@ -16,6 +16,7 @@ class channel {
 public:
     channel& operator<<(T val) { set(std::move(val)); return *this; }
     channel& operator>>(T& out)  { out = get(); return *this; }
+	T operator*() { return get(); }
 
     void set(T val) {
         if constexpr (Capacity > 0) {

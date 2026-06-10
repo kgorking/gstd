@@ -15,9 +15,7 @@ struct awaiter {
 		return h.promise().value_ready.test();
 	}
 
-	void await_suspend(std::coroutine_handle<PromiseType> current) {
-		current.resume();
-	}
+	consteval void await_suspend(std::coroutine_handle<PromiseType> /*current*/) {}
     
     void await_resume() requires (std::is_void_v<ValueType>) {
 		if (h.promise().exception) {
@@ -44,23 +42,25 @@ struct awaiter {
 template<typename ValueType>
 struct task_promise_base {
 	using value_type = ValueType;
-	std::coroutine_handle<> continuation = std::noop_coroutine();
 	std::exception_ptr exception = nullptr;
 	std::atomic_flag done{};
 
 	// Task are always suspended at the beginning, so we can enqueue them on the thread pool before they start executing
 	auto initial_suspend() noexcept {
+		done.clear();
 		auto handle = std::coroutine_handle<task_promise_base>::from_promise(*this);
 		thread_pool::instance().enqueue(handle);
 		return std::suspend_always{};
 	}
-	auto final_suspend() noexcept -> std::suspend_always {
+	auto final_suspend() noexcept -> std::suspend_never {
 		done.test_and_set();
 		done.notify_one();
 		return {};
 	}
 	auto get_return_object() noexcept -> task<ValueType>;
-	void unhandled_exception() noexcept { exception = std::current_exception(); }
+	void unhandled_exception() noexcept {
+		exception = std::current_exception();
+	}
 };
 
 template<typename ValueType>
@@ -108,7 +108,7 @@ public:
     explicit task(std::coroutine_handle<promise_type> h) noexcept : _handle(h) {}
     task(task&& other) noexcept : _handle(other._handle) { other._handle = nullptr; }
     task(const task&) = delete;
-    auto operator=(task&&) = delete;
+	auto operator=(task&&) = delete;
 
     bool done() const noexcept { return !_handle || _handle.done(); }
 
