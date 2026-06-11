@@ -20,22 +20,22 @@ struct awaiter {
 	}
     
     void await_resume() requires (std::is_void_v<ValueType>) {
-		if (h.promise().exception) {
-            std::rethrow_exception(h.promise().exception);
-        }
-    }
+		auto& promise = h.promise();
+		if (promise.exception) std::rethrow_exception(promise.exception);
+		promise.suspended.clear();
+		promise.suspended.notify_one();
+	}
 
     auto await_resume() -> ValueType requires (!std::is_void_v<ValueType>) {
 		auto& promise = h.promise();
-		if (!promise.value_ready.test())
-			promise.value_ready.wait(false);
+		promise.suspended.wait(false);
 
 		if (promise.exception)
             std::rethrow_exception(promise.exception);
 
 		ValueType vt = std::move(promise.value);
-		promise.value_ready.clear();
-		promise.value_ready.notify_one();
+		promise.suspended.clear();
+		promise.suspended.notify_one();
 		return vt;
     }
 };
@@ -46,8 +46,9 @@ struct awaiter {
 template<typename ValueType>
 struct task_promise_base {
 	using value_type = ValueType;
-	std::exception_ptr exception = nullptr;
+	std::atomic_flag suspended{};
 	std::atomic_flag done{};
+	std::exception_ptr exception = nullptr;
 
 	// Task are always suspended at the beginning, so we can resume them on the thread pool
 	auto initial_suspend() noexcept {
@@ -71,23 +72,22 @@ struct task_promise_base {
 
 template<typename ValueType>
 struct task_promise : task_promise_base<ValueType> {
-	std::atomic_flag value_ready{};
 	ValueType value{};
 
 	auto get_return_object() noexcept -> task<ValueType>;
 
 	auto yield_value(ValueType&& v) noexcept {
-		value_ready.wait(true); // Wait for a value to be consumed
+		task_promise_base<ValueType>::suspended.wait(true);
 		value = std::forward<ValueType>(v);
-		value_ready.test_and_set();
-		value_ready.notify_one();
-		return std::suspend_always{};
+		task_promise_base<ValueType>::suspended.test_and_set();
+		task_promise_base<ValueType>::suspended.notify_one();
+		return std::suspend_never{}; // let it rip on the scheduled thread
 	}
 	void return_value(ValueType&& v) noexcept {
-		value_ready.wait(true); // Wait for a value to be consumed
+		task_promise_base<ValueType>::suspended.wait(true);
 		value = std::forward<ValueType>(v);
-		value_ready.test_and_set();
-		value_ready.notify_one();
+		task_promise_base<ValueType>::suspended.test_and_set();
+		task_promise_base<ValueType>::suspended.notify_one();
 		task_promise_base<ValueType>::done.test_and_set();
 		task_promise_base<ValueType>::done.notify_all();
 	}
@@ -129,11 +129,15 @@ public:
 
 	template<typename T = ValueType>
     T result() const requires (!std::is_void_v<T>) {
-		auto& value_ready = _handle.promise().value_ready;
+		// Wait until a value is ready
+		auto& value_ready = _handle.promise().suspended;
 		value_ready.wait(false);
+
+		// Snag the value, and signal that we're done consuming it
 		T value = std::move(_handle.promise().value);
 		value_ready.clear();
 		value_ready.notify_one();
+
 		return value;
     }
 
