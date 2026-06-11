@@ -12,13 +12,15 @@ struct awaiter {
     std::coroutine_handle<PromiseType> h;
 
     bool await_ready() const noexcept {
-		return false; // h.promise().value_ready.test();
+		// If the task is already suspended, a value is ready.
+		// Skips all the coroutine machinery and just returns the value immediately.
+		return h.promise().suspended.test();
 	}
 
 	auto await_suspend(std::coroutine_handle<PromiseType> current) {
 		return current;
 	}
-    
+
     void await_resume() requires (std::is_void_v<ValueType>) {
 		auto& promise = h.promise();
 		if (promise.exception) std::rethrow_exception(promise.exception);
@@ -58,15 +60,34 @@ struct task_promise_base {
 		return std::suspend_always{};
 	}
 	auto final_suspend() noexcept -> std::suspend_always {
-		done.test_and_set();
-		done.notify_one();
+		set_done();
 		return {};
 	}
 	auto get_return_object() noexcept -> task<ValueType>;
 	void unhandled_exception() noexcept {
 		exception = std::current_exception();
+		set_done();
+	}
+
+	void wait_until_suspended() const noexcept {
+		suspended.wait(false);
+	}
+	void wait_until_not_suspended() const noexcept {
+		suspended.wait(true);
+	}
+
+	void wait_until_done() const noexcept {
+		done.wait(false);
+	}
+
+	void set_done() noexcept {
 		done.test_and_set();
-		done.notify_all();
+		done.notify_one();
+	}
+
+	void set_suspended() noexcept {
+		suspended.test_and_set();
+		suspended.notify_one();
 	}
 };
 
@@ -77,19 +98,16 @@ struct task_promise : task_promise_base<ValueType> {
 	auto get_return_object() noexcept -> task<ValueType>;
 
 	auto yield_value(ValueType&& v) noexcept {
-		task_promise_base<ValueType>::suspended.wait(true);
+		this->wait_until_not_suspended();
 		value = std::forward<ValueType>(v);
-		task_promise_base<ValueType>::suspended.test_and_set();
-		task_promise_base<ValueType>::suspended.notify_one();
+		this->set_suspended();
 		return std::suspend_never{}; // let it rip on the scheduled thread
 	}
 	void return_value(ValueType&& v) noexcept {
-		task_promise_base<ValueType>::suspended.wait(true);
+		this->wait_until_not_suspended();
 		value = std::forward<ValueType>(v);
-		task_promise_base<ValueType>::suspended.test_and_set();
-		task_promise_base<ValueType>::suspended.notify_one();
-		task_promise_base<ValueType>::done.test_and_set();
-		task_promise_base<ValueType>::done.notify_all();
+		this->set_suspended();
+		this->set_done();
 	}
 };
 
@@ -97,8 +115,7 @@ template<>
 struct task_promise<void> : task_promise_base<void> {
 	auto get_return_object() noexcept -> task<void>;
 	void return_void() noexcept {
-		task_promise_base<void>::done.test_and_set();
-		task_promise_base<void>::done.notify_all();
+		this->set_done();
 	}
 };
 
@@ -123,20 +140,20 @@ public:
 
 	void wait() const {
 		if (!done()) {
-			_handle.promise().done.wait(false);
+			_handle.promise().wait_until_done();
 		}
 	}
 
 	template<typename T = ValueType>
     T result() const requires (!std::is_void_v<T>) {
 		// Wait until a value is ready
-		auto& value_ready = _handle.promise().suspended;
-		value_ready.wait(false);
+		auto& suspended = _handle.promise().suspended;
+		suspended.wait(false);
 
 		// Snag the value, and signal that we're done consuming it
 		T value = std::move(_handle.promise().value);
-		value_ready.clear();
-		value_ready.notify_one();
+		suspended.clear();
+		suspended.notify_one();
 
 		return value;
     }
