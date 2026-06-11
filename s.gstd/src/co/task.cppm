@@ -12,26 +12,32 @@ struct awaiter {
     std::coroutine_handle<PromiseType> h;
 
     bool await_ready() const noexcept {
-		return h.promise().value_ready.test();
+		// If the task is already suspended, a value is ready.
+		// Skips all the coroutine machinery and just returns the value immediately.
+		return h.promise().suspended.test();
 	}
 
-	consteval void await_suspend(std::coroutine_handle<PromiseType> /*current*/) {}
-    
+	auto await_suspend(std::coroutine_handle<PromiseType> current) {
+		return current;
+	}
+
     void await_resume() requires (std::is_void_v<ValueType>) {
-		if (h.promise().exception) {
-            std::rethrow_exception(h.promise().exception);
-        }
-    }
+		auto& promise = h.promise();
+		if (promise.exception) std::rethrow_exception(promise.exception);
+		promise.suspended.clear();
+		promise.suspended.notify_one();
+	}
 
     auto await_resume() -> ValueType requires (!std::is_void_v<ValueType>) {
-		h.promise().value_ready.wait(false);
-		if (h.promise().exception)
-            std::rethrow_exception(h.promise().exception);
+		auto& promise = h.promise();
+		promise.suspended.wait(false);
 
-		ValueType vt = std::move(*h.promise().value);
-		h.promise().value_ready.clear();
-		h.promise().value_ready.notify_one();
+		if (promise.exception)
+            std::rethrow_exception(promise.exception);
 
+		ValueType vt = std::move(promise.value);
+		promise.suspended.clear();
+		promise.suspended.notify_one();
 		return vt;
     }
 };
@@ -42,55 +48,75 @@ struct awaiter {
 template<typename ValueType>
 struct task_promise_base {
 	using value_type = ValueType;
-	std::exception_ptr exception = nullptr;
+	std::atomic_flag suspended{};
 	std::atomic_flag done{};
+	std::exception_ptr exception = nullptr;
 
-	// Task are always suspended at the beginning, so we can enqueue them on the thread pool before they start executing
+	// Task are always suspended at the beginning, so we can resume them on the thread pool
 	auto initial_suspend() noexcept {
 		done.clear();
 		auto handle = std::coroutine_handle<task_promise_base>::from_promise(*this);
 		thread_pool::instance().enqueue(handle);
 		return std::suspend_always{};
 	}
-	auto final_suspend() noexcept -> std::suspend_never {
-		done.test_and_set();
-		done.notify_one();
+	auto final_suspend() noexcept -> std::suspend_always {
+		set_done();
 		return {};
 	}
 	auto get_return_object() noexcept -> task<ValueType>;
 	void unhandled_exception() noexcept {
 		exception = std::current_exception();
+		set_done();
+	}
+
+	void wait_until_suspended() const noexcept {
+		suspended.wait(false);
+	}
+	void wait_until_not_suspended() const noexcept {
+		suspended.wait(true);
+	}
+
+	void wait_until_done() const noexcept {
+		done.wait(false);
+	}
+
+	void set_done() noexcept {
+		done.test_and_set();
+		done.notify_one();
+	}
+
+	void set_suspended() noexcept {
+		suspended.test_and_set();
+		suspended.notify_one();
 	}
 };
 
 template<typename ValueType>
 struct task_promise : task_promise_base<ValueType> {
-	std::atomic_flag value_ready{};
-	std::optional<ValueType> value;
+	ValueType value{};
 
 	auto get_return_object() noexcept -> task<ValueType>;
 
 	auto yield_value(ValueType&& v) noexcept {
-		value_ready.wait(true); // Wait for a value to be consumed
+		this->wait_until_not_suspended();
 		value = std::forward<ValueType>(v);
-		value_ready.test_and_set();
-		value_ready.notify_one();
-		return std::suspend_always{};
+		this->set_suspended();
+		return std::suspend_never{}; // let it rip on the scheduled thread
 	}
 	void return_value(ValueType&& v) noexcept {
-		value_ready.wait(true); // Wait for a value to be consumed
+		this->wait_until_not_suspended();
 		value = std::forward<ValueType>(v);
-		value_ready.test_and_set();
-		value_ready.notify_one();
-		task_promise_base<ValueType>::done.test_and_set();
-		task_promise_base<ValueType>::done.notify_all();
+		this->set_suspended();
+		this->set_done();
 	}
 };
 
 template<>
 struct task_promise<void> : task_promise_base<void> {
 	auto get_return_object() noexcept -> task<void>;
-	void return_void() noexcept {}
+	void return_void() noexcept {
+		this->set_done();
+	}
 };
 
 export template<typename ValueType = void>
@@ -110,20 +136,25 @@ public:
     task(const task&) = delete;
 	auto operator=(task&&) = delete;
 
-    bool done() const noexcept { return !_handle || _handle.done(); }
+    bool done() const noexcept { return !_handle || _handle.promise().done.test(); }
 
 	void wait() const {
-		if (_handle) {
-			_handle.promise().done.wait(false);
+		if (!done()) {
+			_handle.promise().wait_until_done();
 		}
 	}
 
 	template<typename T = ValueType>
     T result() const requires (!std::is_void_v<T>) {
-		_handle.promise().value_ready.wait(false);
-		T value = std::move(*_handle.promise().value);
-		_handle.promise().value_ready.clear();
-		_handle.promise().value_ready.notify_one();
+		// Wait until a value is ready
+		auto& suspended = _handle.promise().suspended;
+		suspended.wait(false);
+
+		// Snag the value, and signal that we're done consuming it
+		T value = std::move(_handle.promise().value);
+		suspended.clear();
+		suspended.notify_one();
+
 		return value;
     }
 
