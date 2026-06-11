@@ -1,4 +1,11 @@
+/.vs
 gbs.out/
 build/
+out/
 vc140.pdb
-/.vs
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+/s.gstd/lines_test.txt

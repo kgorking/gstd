@@ -11,7 +11,7 @@ private:
 public:
     std::int64_t write(Span<const char> auto const& data) {
         std::lock_guard<std::mutex> lock(write_mutex);
-        std::cout.write(data.data(), data.size());
+        std::cout.write(data.c_str(), data.size());
         return data.size();
     }
 };

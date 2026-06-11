@@ -106,21 +106,21 @@ namespace path {
     }
 
     // Normalize a path (handle both / and \ as separators, works on any platform)
-    export string normalize_path(const string& path) {
+    /*export string normalize_path(const string& path) {
         string result = path;
         char sep = get_path_separator();
         
         // Replace the non-preferred separator with the platform separator
         char other_sep = (sep == '/') ? '\\' : '/';
-        for (size_t i = 0; i < result.count(); ++i) {
+        for (int i = 0; i < result.count(); ++i) {
             // TODO
-            /*if (result[i] == other_sep) {
+            if (result[i] == other_sep) {
                 result[i] = sep;
-            }*/
+            }
         }
         
         return result;
-    }
+    }*/
 
     // Go up N levels in a path
     // Example: go_up_levels("/aa/bb/cc/dd/", 2) returns "/aa/bb/"

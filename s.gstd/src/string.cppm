@@ -1,3 +1,5 @@
+module;
+#include <cstddef> // for offsetof
 export module gs:string;
 import :utf8;
 import :sequence;
@@ -7,42 +9,34 @@ import std;
 // However, all size, indexing, and substring operations work at the CHARACTER level, not byte level.
 // This properly handles multi-byte UTF-8 characters (e.g., é = 1 char/2 bytes, 🚀 = 1 char/4 bytes).
 
-struct StringData {
-    char const* data;
-    std::ptrdiff_t size;
-    ~StringData() { 
-        delete[] data; 
-    }
-};
-
 // Helper class for building strings with format
 class StringBuilder {
 public:
-    using value_type = char;
-    char* buffer = nullptr;
-    std::ptrdiff_t size = 0;
-    std::ptrdiff_t capacity = 0;
-    
-    inline ~StringBuilder() {
-        delete[] buffer;
-    }
-    
-    // Support for std::back_insert_iterator
-    inline void push_back(char c) {
-        if (size >= capacity) {
-            // Grow capacity exponentially
-            std::ptrdiff_t new_capacity = (capacity == 0) ? 8 : capacity * 2;
-            char* new_buffer = new char[new_capacity+1];
-            if (buffer) {
-                std::memcpy(new_buffer, buffer, size);
-                new_buffer[size] = 0;
-                delete[] buffer;
-            }
-            buffer = new_buffer;
-            capacity = new_capacity;
-        }
-        buffer[size++] = c;
-    }
+	using value_type = char;
+	char* buffer = nullptr;
+	std::ptrdiff_t size = 0;
+	std::ptrdiff_t capacity = 0;
+
+	inline ~StringBuilder() {
+		delete[] buffer;
+	}
+
+	// Support for std::back_insert_iterator
+	inline void push_back(char c) {
+		if (size >= capacity) {
+			// Grow capacity exponentially
+			std::ptrdiff_t new_capacity = (capacity == 0) ? 8 : capacity * 2;
+			char* new_buffer = new char[new_capacity + 1];
+			if (buffer) {
+				std::memcpy(new_buffer, buffer, size);
+				new_buffer[size] = 0;
+				delete[] buffer;
+			}
+			buffer = new_buffer;
+			capacity = new_capacity;
+		}
+		buffer[size++] = c;
+	}
 
 	inline void pop_back() {
 		if (size > 0) {
@@ -52,6 +46,42 @@ public:
 	}
 	inline bool empty() const {
 		return size == 0;
+	}
+};
+
+struct StringData {
+	char const* data = nullptr;
+	std::ptrdiff_t size = 0;
+	~StringData() {
+		delete[] data;
+	}
+};
+
+struct small_string {
+	char data[29];
+	std::int8_t start_;
+	std::int8_t end_;
+	std::int8_t is_small_;
+};
+struct shared_string {
+	std::shared_ptr<StringData> data;
+	std::int64_t start_;
+	std::int64_t end_ : 56;
+	std::int64_t is_small_ : 8;
+};
+using v_string = std::variant<shared_string, small_string>;
+union u_string {
+	small_string small;
+	shared_string shared;
+
+	~u_string() {
+		if (shared.is_small_) {
+			// No dynamic memory to clean up for small string
+		}
+		else {
+			// For shared string, the shared_ptr will automatically clean up
+			shared.data.reset();
+		}
 	}
 };
 
@@ -121,7 +151,7 @@ public:
     // returns count of characters, not bytes
     std::ptrdiff_t count() const { 
         if (!data_) return 0;
-        return utf8::count_chars(data(), size_bytes()); 
+        return utf8::count_chars(c_str(), size_bytes());
     }
 
     std::ptrdiff_t size_bytes() const { 
@@ -136,30 +166,30 @@ public:
         start_ = end_;
     }
 
-    // Access (checked) - index works with character index, returns the whole UTF-8 character as a view
-    string operator[](std::ptrdiff_t char_idx) const {
+    // Access (checked) - index works with character index, returns the whole UTF-8 character as a char32_t
+	char32_t operator[](std::ptrdiff_t char_idx) const {
         std::ptrdiff_t char_count = count();
         if (char_idx < 0 || char_idx >= char_count) {
             throw std::out_of_range("string index out of range");
         }
-        std::ptrdiff_t const byte_offset = utf8::char_index_to_byte_offset(data(), size_bytes(), char_idx);
-        std::ptrdiff_t const char_byte_len = utf8::get_char_byte_len(data(), byte_offset, size_bytes());
-        return string(data_, start_ + byte_offset, start_ + byte_offset + char_byte_len);
+        std::ptrdiff_t const byte_offset = utf8::char_index_to_byte_offset(c_str(), size_bytes(), char_idx);
+        std::ptrdiff_t const char_byte_len = utf8::get_char_byte_len(c_str(), byte_offset, size_bytes());
+		return utf8::utf8_to_char32(c_str(), byte_offset, char_byte_len);
     }
 
     // Returns a generator of characters in the string
-    sequence<string> chars() const {
+    sequence<char32_t> chars() const {
         std::ptrdiff_t byte_offset = 0;
         while (byte_offset < size_bytes()) {
-            std::ptrdiff_t char_byte_len = utf8::get_char_byte_len(data(), byte_offset, size_bytes());
-            co_yield string(data_, start_ + byte_offset, start_ + byte_offset + char_byte_len);
+            std::ptrdiff_t char_byte_len = utf8::get_char_byte_len(c_str(), byte_offset, size_bytes());
+            co_yield utf8::utf8_to_char32(c_str(), byte_offset, char_byte_len);
             byte_offset += char_byte_len;
         }
     }
 
     // Substring - works with character positions, not byte positions
     string substr(std::ptrdiff_t char_pos, std::ptrdiff_t char_len = -1) const {
-        std::ptrdiff_t byte_pos = utf8::char_index_to_byte_offset(data_->data + start_, end_ - start_, char_pos);
+        std::ptrdiff_t byte_pos = utf8::char_index_to_byte_offset(c_str(), size_bytes(), char_pos);
         std::ptrdiff_t new_start = start_ + byte_pos;
         
         std::ptrdiff_t new_end;
@@ -202,14 +232,14 @@ public:
         remove_postfix(1);
     }
 
-    // Get raw data pointer
+    // Get raw data pointer. Needed for the Span concept
     const char* data() const {
         return data_->data + start_;
     }
 
     // Get C-style string pointer (for compatibility)
     const char* c_str() const {
-        return data();
+		return data_->data + start_;
     }
 
     // Get last character as a string
@@ -255,7 +285,7 @@ public:
     }
 
     // Reverse find
-    std::ptrdiff_t rfind(char c, std::ptrdiff_t pos = -1) const {
+    std::ptrdiff_t rfind(char32_t c, std::ptrdiff_t pos = -1) const {
         std::ptrdiff_t len = count();
         if (pos < 0 || pos >= len) pos = len - 1;
         for (std::ptrdiff_t i = pos; i >= 0; --i) {
@@ -273,7 +303,7 @@ public:
         if (pos < 0 || pos >= len) pos = len - 1;
 
         for (std::ptrdiff_t i = pos; i >= 0; --i) {
-            string const c = (*this)[i];
+			char32_t const c = (*this)[i];
             for (std::ptrdiff_t j = 0; j < sv.count(); ++j) {
                 if (sv[j] == c) {
                     return i;
@@ -284,8 +314,8 @@ public:
     }
 
     // Find last occurrence of any character from the given string
-    std::ptrdiff_t find_last_of(char c, std::ptrdiff_t pos = -1) const {
-        std::ptrdiff_t len = count();
+    std::ptrdiff_t find_last_of(char32_t c, std::ptrdiff_t pos = -1) const {
+		std::ptrdiff_t len = count();
         if (pos < 0 || pos >= len) pos = len - 1;
 
         for (std::ptrdiff_t i = pos; i >= 0; --i) {
@@ -299,29 +329,47 @@ public:
     // Starts with
     bool starts_with(string sv) const {
         if (sv.size_bytes() > size_bytes()) return false;
-        return std::memcmp(data_->data + start_, sv.data(), sv.size_bytes()) == 0;
+        return std::memcmp(c_str(), sv.c_str(), sv.size_bytes()) == 0;
     }
 
-    bool starts_with(char c) const {
-        return !empty() && data_->data[start_] == c;
+    bool starts_with(char32_t c) const {
+        return !empty() && (*this)[0] == c;
     }
 
     // Ends with
     bool ends_with(string sv) const {
         if (sv.size_bytes() > size_bytes()) return false;
-        return std::memcmp(data_->data + end_ - sv.size_bytes(), sv.data(), sv.size_bytes()) == 0;
+        return std::memcmp(data_->data + end_ - sv.size_bytes(), sv.c_str(), sv.size_bytes()) == 0;
     }
 
-    bool ends_with(char c) const {
-        return !empty() && data_->data[end_ - 1] == c;
+    bool ends_with(char32_t c) const {
+        return !empty() && (*this)[count() - 1] == c;
     }
 
-    // Concatenation
+	template <std::integral T = std::int64_t>
+	T to_int() const {
+		T value = 0;
+		auto [ptr, ec] = std::from_chars(c_str(), c_str() + size_bytes(), value);
+		if (ec != std::errc{})
+			throw std::system_error(std::make_error_code(ec));
+		return value;
+	}
+
+	template <std::floating_point T = float>
+	T to_float() const {
+		T value = 0;
+		auto [ptr, ec] = std::from_chars(c_str(), c_str() + size_bytes(), value);
+		if (ec != std::errc{})
+			throw std::system_error(std::make_error_code(ec));
+		return value;
+	}
+
+	// Concatenation
     string operator+(const string& other) const {
         std::ptrdiff_t total_size = size_bytes() + other.size_bytes();
         char* new_data = new char[total_size + 1];
-        std::memcpy(new_data, data(), size_bytes());
-        std::memcpy(new_data + size_bytes(), other.data(), other.size_bytes());
+        std::memcpy(new_data, c_str(), size_bytes());
+        std::memcpy(new_data + size_bytes(), other.c_str(), other.size_bytes());
         new_data[total_size] = 0;
         auto block = std::make_shared<StringData>();
         block->data = new_data;
@@ -332,7 +380,7 @@ public:
     string operator+(char c) const {
         std::ptrdiff_t total_size = size_bytes() + 1;
         char* new_data = new char[total_size + 1];
-        std::memcpy(new_data, data(), size_bytes());
+        std::memcpy(new_data, c_str(), size_bytes());
         new_data[size_bytes()] = c;
         new_data[total_size] = 0;
         auto block = std::make_shared<StringData>();
@@ -356,20 +404,24 @@ public:
         bool const same_size = size_bytes() == other.size_bytes();
         if (!same_size)
             return false;
-        return 0 == std::memcmp(data(), other.data(), size_bytes());
+        return 0 == std::memcmp(c_str(), other.c_str(), size_bytes());
     }
 
-    bool operator==(const char c) const {
-        return size() > 0 && data_->data[start_] == c;
+    bool operator==(const char32_t c) const {
+        return (*this)[0] == c;
+    }
+
+    bool operator==(std::string_view sv) const {
+        return std::string_view(data_->data + start_, size_bytes()) == sv;
     }
 
     bool operator==(const char* s) const {
         auto const s_len = static_cast<std::intptr_t>(std::strlen(s));
-        return size_bytes() == s_len && 0 == std::memcmp(data(), s, s_len);
+        return size_bytes() == s_len && 0 == std::memcmp(c_str(), s, s_len);
     }
 
     // Iterator support
-    sequence<string> begin() const { return chars(); }
+    sequence<char32_t> begin() const { return chars(); }
     std::default_sentinel_t end() const noexcept { return {}; }
 
     // Private constructor for substr
@@ -385,7 +437,7 @@ public:
             data_->data = builder.buffer;
             data_->size = builder.size;
             end_ = builder.size;
-            // Clear the builder's buffer so its destructor doesn't delete it
+            // Clear the builder's buffer so its destructor doesn'y delete it
             builder.buffer = nullptr;
         } else {
             data_ = nullptr;
@@ -393,14 +445,12 @@ public:
         }
     }
 };
+static_assert(Span<string, const char>, "string should satisfy the Span concept");
 
 // Non-member operators
 std::ostream& operator<<(std::ostream& os, const string& str) {
-    os << str.data();
+    os << str.c_str();
     return os;
-}
-export inline bool operator==(const char* sz, string s) {
-    return s == sz;
 }
 
 // Formatter specialization for std::format support
@@ -412,8 +462,35 @@ export template <> struct std::formatter<::string, char> {
     auto format(::string const& s, std::format_context& ctx) const {
         auto out = ctx.out();
         for (std::ptrdiff_t i = 0; i < s.size_bytes(); ++i) {
-            *out++ = static_cast<char>(s.data()[i]);
+            *out++ = static_cast<char>(s.c_str()[i]);
         }
         return out;
+    }
+};
+
+export template <> struct std::formatter<char32_t, char> {
+    constexpr auto parse(std::format_parse_context& ctx) {
+        return ctx.begin();
+    }
+
+    auto format(char32_t const s, std::format_context& ctx) const {
+        auto out = ctx.out();
+		char buff[4] = { 0 };
+		std::ptrdiff_t const len = utf8::encode_code_point(s, buff, 4);
+        for (std::ptrdiff_t i = 0; i < len; ++i) {
+            *out++ = buff[i];
+        }
+        return out;
+    }
+};
+
+// Specialization of std::hash for string
+export template <> struct std::hash<::string> {
+	std::size_t operator()(const ::string& s) const noexcept {
+        std::size_t h = 0;
+        for (std::ptrdiff_t i = 0; i < s.size_bytes(); ++i) {
+            h = h * 31 + static_cast<unsigned char>(s.c_str()[i]);
+        }
+        return h;
     }
 };

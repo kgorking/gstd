@@ -4,94 +4,119 @@ export module gs:task;
 import std;
 import :thread_pool;
 
-export template<typename ValueType> class task; // forward declaration for use in promise
-
+template<typename ValueType> class task; // forward declaration for use in promise
 
 // awaiter support
 template<typename ValueType, typename PromiseType>
 struct awaiter {
     std::coroutine_handle<PromiseType> h;
 
-    bool await_ready() const noexcept { return !h || h.done(); }
-    
-    bool await_suspend(std::coroutine_handle<> /*cont*/)  {
-        // If task is already done, no suspension needed
-        if (h && h.done())
-            return false;
+    bool await_ready() const noexcept {
+		// If the task is already suspended, a value is ready.
+		// Skips all the coroutine machinery and just returns the value immediately.
+		return h.promise().suspended.test();
+	}
 
-        // Wait for task to complete before returning control
-        h.promise().is_running.wait(true);
-        
-        // Don't suspend - the task is now complete and the value is ready
-        return false;
-    }
-    
-    // Different return types based on ValueType
+	auto await_suspend(std::coroutine_handle<PromiseType> current) {
+		return current;
+	}
+
     void await_resume() requires (std::is_void_v<ValueType>) {
-        if (h && h.promise().exception) {
-            std::rethrow_exception(h.promise().exception);
-        }
-    }
-    
-    ValueType await_resume() requires (!std::is_void_v<ValueType>) {
-        if (h && h.promise().exception) {
-            std::rethrow_exception(h.promise().exception);
-        }
+		auto& promise = h.promise();
+		if (promise.exception) std::rethrow_exception(promise.exception);
+		promise.suspended.clear();
+		promise.suspended.notify_one();
+	}
 
-        // return stored return value, or default-constructed if absent
-        if (h && h.promise().returned_value.has_value())
-            return *h.promise().returned_value;
-        return ValueType{};
-    }
-};
+    auto await_resume() -> ValueType requires (!std::is_void_v<ValueType>) {
+		auto& promise = h.promise();
+		promise.suspended.wait(false);
 
-template<typename PromiseType>
-struct final_awaiter {
-    bool await_ready() const noexcept { return false; }
-    void await_resume() const noexcept {}
-    void await_suspend(std::coroutine_handle<PromiseType> h) noexcept {
-        h.promise().is_running = false;
-        h.promise().is_running.notify_one();
+		if (promise.exception)
+            std::rethrow_exception(promise.exception);
 
-        if (auto cont = h.promise().continuation)
-            cont.resume();
+		ValueType vt = std::move(promise.value);
+		promise.suspended.clear();
+		promise.suspended.notify_one();
+		return vt;
     }
 };
 
-// promise implementation used by task; runs on thread pool
+//
+// Promise implementation used by task.
+// The coroutine submits its result or exception through this object
 template<typename ValueType>
 struct task_promise_base {
-    using value_type = ValueType;
-    std::coroutine_handle<> continuation = nullptr;
-    std::exception_ptr exception = nullptr;
-    std::atomic<bool> is_running = false;
+	using value_type = ValueType;
+	std::atomic_flag suspended{};
+	std::atomic_flag done{};
+	std::exception_ptr exception = nullptr;
 
-    auto get_return_object() noexcept -> task<ValueType>;
-    // Suspend initially so we can schedule on thread pool
-    auto initial_suspend() noexcept { return std::suspend_always{}; }
-    
-    void unhandled_exception() noexcept {
-        exception = std::current_exception();
-    }
+	// Task are always suspended at the beginning, so we can resume them on the thread pool
+	auto initial_suspend() noexcept {
+		done.clear();
+		auto handle = std::coroutine_handle<task_promise_base>::from_promise(*this);
+		thread_pool::instance().enqueue(handle);
+		return std::suspend_always{};
+	}
+	auto final_suspend() noexcept -> std::suspend_always {
+		set_done();
+		return {};
+	}
+	auto get_return_object() noexcept -> task<ValueType>;
+	void unhandled_exception() noexcept {
+		exception = std::current_exception();
+		set_done();
+	}
+
+	void wait_until_suspended() const noexcept {
+		suspended.wait(false);
+	}
+	void wait_until_not_suspended() const noexcept {
+		suspended.wait(true);
+	}
+
+	void wait_until_done() const noexcept {
+		done.wait(false);
+	}
+
+	void set_done() noexcept {
+		done.test_and_set();
+		done.notify_one();
+	}
+
+	void set_suspended() noexcept {
+		suspended.test_and_set();
+		suspended.notify_one();
+	}
 };
 
 template<typename ValueType>
 struct task_promise : task_promise_base<ValueType> {
-    std::optional<ValueType> returned_value;
+	ValueType value{};
 
-    auto final_suspend() noexcept -> final_awaiter<task_promise> { return {}; }
-    auto get_return_object() noexcept -> task<ValueType>;
-    void return_value(ValueType&& v) noexcept {
-        returned_value = std::forward<ValueType>(v);
-    }
+	auto get_return_object() noexcept -> task<ValueType>;
+
+	auto yield_value(ValueType&& v) noexcept {
+		this->wait_until_not_suspended();
+		value = std::forward<ValueType>(v);
+		this->set_suspended();
+		return std::suspend_never{}; // let it rip on the scheduled thread
+	}
+	void return_value(ValueType&& v) noexcept {
+		this->wait_until_not_suspended();
+		value = std::forward<ValueType>(v);
+		this->set_suspended();
+		this->set_done();
+	}
 };
 
-// Promise for void-returning task coroutines
 template<>
 struct task_promise<void> : task_promise_base<void> {
-    auto final_suspend() noexcept -> final_awaiter<task_promise> { return {}; }
-    auto get_return_object() noexcept -> task<void>;
-    void return_void() noexcept {}
+	auto get_return_object() noexcept -> task<void>;
+	void return_void() noexcept {
+		this->set_done();
+	}
 };
 
 export template<typename ValueType = void>
@@ -108,69 +133,35 @@ public:
     task() noexcept = default;
     explicit task(std::coroutine_handle<promise_type> h) noexcept : _handle(h) {}
     task(task&& other) noexcept : _handle(other._handle) { other._handle = nullptr; }
-    task& operator=(task&& other) noexcept {
-        if (this != &other) {
-            if (_handle)
-                _handle.destroy();
-            _handle = other._handle;
-            other._handle = nullptr;
-        }
-        return *this;
-    }
     task(const task&) = delete;
-    task& operator=(const task&) = delete;
+	auto operator=(task&&) = delete;
 
-    ~task() {
-        wait();
+    bool done() const noexcept { return !_handle || _handle.promise().done.test(); }
 
-        if (_handle)
-            _handle.destroy();
-    }
+	void wait() const {
+		if (!done()) {
+			_handle.promise().wait_until_done();
+		}
+	}
 
-    // Get the current status
-    bool done() const noexcept { return !_handle || _handle.done(); }
-    
-    void resume() noexcept {
-        if (_handle && !_handle.done())
-            _handle.resume();
-    }
-
-    // Execute on thread pool and wait for completion
-    void wait() const {
-        if (_handle) {
-            if (!_handle.done() && _handle.promise().is_running) {
-                // Wait until the coroutine completes
-                _handle.promise().is_running.wait(true);
-            }
-
-            // If there was an exception, rethrow it
-            if (_handle.promise().exception) {
-                std::rethrow_exception(_handle.promise().exception);
-            }
-        }
-    }
-
-    // Get the result of the task, if it has one.
-    // Blocks until the task is complete.
-    template<typename T = ValueType>
+	template<typename T = ValueType>
     T result() const requires (!std::is_void_v<T>) {
-        wait();
+		// Wait until a value is ready
+		auto& suspended = _handle.promise().suspended;
+		suspended.wait(false);
 
-        if (!_handle.promise().returned_value.has_value()) {
-            throw std::runtime_error("Task completed without returning a value");
-        }
+		// Snag the value, and signal that we're done consuming it
+		T value = std::move(_handle.promise().value);
+		suspended.clear();
+		suspended.notify_one();
 
-        return std::move(*_handle.promise().returned_value);
+		return value;
     }
 
-    // lvalue overload: the caller retains ownership of the handle
     auto operator co_await() & noexcept {
         return awaiter<ValueType, promise_type>{_handle};
     }
 
-    // rvalue overload: transfer ownership to the awaiter so that the
-    // temporary object won't destroy the handle before the coroutine
-    // finishes
     auto operator co_await() && noexcept {
         return awaiter<ValueType, promise_type>{std::exchange(_handle, nullptr)};
     }
@@ -180,21 +171,17 @@ public:
 
 template<typename ValueType>
 auto task_promise<ValueType>::get_return_object() noexcept -> task<ValueType> {
-    auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
-    handle.promise().is_running = true;
-    thread_pool::instance().enqueue(handle);
+	auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
     return task<ValueType>{handle};
 }
 
 auto task_promise<void>::get_return_object() noexcept -> task<void> {
-    auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
-    handle.promise().is_running = true;
-    thread_pool::instance().enqueue(handle);
+	auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
     return task<void>{handle};
 }
 
 // Utility to wait for multiple tasks and collect their results
-export template<typename... Tasks>
-auto wait_all(Tasks&... tasks) {
-    return std::make_tuple(tasks.result()...);
+export template<typename... ValueTypes>
+auto wait_all(task<ValueTypes>&... tasks) {
+	return std::make_tuple(tasks.result()...);
 }

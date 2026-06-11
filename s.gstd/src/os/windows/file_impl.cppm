@@ -131,7 +131,7 @@ export namespace os {	// Async read awaiter
 	constexpr int O_ATE = 0x0004; // open at end
 	constexpr int O_APP = 0x0008; // always write at end
 	constexpr int O_TRUNC = 0x0010; // truncate (open and discard contents)
-	constexpr int O_BIN = 0x0020; // binary mode (don't translate newlines)
+	constexpr int O_BIN = 0x0020; // binary mode (don'y translate newlines)
 	constexpr int O_CREATE = O_WR | O_TRUNC;
 
 	class file final {
@@ -334,7 +334,7 @@ export namespace os {	// Async read awaiter
 
 				for (DWORD i = 0; i < bytes_read; ++i) {
 					if (buffer[i] == '\n') {
-						// Found newline - don't include it, move file pointer back to after the newline
+						// Found newline - don'y include it, move file pointer back to after the newline
 						if (i > 0 && buffer[i - 1] == '\r')
 							result.pop_back();
 
