@@ -12,13 +12,17 @@ struct awaiter {
     std::coroutine_handle<PromiseType> h;
 
     bool await_ready() const noexcept {
-		// If the task is already suspended, a value is ready.
-		// Skips all the coroutine machinery and just returns the value immediately.
-		return h.promise().suspended.test();
+		return h.promise().suspended.test() || h.promise().done.test();
 	}
 
-	auto await_suspend(std::coroutine_handle<PromiseType> current) {
-		return current;
+	void await_suspend(std::coroutine_handle<> current) noexcept {
+		h.promise().continuation.store(current, std::memory_order_release);
+		if (h.promise().done.test(std::memory_order_acquire)) {
+			auto stored = h.promise().continuation.exchange(nullptr, std::memory_order_acq_rel);
+			if (stored) {
+				thread_pool::instance().enqueue(stored);
+			}
+		}
 	}
 
     void await_resume() requires (std::is_void_v<ValueType>) {
@@ -51,6 +55,7 @@ struct task_promise_base {
 	std::atomic_flag suspended{};
 	std::atomic_flag done{};
 	std::exception_ptr exception = nullptr;
+	std::atomic<std::coroutine_handle<>> continuation{nullptr};
 
 	// Task are always suspended at the beginning, so we can resume them on the thread pool
 	auto initial_suspend() noexcept {
@@ -83,6 +88,10 @@ struct task_promise_base {
 	void set_done() noexcept {
 		done.test_and_set();
 		done.notify_one();
+		auto cont = continuation.exchange(nullptr, std::memory_order_acq_rel);
+		if (cont) {
+			cont.resume();
+		}
 	}
 
 	void set_suspended() noexcept {

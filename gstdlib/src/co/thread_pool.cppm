@@ -5,8 +5,8 @@ import :channel;
 
 export class thread_pool {
 private:
-    channel<std::coroutine_handle<>> work_queue;
-    channel<std::coroutine_handle<>> io_work_queue;
+    channel<std::coroutine_handle<>, 256> work_queue;
+    channel<std::coroutine_handle<>, std::numeric_limits<int>::max()> io_work_queue;
     std::vector<std::jthread> workers;
     std::vector<std::jthread> io_workers;
 
