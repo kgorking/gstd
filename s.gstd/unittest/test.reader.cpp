@@ -1,7 +1,5 @@
 ﻿import std;
-import gs;
-
-using namespace std;
+//import gs;
 
 struct MyWriter
 {
@@ -13,9 +11,9 @@ struct MyWriter
 		return static_cast<std::int64_t>(data.size_bytes());
 	}
 };
-static_assert(Writer<MyWriter>);
+//static_assert(Writer<MyWriter>);
 
-static auto copy(Writer auto&& writer, Reader auto&& reader) -> std::int64_t {
+/*static auto copy(Writer auto&& writer, Reader auto&& reader) -> std::int64_t {
 	std::vector<char> buffer(4096);
 	std::int64_t total_written = 0;
 
@@ -26,7 +24,7 @@ static auto copy(Writer auto&& writer, Reader auto&& reader) -> std::int64_t {
 	}
 
 	return total_written;
-}
+}*/
 
 //int main() {
 //	return !copy(MyWriter{}, os::open("CMakeCache.txt"));

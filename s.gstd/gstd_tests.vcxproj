@@ -118,10 +118,10 @@
       <TreatWChar_tAsBuiltInType>
       </TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_MSVC_STL_HARDENING=1;_MSVC_STL_DESTRUCTOR_TOMBSTONES=1;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ProgramDataBaseFileName>E:\source\repos\gstd\s.gstd\gstd_tests.dir\Debug\</ProgramDataBaseFileName>
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
+      <PreprocessorDefinitions>_DEBUG;_MBCS;_GUARDOVERFLOW_CRT_ALLOCATORS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;_MSVC_STL_HARDENING=1;_MSVC_STL_DESTRUCTOR_TOMBSTONES=1;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
@@ -161,14 +161,10 @@
       <AdditionalIncludeDirectories>E:\source\repos\gstd\s.gstd\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>%(AdditionalOptions) /utf-8</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
-      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>
       </BufferSecurityCheck>
       <CallingConvention>
       </CallingConvention>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <FloatingPointModel>
-      </FloatingPointModel>
       <ForceConformanceInForLoopScope>
       </ForceConformanceInForLoopScope>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
@@ -179,18 +175,21 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RemoveUnreferencedCodeData>
       </RemoveUnreferencedCodeData>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <SupportJustMyCode>
       </SupportJustMyCode>
       <TreatWChar_tAsBuiltInType>
       </TreatWChar_tAsBuiltInType>
       <UseFullPaths>false</UseFullPaths>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_MSVC_STL_HARDENING=1;_MSVC_STL_DESTRUCTOR_TOMBSTONES=1;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_GUARDOVERFLOW_CRT_ALLOCATORS=1</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
       <ProgramDataBaseFileName>E:\source\repos\gstd\s.gstd\gstd_tests.dir\Release\</ProgramDataBaseFileName>
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
+      <ConformanceMode>true</ConformanceMode>
+      <BuildStlModules>true</BuildStlModules>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_MSVC_STL_HARDENING=1;_MSVC_STL_DESTRUCTOR_TOMBSTONES=1;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
@@ -379,12 +378,12 @@
     <ClCompile Include="E:\source\repos\gstd\s.gstd\unittest\test.task.cpp" />
     <ClCompile Include="unittest\x.test.testing.cpp" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
-    <ProjectReference Include="E:\source\repos\gstd\s.gstd\gstd.vcxproj">
-      <Project>{9311F981-1EEF-36B2-B01C-FAB4045B43A7}</Project>
-      <Name>gstd</Name>
+    <ProjectReference Include="..\gstdlib\gstdlib.vcxproj">
+      <Project>{91d6f2c7-4f22-4f3b-86b7-7e141335e314}</Project>
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

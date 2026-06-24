@@ -1,5 +1,4 @@
 import gs;
-import gs.testing;
 
 test simpleTest2 = [] {
 	test::is_true(42 == 21, "42 should equal 21");

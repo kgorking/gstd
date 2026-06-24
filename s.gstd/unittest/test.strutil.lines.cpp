@@ -1,6 +1,5 @@
 import std;
 import gs;
-import gs.testing;
 
 test strutil_lines_test = [] {
 	constexpr auto wait = std::chrono::milliseconds(25);

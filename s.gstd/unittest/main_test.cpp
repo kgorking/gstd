@@ -1,5 +1,4 @@
-import gs.testing;
-import std;
+import gs;
 
 int main() {
 	gs::testing::run_all_tests();

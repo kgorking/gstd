@@ -1,8 +1,5 @@
-#include <vector>
-
 import std;
 import gs;
-import gs.testing;
 
 sequence<int> numbers(int count) {
     for (int i = 0; i < count; ++i) {

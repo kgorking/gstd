@@ -1,5 +1,4 @@
 import gs;
-import gs.testing;
 import std;
 
 test exec_basic_command = [] {

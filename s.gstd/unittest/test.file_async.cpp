@@ -1,6 +1,5 @@
 import std;
 import gs;
-import gs.testing;
 
 // Test coroutine for async read
 static co<std::int64_t> test_async_read_impl(os::file& f, std::span<char> buf) {

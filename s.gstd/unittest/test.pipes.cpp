@@ -1,5 +1,4 @@
 import gs;
-import gs.testing;
 import std;
 
 test pipes_creation_and_validity = [] {
@@ -25,7 +24,7 @@ test pipes_write_and_read_small_data = [] {
 test pipes_reader_concept = [] {
 	auto p = os::pipes();
 
-	string data = "test";
+	string const data = "test";
 	auto w = p.writer.write(data);
 	test::equals(w, 4Z, "write should return 4 bytes");
 
