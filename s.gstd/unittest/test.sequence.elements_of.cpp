@@ -1,6 +1,5 @@
 import std;
 import gs;
-import gs.testing;
 
 sequence<int> gen_with_elements_of() {
     std::vector<int> v = {1, 2, 3};

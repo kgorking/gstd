@@ -1,6 +1,5 @@
-import std;
 import gs;
-import gs.testing;
+import std;
 
 static task<int> cpu_heavy_task(int iterations) {
 	int result = 100 + std::rand() % 1024;

@@ -1,6 +1,5 @@
 import std;
 import gs;
-import gs.testing;
 
 co<> test_void() {
 	co_await std::suspend_always{};

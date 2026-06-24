@@ -1,5 +1,4 @@
 import gs;
-import gs.testing;
 
 test string_basic = [] {
     string s("hello world");
@@ -160,12 +159,12 @@ test string_remove_postfix = [] {
 
 test string_format = [] {
     string text = "world";
-    string formatted = string::fmt("Hello, {}!", text);
+    string formatted = fmt("Hello, {}!", text);
     test::equals(formatted, string("Hello, world!"), "formatted string should match");
 
     // Test with UTF-8 characters
     string emoji = "🚀";
     string expected = "Emoji: 🚀";
-    formatted = string::fmt("Emoji: {}", emoji);
+    formatted = fmt("Emoji: {}", emoji);
     test::equals(formatted, expected, "formatted emoji should match");
 };

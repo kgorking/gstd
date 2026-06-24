@@ -1,6 +1,5 @@
 import std;
 import gs;
-import gs.testing;
 
 sequence<int> odds() {
     for (int i = 1; ; i += 2) {
@@ -23,5 +22,5 @@ test sequence_merge = [] {
         actual.push_back(i);
         if (i==9) break;
     }
-    test::equals(expected, actual, "merged sequence should match expected");
+    test::is_true(expected == actual, "merged sequence should match expected");
 };
