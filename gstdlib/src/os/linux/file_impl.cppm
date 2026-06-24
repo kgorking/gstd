@@ -88,6 +88,10 @@ export namespace os {
 			close();
 		}
 
+		auto get_os_handle() const {
+			return fd;
+		}
+
 		bool open(string path, int flags) {
 			close();
 

@@ -2,7 +2,6 @@ import std;
 import gs;
 
 test strutil_lines_test = [] {
-	constexpr auto wait = std::chrono::milliseconds(25);
 	constexpr char text_arr[] = "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10";
 	string text = text_arr;
 	char buffer[32];

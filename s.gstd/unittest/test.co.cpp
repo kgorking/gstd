@@ -1,11 +1,11 @@
 import std;
 import gs;
 
-co<> test_void() {
-	co_await std::suspend_always{};
+task<> test_void() {
+	co_return;
 }
 
-co<int> simple_test() {
+task<int> simple_test() {
 	co_await test_void();
 	co_return 50;
 }

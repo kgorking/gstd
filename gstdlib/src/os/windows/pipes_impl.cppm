@@ -5,6 +5,7 @@ import std;
 import :file;
 import :LineWriter;
 import :string;
+import :get_last_error;
 
 export namespace os {
 	struct rw_pipes {
@@ -16,9 +17,10 @@ export namespace os {
 
 	rw_pipes pipes() {
 		HANDLE read_handle, write_handle;
+		SECURITY_ATTRIBUTES sa{ sizeof(SECURITY_ATTRIBUTES), nullptr, TRUE };
 
-		if (!CreatePipe(&read_handle, &write_handle, nullptr, 0)) {
-			return { file(INVALID_HANDLE_VALUE), file(INVALID_HANDLE_VALUE) };
+		if (!CreatePipe(&read_handle, &write_handle, &sa, 0)) {
+			throw std::system_error(std::make_error_code(std::errc::io_error), get_last_std_error());
 		}
 
 		return { file(read_handle), file(write_handle) };

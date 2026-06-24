@@ -2,12 +2,12 @@ import std;
 import gs;
 
 // Test coroutine for async read
-static co<std::int64_t> test_async_read_impl(os::file& f, std::span<char> buf) {
+static task<std::int64_t> test_async_read_impl(os::file& f, std::span<char> buf) {
 	co_return co_await f.read_async(buf);
 }
 
 // Test coroutine for async write
-static co<std::int64_t> test_async_write_impl(os::file& f, std::span<const char> buf) {
+static task<std::int64_t> test_async_write_impl(os::file& f, std::span<const char> buf) {
 	co_return co_await f.write_async(buf);
 }
 

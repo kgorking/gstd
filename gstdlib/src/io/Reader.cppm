@@ -1,6 +1,6 @@
 export module gs:Reader;
 import std;
-import :co;
+import :task;
 
 export template<typename I>
 concept Reader = requires(I i, std::span<char> buf) {
@@ -9,5 +9,5 @@ concept Reader = requires(I i, std::span<char> buf) {
 
 export template<typename I>
 concept AsyncReader = requires(I i, std::span<char> buf) {
-	{ i.read_async(buf) } -> std::same_as<co<std::int64_t>>;
+	{ i.read_async(buf) } -> std::same_as<task<std::int64_t>>;
 };

@@ -90,6 +90,7 @@ public:
     // constructors / destructor
     co() noexcept = delete;
     explicit co(std::coroutine_handle<promise_type> h) : _handle(h) {
+		throw;
         if (!_handle) {
             throw std::runtime_error("Coroutine handle cannot be null");
         }

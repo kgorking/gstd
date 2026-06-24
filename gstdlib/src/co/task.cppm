@@ -86,17 +86,19 @@ struct task_promise_base {
 	}
 
 	void set_done() noexcept {
+		set_suspended();
 		done.test_and_set();
 		done.notify_one();
-		auto cont = continuation.exchange(nullptr, std::memory_order_acq_rel);
-		if (cont) {
-			cont.resume();
-		}
 	}
 
 	void set_suspended() noexcept {
 		suspended.test_and_set();
 		suspended.notify_one();
+		auto cont = continuation.exchange(nullptr, std::memory_order_acq_rel);
+		if (cont) {
+			cont.resume();
+			//thread_pool::instance().enqueue(cont);
+		}
 	}
 };
 

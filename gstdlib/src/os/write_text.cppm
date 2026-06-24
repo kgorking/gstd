@@ -9,7 +9,7 @@ namespace os {
 		return open(filename, O_WR | O_TRUNC | O_BIN).write(text);
 	}
 
-	export auto write_text_async(string filename, Span<const char> auto text) -> co<std::int64_t> {
+	export auto write_text_async(string filename, Span<const char> auto text) -> task<std::int64_t> {
 		co_return co_await open(filename, O_WR | O_TRUNC | O_BIN).write_async(text);
 	}
 }

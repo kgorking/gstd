@@ -8,8 +8,9 @@ import :LineReader;
 import :Writer;
 import :LineWriter;
 import :string;
-import :co;
+import :task;
 import :thread_pool;
+import :get_last_error;
 
 export namespace os {
 	template<typename T, auto operation>
@@ -72,9 +73,10 @@ export namespace os {
 		file(const file&) = delete;
 		file& operator=(const file&) = delete;
 
-		file(file&& other) noexcept : handle(other.handle), eof_flag(other.eof_flag) {
+		file(file&& other) noexcept : handle(other.handle), eof_flag(other.eof_flag), file_position(other.file_position) {
 			other.handle = INVALID_HANDLE_VALUE;
 			other.eof_flag = false;
+			other.file_position = 0;
 		}
 
 		file& operator=(file&& other) noexcept {
@@ -82,14 +84,20 @@ export namespace os {
 				close();
 				handle = other.handle;
 				eof_flag = other.eof_flag;
+				file_position = other.file_position;
 				other.handle = INVALID_HANDLE_VALUE;
 				other.eof_flag = false;
+				other.file_position = 0;
 			}
 			return *this;
 		}
 
 		~file() {
 			close();
+		}
+
+		auto get_os_handle() const {
+			return handle;
 		}
 
 		bool open(string path, int flags) {
@@ -186,7 +194,7 @@ export namespace os {
 			return static_cast<std::int64_t>(bytes_read);
 		}
 
-		co<std::int64_t> read_async(Span<char> auto buf) {
+		task<std::int64_t> read_async(Span<char> auto buf) {
 			if (handle == INVALID_HANDLE_VALUE) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
@@ -194,7 +202,7 @@ export namespace os {
 			co_return co_await async_io_awaiter<char, ReadFile>(handle, buf, &file_position);
 		}
 
-		co<std::int64_t> write_async(Span<const char> auto buf) {
+		task<std::int64_t> write_async(Span<const char> auto buf) {
 			if (handle == INVALID_HANDLE_VALUE) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
@@ -214,7 +222,7 @@ export namespace os {
 				DWORD bytes_read = 0;
 				if (!ReadFile(handle, buffer, sizeof(buffer), &bytes_read, nullptr)) {
 					if (result.empty()) {
-						throw std::system_error(std::make_error_code(std::errc::io_error));
+						throw std::system_error(std::make_error_code(std::errc::io_error), get_last_std_error());
 					}
 					break;
 				}

@@ -4,6 +4,8 @@ export module gs:exec_impl;
 import std;
 import :file;
 import :string;
+import :pipes;
+import :get_last_error;
 
 export namespace os {
 	class command {
@@ -84,8 +86,11 @@ export namespace os {
 	};
 
 	command exec(string cmd) {
-		HANDLE stdout_read, stdout_write;
-		HANDLE stdin_read, stdin_write;
+		// Create pipes for stdout (child writes, parent reads) and stdin (parent writes, child reads)
+		auto stdout = os::pipes();
+		auto stdin = os::pipes();
+		SetHandleInformation(stdout.reader.get_os_handle(), HANDLE_FLAG_INHERIT, 0);
+		SetHandleInformation(stdin.writer.get_os_handle(), HANDLE_FLAG_INHERIT, 0);
 
 		// Set up SECURITY_ATTRIBUTES to make handles inheritable
 		SECURITY_ATTRIBUTES sa{};
@@ -93,71 +98,29 @@ export namespace os {
 		sa.bInheritHandle = TRUE;
 		sa.lpSecurityDescriptor = nullptr;
 
-		// Create pipes for stdout (child writes, parent reads)
-		if (!CreatePipe(&stdout_read, &stdout_write, &sa, 0)) {
-            std::println("CreatePipe for stdout failed with error: {}", GetLastError());
-			return { INVALID_HANDLE_VALUE, file(INVALID_HANDLE_VALUE), file(INVALID_HANDLE_VALUE) };
-   		}
-		// Make stdout_read non-inheritable (parent only)
-		SetHandleInformation(stdout_read, HANDLE_FLAG_INHERIT, 0);
-
-		// Create pipes for stdin (parent writes, child reads)
-		if (!CreatePipe(&stdin_read, &stdin_write, &sa, 0)) {
-			CloseHandle(stdout_read);
-			CloseHandle(stdout_write);
-			return { INVALID_HANDLE_VALUE, file(INVALID_HANDLE_VALUE), file(INVALID_HANDLE_VALUE) };
-		}
-		// Make stdin_write non-inheritable (parent only)
-		SetHandleInformation(stdin_write, HANDLE_FLAG_INHERIT, 0);
-
 		// Set up process info
 		STARTUPINFOA startup_info = {};
 		startup_info.cb = sizeof(startup_info);
-		startup_info.hStdOutput = stdout_write;   // Child writes to this
-		startup_info.hStdError = stdout_write;    // Child writes to this
-		startup_info.hStdInput = stdin_read;      // Child reads from this
+		startup_info.hStdOutput = stdout.writer.get_os_handle();   // Child writes to this
+		startup_info.hStdError = stdout.writer.get_os_handle();    // Child writes to this
+		startup_info.hStdInput = stdin.reader.get_os_handle();      // Child reads from this
 		startup_info.dwFlags = STARTF_USESTDHANDLES;
 
-		// Create the process
-		PROCESS_INFORMATION process_info = {};
-		
 		// Make a mutable copy of the command string for CreateProcessA
 		std::string cmd_str(cmd.c_str());
 		
-		if (!CreateProcessA(nullptr, cmd_str.data(), nullptr, nullptr, TRUE, 
-		                    CREATE_NO_WINDOW, nullptr, nullptr, &startup_info, &process_info)) {
-            LPVOID lpMsgBuf;
-            DWORD dw = GetLastError(); 
+		// Create the process
+		PROCESS_INFORMATION process_info = {};
+		if (!CreateProcessA(nullptr, cmd_str.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &startup_info, &process_info)) {
+            std::string error_msg = get_last_std_error();
+            std::println("os::exec '{}' failed with error: \"{}\"", cmd_str, error_msg);
 
-            if (FormatMessage(
-                FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-                FORMAT_MESSAGE_FROM_SYSTEM |
-                FORMAT_MESSAGE_IGNORE_INSERTS,
-                NULL,
-                dw,
-                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                (LPTSTR) &lpMsgBuf,
-                0, NULL) != 0) {
-                std::println("os::exec '{}' failed with error: \"{}\" ({})", cmd_str, (char*)lpMsgBuf, dw);
-            }
-
-            LocalFree(lpMsgBuf);
-
-			CloseHandle(stdout_read);
-			CloseHandle(stdout_write);
-			CloseHandle(stdin_read);
-			CloseHandle(stdin_write);
 			return { INVALID_HANDLE_VALUE, file(INVALID_HANDLE_VALUE), file(INVALID_HANDLE_VALUE) };
 		}
 
-		// Close the inherited handles in parent process
-		// Close the write end of stdout (only child writes to it)
-		CloseHandle(stdout_write);
-		// Close the read end of stdin (only child reads from it)
-		CloseHandle(stdin_read);
 		CloseHandle(process_info.hThread);
 
-		return { process_info.hProcess, file(stdout_read), file(stdin_write) };
+		return { process_info.hProcess, std::move(stdout.reader), std::move(stdin.writer) };
 	}
 }
 

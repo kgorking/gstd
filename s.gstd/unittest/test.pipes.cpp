@@ -43,8 +43,10 @@ test pipes_writer_concept = [] {
 	static_assert(Writer<std::remove_reference_t<decltype(p.writer)>>);
 
 	string data = "test";
-	auto result = p.writer.write(data);
-	test::equals(result, 4Z, "write should return 4 bytes");
+	auto result = p.writer.write_line(data);
+	auto data_read_back = p.reader.read_line();
+	test::equals(result, 5Z, "write should return 5 bytes");
+	test::equals(data_read_back, data, "read_back content should match");
 };
 
 test pipes_line_reader_concept = [] {
@@ -69,5 +71,7 @@ test pipes_line_writer_concept = [] {
 
 	string test_line = "test line";
 	auto result = p.writer.write_line(test_line);
+	string test_line_read_back = p.reader.read_line();
 	test::is_true(result >= 9, "write_line should write at least 9 bytes");
+	test::equals(test_line_read_back, test_line, "read_back line content should match");
 };

@@ -43,6 +43,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="src\os\linux\get_last_error.cppm">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="src\os\linux\pipes_impl.cppm">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -53,6 +57,7 @@
     <ClCompile Include="src\os\read_text.cppm" />
     <ClCompile Include="src\os\windows\exec_impl.cppm" />
     <ClCompile Include="src\os\windows\file_impl.cppm" />
+    <ClCompile Include="src\os\windows\get_last_error.cppm" />
     <ClCompile Include="src\os\windows\pipes_impl.cppm" />
     <ClCompile Include="src\os\write_text.cppm" />
     <ClCompile Include="src\strconv\strconv.cppm" />
