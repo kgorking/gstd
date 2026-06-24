@@ -6,8 +6,8 @@ module;
     #include <windows.h>
 #else
     #include <dirent.h>
-    #include <unistd.h>
     #include <sys/stat.h>
+    #include <unistd.h>
 #endif
 export module gs:dir;
 
@@ -96,8 +96,7 @@ namespace os {
 
     export bool exists(string path) {
 #ifdef _WIN32
-        DWORD attr = GetFileAttributesA(path.c_str());
-        return attr != INVALID_FILE_ATTRIBUTES;
+		return INVALID_FILE_ATTRIBUTES != GetFileAttributesA(path.c_str());
 #else
         return access(path.c_str(), F_OK) == 0;
 #endif

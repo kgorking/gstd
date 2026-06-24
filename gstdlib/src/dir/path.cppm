@@ -3,7 +3,7 @@ import :string;
 
 namespace path {
     // Get the platform-specific path separator
-    export char get_path_separator() {
+    export consteval char get_path_separator() {
 #ifdef _WIN32
         return '\\';
 #else
