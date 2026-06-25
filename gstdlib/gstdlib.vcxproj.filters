@@ -163,5 +163,11 @@
     <ClCompile Include="src\net\http\http.cppm">
       <Filter>Source Files\net\http</Filter>
     </ClCompile>
+    <ClCompile Include="src\net\http\get.cppm">
+      <Filter>Source Files\net\http</Filter>
+    </ClCompile>
+    <ClCompile Include="src\net\http\post.cppm">
+      <Filter>Source Files\net\http</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

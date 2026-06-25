@@ -37,7 +37,8 @@ export import :string_reader;
 export import :string_writer;
 
 // net/http
-export import :http;
+export import :http_get;
+export import :http_post;
 
 // testing
 export import :testing;

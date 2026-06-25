@@ -36,7 +36,7 @@ public:
 		if (size >= capacity) {
 			// Grow capacity exponentially
 			int64 new_capacity = (capacity == 0) ? 8 : capacity * 2;
-			while (new_capacity < span.size())
+			while (new_capacity < std::ssize(span))
 				new_capacity *= 2;
 
 			char* new_buffer = new char[new_capacity + 1];
