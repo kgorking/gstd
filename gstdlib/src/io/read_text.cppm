@@ -1,5 +1,6 @@
 export module gs:read_text;
 import std;
+import :types;
 import :file;
 import :string;
 import :fmt;
@@ -10,7 +11,7 @@ namespace io {
 		std::vector<char> buffer(4096);
 		
 		file f = open(filename);
-		while (std::int64_t r = f.read(buffer)) {
+		while (int64 r = f.read(buffer)) {
 			if (!r) break;
 			text = fmt("{}{}", text, std::string_view(buffer.data(), r));
 		}

@@ -1,5 +1,6 @@
 export module gs:string;
 import std;
+import :types;
 import :utf8;
 import :sequence;
 import :string_builder;
@@ -10,7 +11,7 @@ import :string_builder;
 
 struct StringData {
 	char const* data = nullptr;
-	std::ptrdiff_t const size = 0;
+	int64 const size = 0;
 	~StringData() {
 		delete[] data;
 	}
@@ -19,11 +20,11 @@ struct StringData {
 // An immutable UTF-8 string class with efficient slicing (substring) and character-level indexing.
 export class string {
     std::shared_ptr<StringData> data_;
-    std::ptrdiff_t start_;
-    std::ptrdiff_t end_;
+    int64 start_;
+    int64 end_;
 
 public:
-    static constexpr std::ptrdiff_t npos = -1;
+    static constexpr int64 npos = -1;
 
     string() : data_(nullptr), start_(0), end_(0) {}
     string(std::string_view sv) : start_(0), end_(sv.size()) {
@@ -63,17 +64,17 @@ public:
     }
 
     // returns size of characters in bytes
-    std::ptrdiff_t size() const { 
+    int64 size() const { 
         return end_ - start_; 
     }
 
     // returns count of characters, not bytes
-    std::ptrdiff_t count() const { 
+    int64 count() const { 
         if (!data_) return 0;
         return utf8::count_chars(c_str(), size_bytes());
     }
 
-    std::ptrdiff_t size_bytes() const { 
+    int64 size_bytes() const { 
         return end_ - start_; 
     }
 
@@ -86,36 +87,36 @@ public:
     }
 
     // Access (checked) - index works with character index, returns the whole UTF-8 character as a int
-	int operator[](std::ptrdiff_t char_idx) const {
-        std::ptrdiff_t char_count = count();
+	int operator[](int64 char_idx) const {
+        int64 char_count = count();
         if (char_idx < 0 || char_idx >= char_count) {
             throw std::out_of_range("string index out of range");
         }
-        std::ptrdiff_t const byte_offset = utf8::char_index_to_byte_offset(c_str(), size_bytes(), char_idx);
-        std::ptrdiff_t const char_byte_len = utf8::get_char_byte_len(c_str(), byte_offset, size_bytes());
+        int64 const byte_offset = utf8::char_index_to_byte_offset(c_str(), size_bytes(), char_idx);
+        int64 const char_byte_len = utf8::get_char_byte_len(c_str(), byte_offset, size_bytes());
 		return utf8::utf8_to_char32(c_str(), byte_offset, char_byte_len);
     }
 
     // Returns a generator of characters in the string
     sequence<int> chars() const {
-        std::ptrdiff_t byte_offset = 0;
+        int64 byte_offset = 0;
         while (byte_offset < size_bytes()) {
-            std::ptrdiff_t char_byte_len = utf8::get_char_byte_len(c_str(), byte_offset, size_bytes());
+            int64 char_byte_len = utf8::get_char_byte_len(c_str(), byte_offset, size_bytes());
             co_yield utf8::utf8_to_char32(c_str(), byte_offset, char_byte_len);
             byte_offset += char_byte_len;
         }
     }
 
     // Substring - works with character positions, not byte positions
-    string substr(std::ptrdiff_t char_pos, std::ptrdiff_t char_len = -1) const {
-        std::ptrdiff_t byte_pos = utf8::char_index_to_byte_offset(c_str(), size_bytes(), char_pos);
-        std::ptrdiff_t new_start = start_ + byte_pos;
+    string substr(int64 char_pos, int64 char_len = -1) const {
+        int64 byte_pos = utf8::char_index_to_byte_offset(c_str(), size_bytes(), char_pos);
+        int64 new_start = start_ + byte_pos;
         
-        std::ptrdiff_t new_end;
+        int64 new_end;
         if (char_len < 0) {
             new_end = end_;
         } else {
-            std::ptrdiff_t byte_len_needed = utf8::char_index_to_byte_offset(data_->data + new_start, end_ - new_start, char_len);
+            int64 byte_len_needed = utf8::char_index_to_byte_offset(data_->data + new_start, end_ - new_start, char_len);
             new_end = std::min(end_, new_start + byte_len_needed);
         }
         
@@ -123,9 +124,9 @@ public:
     }
 
     // Remove prefix (character count)
-    void remove_prefix(std::ptrdiff_t char_count) {
+    void remove_prefix(int64 char_count) {
         if (char_count <= 0) return;
-        std::ptrdiff_t byte_offset = utf8::char_index_to_byte_offset(data_->data + start_, end_ - start_, char_count);
+        int64 byte_offset = utf8::char_index_to_byte_offset(data_->data + start_, end_ - start_, char_count);
         start_ += byte_offset;
         if (start_ > end_)
             start_ = end_;
@@ -136,14 +137,14 @@ public:
     }
 
     // Remove postfix (character count)
-    void remove_postfix(std::ptrdiff_t char_count) {
+    void remove_postfix(int64 char_count) {
         if (char_count <= 0) return;
-        std::ptrdiff_t char_pos = count() - char_count;
+        int64 char_pos = count() - char_count;
         if (char_pos <= 0) {
             end_ = start_;
             return;
         }
-        std::ptrdiff_t byte_offset = utf8::char_index_to_byte_offset(data_->data + start_, end_ - start_, char_pos);
+        int64 byte_offset = utf8::char_index_to_byte_offset(data_->data + start_, end_ - start_, char_pos);
         end_ = start_ + byte_offset;
     }
 
@@ -167,7 +168,7 @@ public:
         
         // Walk backwards from the end to find the start of the last UTF-8 character
         // UTF-8 continuation bytes have pattern 10xxxxxx, so skip those
-        std::ptrdiff_t last_char_start = end_ - 1;
+        int64 last_char_start = end_ - 1;
         while (last_char_start > start_ && (data_->data[last_char_start] & 0xC0) == 0x80) {
             last_char_start--;
         }
@@ -179,14 +180,14 @@ public:
     string front() const {
         if (empty()) return string();
 
-		std::ptrdiff_t const char_len = utf8::char_len(data_->data[start_]);
+		int64 const char_len = utf8::char_len(data_->data[start_]);
         return string(data_, start_, std::min(start_ + char_len, end_));
     }
 
     // Find functions
-    std::ptrdiff_t find(int c, std::ptrdiff_t pos = 0) const {
+    int64 find(int c, int64 pos = 0) const {
         if (pos < 0) pos = 0;
-        for (std::ptrdiff_t i = pos; i < count(); ++i) {
+        for (int64 i = pos; i < count(); ++i) {
             if ((*this)[i] == c) {
                 return i;
             }
@@ -194,13 +195,13 @@ public:
         return -1;
     }
 
-    std::ptrdiff_t find(string sv, std::ptrdiff_t pos = 0) const {
+    int64 find(string sv, int64 pos = 0) const {
         if (pos < 0) pos = 0;
         if (sv.empty()) return pos <= count() ? pos : -1;
-        std::ptrdiff_t len = count();
-        for (std::ptrdiff_t i = pos; i <= len - sv.count(); ++i) {
+        int64 len = count();
+        for (int64 i = pos; i <= len - sv.count(); ++i) {
             bool match = true;
-            for (std::ptrdiff_t j = 0; j < sv.count(); ++j) {
+            for (int64 j = 0; j < sv.count(); ++j) {
                 if ((*this)[i + j] != sv[j]) {
                     match = false;
                     break;
@@ -212,10 +213,10 @@ public:
     }
 
     // Reverse find
-    std::ptrdiff_t rfind(int c, std::ptrdiff_t pos = -1) const {
-        std::ptrdiff_t len = count();
+    int64 rfind(int c, int64 pos = -1) const {
+        int64 len = count();
         if (pos < 0 || pos >= len) pos = len - 1;
-        for (std::ptrdiff_t i = pos; i >= 0; --i) {
+        for (int64 i = pos; i >= 0; --i) {
             if ((*this)[i] == c) {
                 return i;
             }
@@ -224,14 +225,14 @@ public:
     }
 
     // Find last occurrence of any character from the given string
-    std::ptrdiff_t find_last_of(string sv, std::ptrdiff_t pos = -1) const {
-        std::ptrdiff_t len = count();
+    int64 find_last_of(string sv, int64 pos = -1) const {
+        int64 len = count();
         if (sv.empty()) return -1;
         if (pos < 0 || pos >= len) pos = len - 1;
 
-        for (std::ptrdiff_t i = pos; i >= 0; --i) {
+        for (int64 i = pos; i >= 0; --i) {
 			int const c = (*this)[i];
-            for (std::ptrdiff_t j = 0; j < sv.count(); ++j) {
+            for (int64 j = 0; j < sv.count(); ++j) {
                 if (sv[j] == c) {
                     return i;
                 }
@@ -241,11 +242,11 @@ public:
     }
 
     // Find last occurrence of any character from the given string
-    std::ptrdiff_t find_last_of(int c, std::ptrdiff_t pos = -1) const {
-		std::ptrdiff_t len = count();
+    int64 find_last_of(int c, int64 pos = -1) const {
+		int64 len = count();
         if (pos < 0 || pos >= len) pos = len - 1;
 
-        for (std::ptrdiff_t i = pos; i >= 0; --i) {
+        for (int64 i = pos; i >= 0; --i) {
             if ((*this)[i] == c) {
                 return i;
             }
@@ -273,7 +274,7 @@ public:
         return !empty() && (*this)[count() - 1] == c;
     }
 
-	template <std::integral T = std::int64_t>
+	template <std::integral T = int64>
 	T to_int() const {
 		T value = 0;
 		auto [ptr, ec] = std::from_chars(c_str(), c_str() + size_bytes(), value);
@@ -293,7 +294,7 @@ public:
 
 	// Concatenation
     string operator+(const string& other) const {
-        std::ptrdiff_t total_size = size_bytes() + other.size_bytes();
+        int64 total_size = size_bytes() + other.size_bytes();
         char* new_data = new char[total_size + 1];
         std::memcpy(new_data, c_str(), size_bytes());
         std::memcpy(new_data + size_bytes(), other.c_str(), other.size_bytes());
@@ -303,7 +304,7 @@ public:
     }
 
     string operator+(char c) const {
-        std::ptrdiff_t total_size = size_bytes() + 1;
+        int64 total_size = size_bytes() + 1;
         char* new_data = new char[total_size + 1];
         std::memcpy(new_data, c_str(), size_bytes());
         new_data[size_bytes()] = c;
@@ -339,7 +340,7 @@ public:
     }
 
     bool operator==(const char* s) const {
-        auto const s_len = static_cast<std::intptr_t>(std::strlen(s));
+        auto const s_len = static_cast<int64>(std::strlen(s));
         return size_bytes() == s_len && 0 == std::memcmp(c_str(), s, s_len);
     }
 
@@ -348,7 +349,7 @@ public:
     std::default_sentinel_t end() const noexcept { return {}; }
 
     // Private constructor for substr
-    string(std::shared_ptr<StringData> data, std::ptrdiff_t start, std::ptrdiff_t end)
+    string(std::shared_ptr<StringData> data, int64 start, int64 end)
         : data_(data), start_(start), end_(end) {}
 
     string(string_builder&& builder) : data_(nullptr), start_(0), end_(0) {
@@ -382,7 +383,7 @@ export template <> struct std::formatter<::string, char> {
 
     auto format(::string const& s, std::format_context& ctx) const {
         auto out = ctx.out();
-        for (std::ptrdiff_t i = 0; i < s.size_bytes(); ++i) {
+        for (int64 i = 0; i < s.size_bytes(); ++i) {
             *out++ = static_cast<char>(s.c_str()[i]);
         }
         return out;
@@ -397,8 +398,8 @@ export template <> struct std::formatter<int, char> {
     auto format(int const s, std::format_context& ctx) const {
         auto out = ctx.out();
 		char buff[4] = { 0 };
-		std::ptrdiff_t const len = utf8::encode_code_point(s, buff, 4);
-        for (std::ptrdiff_t i = 0; i < len; ++i) {
+		int64 const len = utf8::encode_code_point(s, buff, 4);
+        for (int64 i = 0; i < len; ++i) {
             *out++ = buff[i];
         }
         return out;
@@ -413,9 +414,9 @@ export template<>struct std::formatter<char8_t, char> : std::formatter<char, cha
 
 // Specialization of std::hash for string
 export template <> struct std::hash<::string> {
-	std::size_t operator()(const ::string& s) const noexcept {
-        std::size_t h = 0;
-        for (std::ptrdiff_t i = 0; i < s.size_bytes(); ++i) {
+	int64 operator()(const ::string& s) const noexcept {
+        int64 h = 0;
+        for (int64 i = 0; i < s.size_bytes(); ++i) {
             h = h * 31 + static_cast<unsigned char>(s.c_str()[i]);
         }
         return h;

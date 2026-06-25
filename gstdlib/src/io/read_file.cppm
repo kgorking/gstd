@@ -1,5 +1,6 @@
 export module gs:read_file;
 import std;
+import :types;
 import :file;
 
 namespace io {
@@ -7,7 +8,7 @@ namespace io {
 		if (io::file f(filename); f) {
 			std::vector<char> data(f.size());
 			auto bytes_read = f.read(data);
-			if (static_cast<std::size_t>(bytes_read) == data.size())
+			if (bytes_read == std::ssize(data))
 				return data;
 		}
 

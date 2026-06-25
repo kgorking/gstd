@@ -1,5 +1,6 @@
 export module gs:string_reader;
 import std;
+import :types;
 import :string;
 import :Reader;
 import :LineReader;
@@ -11,18 +12,18 @@ namespace strutil {
     public:
         string_reader(string str) : s(std::move(str)) {}
 
-        std::int64_t read(std::span<char> buf) {
+        int64 read(std::span<char> buf) {
             if (s.empty())
                 return 0;
 
-            std::size_t to_read = std::min(buf.size(), static_cast<std::size_t>(s.size()));
+            int64 to_read = std::min(static_cast<int64>(buf.size()), static_cast<int64>(s.size()));
             std::memcpy(buf.data(), s.c_str(), to_read);
             s.remove_prefix(to_read);
-            return static_cast<std::int64_t>(to_read);
+            return static_cast<int64>(to_read);
         }
 
         string read_line(char delim = '\n') {
-            std::ptrdiff_t end = s.find(delim);
+            int64 end = s.find(delim);
             if (end == string::npos) {
                 string line = s;
                 s.clear();

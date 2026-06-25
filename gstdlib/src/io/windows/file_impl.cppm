@@ -11,17 +11,18 @@ import :string;
 import :task;
 import :thread_pool;
 import :get_last_error;
+import :types;
 
 export namespace io {
 	template<typename T, auto operation>
 	class async_io_awaiter {
 	private:
 		HANDLE file_handle;
+		uint64* file_position;
 		std::span<T> buffer;
-		ULONGLONG* file_position;
 
 	public:
-		async_io_awaiter(HANDLE h, std::span<T> buf, ULONGLONG* pos)
+		async_io_awaiter(HANDLE h, std::span<T> buf, uint64* pos)
 			: file_handle(h), buffer(buf), file_position(pos) {}
 
 		bool await_ready() const noexcept { return false; }
@@ -30,14 +31,14 @@ export namespace io {
 			thread_pool::instance().enqueue_io(cont);
 		}
 
-		std::int64_t await_resume() {
+		int64 await_resume() {
 			DWORD bytes_read = 0;
 			if (!operation(file_handle, buffer.data(), static_cast<DWORD>(buffer.size()), &bytes_read, nullptr)) {
-				throw std::system_error(std::make_error_code(std::errc::io_error));
+				throw std::system_error(std::make_error_code(std::errc::io_error), get_last_std_error());
 			}
 
 			*file_position += bytes_read;
-			return static_cast<std::int64_t>(bytes_read);
+			return static_cast<int64>(bytes_read);
 		}
 	};
 
@@ -52,8 +53,8 @@ export namespace io {
 
 	class file final {
 		HANDLE handle;
+		uint64 file_position = 0;
 		bool eof_flag;
-		ULONGLONG file_position = 0;
 
 	public:
 		file(string path) {
@@ -103,9 +104,7 @@ export namespace io {
 		bool open(string path, int flags) {
 			close();
 
-			DWORD desired_access = 0;
-			DWORD creation_disposition = OPEN_EXISTING;
-
+			uint32 desired_access = 0;
 			if (flags & O_RD) {
 				desired_access |= GENERIC_READ;
 			}
@@ -113,6 +112,7 @@ export namespace io {
 				desired_access |= GENERIC_WRITE;
 			}
 
+			uint32 creation_disposition = OPEN_EXISTING;
 			if (flags & O_CREATE) {
 				creation_disposition = CREATE_ALWAYS;
 			}
@@ -163,7 +163,7 @@ export namespace io {
 			return eof_flag;
 		}
 
-		std::size_t size() {
+		int64 size() {
 			if (handle == INVALID_HANDLE_VALUE)
 				return 0;
 
@@ -171,10 +171,10 @@ export namespace io {
 			if (!GetFileSizeEx(handle, &file_size)) {
 				return 0;
 			}
-			return static_cast<std::size_t>(file_size.QuadPart);
+			return static_cast<int64>(file_size.QuadPart);
 		}
 
-		std::int64_t read(std::span<char> buf) {
+		int64 read(std::span<char> buf) {
 			if (handle == INVALID_HANDLE_VALUE) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
@@ -191,10 +191,10 @@ export namespace io {
 				file_position += bytes_read;
 			}
 
-			return static_cast<std::int64_t>(bytes_read);
+			return static_cast<int64>(bytes_read);
 		}
 
-		task<std::int64_t> read_async(Span<char> auto buf) {
+		task<int64> read_async(Span<char> auto buf) {
 			if (handle == INVALID_HANDLE_VALUE) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
@@ -202,7 +202,7 @@ export namespace io {
 			co_return co_await async_io_awaiter<char, ReadFile>(handle, buf, &file_position);
 		}
 
-		task<std::int64_t> write_async(Span<const char> auto buf) {
+		task<int64> write_async(Span<const char> auto buf) {
 			if (handle == INVALID_HANDLE_VALUE) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
@@ -250,21 +250,21 @@ export namespace io {
 			return result;
 		}
 
-		std::int64_t write(Span<const char> auto buf) {
+		int64 write(Span<const char> auto buf) {
 			if (handle == INVALID_HANDLE_VALUE) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
 
 			DWORD bytes_written = 0;
 			if (!WriteFile(handle, buf.data(), static_cast<DWORD>(buf.size()), &bytes_written, nullptr)) {
-				throw std::system_error(std::make_error_code(std::errc::io_error));
+				throw std::system_error(std::make_error_code(std::errc::io_error), get_last_std_error());
 			}
 
 			file_position += bytes_written;
-			return static_cast<std::int64_t>(bytes_written);
+			return static_cast<int64>(bytes_written);
 		}
 
-		std::int64_t write_line(string line) {
+		int64 write_line(string line) {
 			auto written = write(std::span<const char>(line.c_str(), line.size_bytes()));
 			auto newline_result = write(std::span<const char>("\n", 1));
 			return written + newline_result;

@@ -1,6 +1,7 @@
 export module gs:thread_pool;
 
 import std;
+import :types;
 import :channel;
 
 export class thread_pool {
@@ -11,8 +12,8 @@ private:
     std::vector<std::jthread> io_workers;
 
 public:
-    explicit thread_pool(std::size_t num_threads = std::jthread::hardware_concurrency() - 1) {
-        for (std::size_t i = 0; i < num_threads; ++i) {
+    explicit thread_pool(int64 num_threads = std::jthread::hardware_concurrency() - 1) {
+        for (int64 i = 0; i < num_threads; ++i) {
             workers.emplace_back([this] { worker_loop(); });
             io_workers.emplace_back([this] { io_worker_loop(); });
         }

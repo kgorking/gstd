@@ -15,7 +15,6 @@ export using uint16 = std::uint16_t;
 export using uint8 = std::uint8_t;
 
 export using usize = std::size_t;
-export using isize = std::ptrdiff_t;
 
 export using byte = std::byte;
 

@@ -1,5 +1,6 @@
 export module gs:concepts;
 import std;
+import :types;
 
 export template<typename From, typename To>
 concept ConvertibleTo = requires { static_cast<To>(std::declval<From>()); };
@@ -23,5 +24,5 @@ concept IterSeq = Seq<T> && requires(T t) {
 export template<typename T, typename ValueType>
 concept Span = requires(T t) {
     { t.data() } -> std::same_as<std::add_pointer_t<ValueType>>;
-    { t.size() } -> std::convertible_to<std::int64_t>;
+    { t.size() } -> std::convertible_to<int64>;
 };

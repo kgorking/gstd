@@ -6,6 +6,7 @@ import :file;
 import :LineWriter;
 import :string;
 import :get_last_error;
+import :types;
 
 export namespace io {
 	struct rw_pipes {

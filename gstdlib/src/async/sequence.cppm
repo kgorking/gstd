@@ -2,6 +2,7 @@
 export module gs:sequence;
 
 import std;
+import :types;
 import :concepts;
 
 template <typename MapFn, typename ...Ts>
@@ -59,7 +60,7 @@ public:
     };
 
     struct iterator {
-        using difference_type = std::ptrdiff_t;
+        using difference_type = int64;
         using value_type = T;
 
         std::coroutine_handle<promise_type> _handle = nullptr;

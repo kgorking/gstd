@@ -7,6 +7,7 @@ import std;
 import :file;
 import :string;
 import :get_last_error;
+import :types;
 
 export namespace io {
 	struct rw_pipes {

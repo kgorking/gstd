@@ -1,4 +1,5 @@
 export module gs:path;
+import :types;
 import :string;
 import :fmt;
 
@@ -33,7 +34,7 @@ namespace path {
     export string get_filename(string path) {
         if (path.empty()) return path;
         
-        size_t pos = path.find_last_of("/\\");
+        int64 pos = path.find_last_of("/\\");
         if (pos == string::npos) return path;
         
         return path.substr(pos + 1);
@@ -43,7 +44,7 @@ namespace path {
     export string get_directory(string path) {
         if (path.empty()) return path;
         
-        size_t pos = path.find_last_of("/\\");
+        int64 pos = path.find_last_of("/\\");
         if (pos == string::npos) return "";
         if (pos == 0) return path.substr(0, 1);  // Root directory
         
@@ -55,7 +56,7 @@ namespace path {
         string filename = get_filename(path);
         if (filename.empty()) return "";
         
-        size_t pos = filename.find_last_of('.');
+        int64 pos = filename.find_last_of('.');
         if (pos == string::npos || pos == 0) return "";  // No extension or hidden file without extension
         
         return filename.substr(pos);
@@ -125,7 +126,7 @@ namespace path {
 
     // Go up N levels in a path
     // Example: go_up_levels("/aa/bb/cc/dd/", 2) returns "/aa/bb/"
-    export string go_up_levels(string path, size_t levels) {
+    export string go_up_levels(string path, int64 levels) {
         if (path.empty() || levels == 0) return path;
 
         string result = get_directory(path);
@@ -138,9 +139,9 @@ namespace path {
         }
         
         // Go up the specified number of levels
-        for (size_t i = 0; i < levels && !result.empty(); ++i) {
+        for (int64 i = 0; i < levels && !result.empty(); ++i) {
             // Find the last separator
-            size_t pos = result.find_last_of("/\\");
+            int64 pos = result.find_last_of("/\\");
             if (pos == string::npos) {
                 // No more separators, we're at the top
                 result.clear();

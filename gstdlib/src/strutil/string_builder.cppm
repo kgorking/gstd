@@ -1,13 +1,14 @@
 export module gs:string_builder;
 import std;
+import :types;
 
 // Simple helper class for building strings with format
 class string_builder {
 public:
 	using value_type = char;
 	char* buffer = nullptr;
-	std::ptrdiff_t size = 0;
-	std::ptrdiff_t capacity = 0;
+	int64 size = 0;
+	int64 capacity = 0;
 
 	~string_builder() {
 		delete[] buffer;
@@ -17,7 +18,7 @@ public:
 	void push_back(char c) {
 		if (size >= capacity) {
 			// Grow capacity exponentially
-			std::ptrdiff_t new_capacity = (capacity == 0) ? 8 : capacity * 2;
+			int64 new_capacity = (capacity == 0) ? 8 : capacity * 2;
 			char* new_buffer = new char[new_capacity + 1];
 			if (buffer) {
 				std::memcpy(new_buffer, buffer, size);

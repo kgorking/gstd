@@ -1,5 +1,6 @@
 export module gs:sync_console_writer;
 import std;
+import :types;
 import :Writer;
 import :concepts;
 
@@ -9,7 +10,7 @@ private:
     mutable std::mutex write_mutex;
 
 public:
-    std::int64_t write(Span<const char> auto const& data) {
+    int64 write(Span<const char> auto const& data) {
         std::lock_guard<std::mutex> lock(write_mutex);
         std::cout.write(data.c_str(), data.size());
         return data.size();

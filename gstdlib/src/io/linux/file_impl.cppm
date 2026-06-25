@@ -11,14 +11,15 @@ import :LineWriter;
 import :string;
 import :co;
 import :thread_pool;
+import :types;
 
 export namespace io {
 	template<auto operation>
 	class async_io_awaiter {
 	private:
-		int file_fd;
 		std::span<char> buffer;
 		off_t* file_position;
+		int file_fd;
 
 	public:
 		async_io_awaiter(int fd, std::span<char> buf, off_t* pos)
@@ -30,13 +31,13 @@ export namespace io {
 			thread_pool::instance().enqueue_io(cont);
 		}
 
-		std::int64_t await_resume() {
+		int64 await_resume() {
 			ssize_t bytes = operation(file_fd, buffer.data(), buffer.size(), *file_position);
 			if (bytes < 0) {
 				throw std::system_error(std::make_error_code(std::errc::io_error));
 			}
 			*file_position += bytes;
-			return static_cast<std::int64_t>(bytes);
+			return static_cast<int64>(bytes);
 		}
 	};
 
@@ -148,7 +149,7 @@ export namespace io {
 			return eof_flag;
 		}
 
-		std::size_t size() {
+		int64 size() {
 			if (fd < 0)
 				return 0;
 
@@ -159,10 +160,10 @@ export namespace io {
 			if (end_pos < 0)
 				return 0;
 
-			return static_cast<std::size_t>(end_pos);
+			return static_cast<int64>(end_pos);
 		}
 
-		std::int64_t read(std::span<char> buf) {
+		int64 read(std::span<char> buf) {
 			if (fd < 0) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
@@ -179,10 +180,10 @@ export namespace io {
 				file_position += bytes_read;
 			}
 
-			return static_cast<std::int64_t>(bytes_read);
+			return static_cast<int64>(bytes_read);
 		}
 
-		co<std::int64_t> read_async(std::span<char> buf) {
+		co<int64> read_async(std::span<char> buf) {
 			if (fd < 0) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
@@ -190,7 +191,7 @@ export namespace io {
 			co_return co_await async_io_awaiter<::pread>(fd, buf, &file_position);
 		}
 
-		co<std::int64_t> write_async(std::span<const char> buf) {
+		co<int64> write_async(std::span<const char> buf) {
 			if (fd < 0) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
@@ -240,7 +241,7 @@ export namespace io {
 			throw std::system_error(std::make_error_code(std::errc::io_error));
 		}
 
-		std::int64_t write(std::span<const char> buf) {
+		int64 write(std::span<const char> buf) {
 			if (fd < 0) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
@@ -252,10 +253,10 @@ export namespace io {
 			}
 
 			file_position += bytes_written;
-			return static_cast<std::int64_t>(bytes_written);
+			return static_cast<int64>(bytes_written);
 		}
 
-		std::int64_t write_line(string line) {
+		int64 write_line(string line) {
 			auto written = write(std::span<const char>(line.c_str(), line.size_bytes()));
 			auto newline_result = write(std::span<const char>("\n", 1));
 			return written + newline_result;
