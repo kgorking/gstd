@@ -10,7 +10,7 @@ import :string_builder;
 
 struct StringData {
 	char const* data = nullptr;
-	std::ptrdiff_t size = 0;
+	std::ptrdiff_t const size = 0;
 	~StringData() {
 		delete[] data;
 	}
@@ -28,23 +28,19 @@ public:
     string() : data_(nullptr), start_(0), end_(0) {}
     string(std::string_view sv) : start_(0), end_(sv.size()) {
         if (!sv.empty()) {
-            data_ = std::make_shared<StringData>();
             char *pdata = new char[sv.size()+1];
             std::memcpy(pdata, sv.data(), sv.size());
             pdata[sv.size()] = 0;
-            data_->data = pdata;
-            data_->size = sv.size();
+            data_ = std::make_shared<StringData>(pdata, sv.size());
         }
     }
     string(const char* s) : start_(0), end_(0) {
         if (s != nullptr) {
             end_ = utf8::byte_length(s);
-            data_ = std::make_shared<StringData>();
             char *pdata = new char[end_ + 1];
             std::memcpy(pdata, s, end_);
             pdata[end_] = 0;
-            data_->data = pdata;
-            data_->size = end_;
+			data_ = std::make_shared<StringData>(pdata, end_);
         }
     }
     string(const string&) = default;
@@ -294,9 +290,7 @@ public:
         std::memcpy(new_data, c_str(), size_bytes());
         std::memcpy(new_data + size_bytes(), other.c_str(), other.size_bytes());
         new_data[total_size] = 0;
-        auto block = std::make_shared<StringData>();
-        block->data = new_data;
-        block->size = total_size;
+        auto block = std::make_shared<StringData>(new_data, total_size);
         return string(block, 0, total_size);
     }
 
@@ -306,9 +300,7 @@ public:
         std::memcpy(new_data, c_str(), size_bytes());
         new_data[size_bytes()] = c;
         new_data[total_size] = 0;
-        auto block = std::make_shared<StringData>();
-        block->data = new_data;
-        block->size = total_size;
+        auto block = std::make_shared<StringData>(new_data, total_size);
         return string(block, 0, total_size);
     }
 
@@ -353,12 +345,10 @@ public:
 
     string(string_builder&& builder) : data_(nullptr), start_(0), end_(0) {
         if (builder.size > 0 && builder.buffer) {
-            data_ = std::make_shared<StringData>();
             // Add null terminator to the builder's buffer
             builder.buffer[builder.size] = 0;
             // Transfer ownership of the buffer directly
-            data_->data = builder.buffer;
-            data_->size = builder.size;
+            data_ = std::make_shared<StringData>(builder.buffer, builder.size);
             end_ = builder.size;
             // Clear the builder's buffer so its destructor doesn't delete it
             builder.buffer = nullptr;
