@@ -14,8 +14,6 @@ export using uint32 = std::uint32_t;
 export using uint16 = std::uint16_t;
 export using uint8 = std::uint8_t;
 
-export using usize = std::size_t;
-
 export using byte = std::byte;
 
 // Type aliases for floating-point types
