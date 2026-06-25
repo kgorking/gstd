@@ -10,11 +10,11 @@ import :get_last_error;
 export namespace os {
 	class command {
 		HANDLE process_handle;
-		file stdout_pipe;
-		file stdin_pipe;
+		io::file stdout_pipe;
+		io::file stdin_pipe;
 
 	public:
-		command(HANDLE handle, file out, file in) 
+		command(HANDLE handle, io::file out, io::file in) 
 			: process_handle(handle), stdout_pipe(std::move(out)), stdin_pipe(std::move(in)) {}
 
 		command(const command&) = delete;
@@ -68,8 +68,8 @@ export namespace os {
 			return static_cast<int>(exit_code);
 		}
 
-		file& get_stdout() { return stdout_pipe; }
-		file& get_stdin()  { return stdin_pipe;  }
+		io::file& get_stdout() { return stdout_pipe; }
+		io::file& get_stdin()  { return stdin_pipe;  }
 	};
 
 	command exec(string cmd) {
@@ -77,8 +77,8 @@ export namespace os {
 		std::string cmd_str(cmd.c_str());
 
 		// Create pipes for stdout (child writes, parent reads) and stdin (parent writes, child reads)
-		auto stdout = os::pipes();
-		auto stdin = os::pipes();
+		auto stdout = io::pipes();
+		auto stdin = io::pipes();
 		SetHandleInformation(stdout.reader.get_os_handle(), HANDLE_FLAG_INHERIT, 0);
 		SetHandleInformation(stdin.writer.get_os_handle(), HANDLE_FLAG_INHERIT, 0);
 

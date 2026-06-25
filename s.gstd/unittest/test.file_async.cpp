@@ -2,12 +2,12 @@ import std;
 import gs;
 
 // Test coroutine for async read
-static task<std::int64_t> test_async_read_impl(os::file& f, std::span<char> buf) {
+static task<std::int64_t> test_async_read_impl(io::file& f, std::span<char> buf) {
 	co_return co_await f.read_async(buf);
 }
 
 // Test coroutine for async write
-static task<std::int64_t> test_async_write_impl(os::file& f, std::span<const char> buf) {
+static task<std::int64_t> test_async_write_impl(io::file& f, std::span<const char> buf) {
 	co_return co_await f.write_async(buf);
 }
 
@@ -17,10 +17,10 @@ test file_async_read = [] {
 	string test_content = "Hello, async world!";
 
 	// Write test content using synchronous write
-	os::write_text(test_file, test_content);
+	io::write_text(test_file, test_content);
 
 	// Now test async read - keep file alive across the async operation
-	os::file f{test_file};
+	io::file f{test_file};
 	char buf[256] = {0};
 
 	auto result = test_async_read_impl(f, std::span(buf)).result();
@@ -39,7 +39,7 @@ test file_async_write = [] {
 	string test_file = "test_async_write.txt";
 	string test_content = "Async write test";
 
-	os::file f{test_file, os::O_CREATE | os::O_WR | os::O_BIN};
+	io::file f{test_file, io::O_CREATE | io::O_WR | io::O_BIN};
 
 	auto result = test_async_write_impl(f, std::span<const char>(test_content.c_str(), test_content.size())).result();
 
@@ -49,7 +49,7 @@ test file_async_write = [] {
 
 	// Verify the written content
 	{
-		auto file_content = os::read_text(test_file);
+		auto file_content = io::read_text(test_file);
 		test::equals(file_content, test_content, "file content should match");
 	}
 
@@ -63,7 +63,7 @@ test file_async_read_write_sequence = [] {
 	string data1 = expected.substr(0, 11); // "First write"
 	string data2 = expected.substr(11);    // " - Second write"
 
-	os::file f{test_file, os::O_CREATE | os::O_WR | os::O_BIN};
+	io::file f{test_file, io::O_CREATE | io::O_WR | io::O_BIN};
 
 	auto result1 = test_async_write_impl(f, std::span<const char>(data1.c_str(), data1.size())).result();
 	test::equals(result1, data1.size(), "first write size should match");
@@ -81,7 +81,7 @@ test file_async_read_write_sequence = [] {
 
 	// Read back and verify
 	{
-		auto file_content = os::read_text(test_file);
+		auto file_content = io::read_text(test_file);
 		test::equals(expected, file_content, "final content should match");
 	}
 

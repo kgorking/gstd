@@ -21,25 +21,35 @@
   <ItemGroup>
     <ClCompile Include="src\concepts.cppm" />
     <ClCompile Include="src\co\channel.cppm" />
-    <ClCompile Include="src\co\co.cppm" />
     <ClCompile Include="src\co\sequence.cppm" />
     <ClCompile Include="src\co\task.cppm" />
     <ClCompile Include="src\co\thread_pool.cppm" />
     <ClCompile Include="src\dir\list_dir.cppm" />
     <ClCompile Include="src\dir\path.cppm" />
     <ClCompile Include="src\gstd.cppm" />
+    <ClCompile Include="src\io\file.cppm" />
     <ClCompile Include="src\io\LineReader.cppm" />
     <ClCompile Include="src\io\LineWriter.cppm" />
-    <ClCompile Include="src\io\Reader.cppm" />
-    <ClCompile Include="src\io\sync_console_writer.cppm" />
-    <ClCompile Include="src\io\Writer.cppm" />
-    <ClCompile Include="src\os\exec.cppm" />
-    <ClCompile Include="src\os\file.cppm" />
-    <ClCompile Include="src\os\linux\exec_impl.cppm">
+    <ClCompile Include="src\io\linux\file_impl.cppm">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\os\linux\file_impl.cppm">
+    <ClCompile Include="src\io\linux\pipes_impl.cppm">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="src\io\pipes.cppm" />
+    <ClCompile Include="src\io\Reader.cppm" />
+    <ClCompile Include="src\io\read_file.cppm" />
+    <ClCompile Include="src\io\read_lines.cppm" />
+    <ClCompile Include="src\io\read_text.cppm" />
+    <ClCompile Include="src\io\sync_console_writer.cppm" />
+    <ClCompile Include="src\io\windows\file_impl.cppm" />
+    <ClCompile Include="src\io\windows\pipes_impl.cppm" />
+    <ClCompile Include="src\io\Writer.cppm" />
+    <ClCompile Include="src\io\write_text.cppm" />
+    <ClCompile Include="src\os\exec.cppm" />
+    <ClCompile Include="src\os\linux\exec_impl.cppm">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -47,19 +57,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="src\os\linux\pipes_impl.cppm">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="src\os\pipes.cppm" />
-    <ClCompile Include="src\os\read_file.cppm" />
-    <ClCompile Include="src\os\read_lines.cppm" />
-    <ClCompile Include="src\os\read_text.cppm" />
     <ClCompile Include="src\os\windows\exec_impl.cppm" />
-    <ClCompile Include="src\os\windows\file_impl.cppm" />
     <ClCompile Include="src\os\windows\get_last_error.cppm" />
-    <ClCompile Include="src\os\windows\pipes_impl.cppm" />
-    <ClCompile Include="src\os\write_text.cppm" />
     <ClCompile Include="src\strconv\strconv.cppm" />
     <ClCompile Include="src\string.cppm" />
     <ClCompile Include="src\strutil\lines.cppm" />

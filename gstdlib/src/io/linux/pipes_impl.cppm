@@ -8,7 +8,7 @@ import :file;
 import :string;
 import :get_last_error;
 
-export namespace os {
+export namespace io {
 	struct rw_pipes {
 		file reader;
 		file writer;

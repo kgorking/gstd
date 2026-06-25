@@ -5,9 +5,6 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Source Files\co">
-      <UniqueIdentifier>{db1267d2-d6ca-4319-b86c-b1d49e31bc2e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\dir">
       <UniqueIdentifier>{76a9fe01-5808-4b73-9c00-a3534f386b84}</UniqueIdentifier>
     </Filter>
@@ -29,6 +26,15 @@
     <Filter Include="Source Files\os\linux">
       <UniqueIdentifier>{65ce7cec-ee33-4464-b70b-001caa45cd06}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\async">
+      <UniqueIdentifier>{db1267d2-d6ca-4319-b86c-b1d49e31bc2e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\io\windows">
+      <UniqueIdentifier>{72d3bd65-bdd6-45e6-a7af-7f42de56d5df}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\io\linux">
+      <UniqueIdentifier>{399f0ff8-40cb-420e-b19d-8d5c579311fc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\concepts.cppm">
@@ -41,19 +47,16 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\co\channel.cppm">
-      <Filter>Source Files\co</Filter>
-    </ClCompile>
-    <ClCompile Include="src\co\co.cppm">
-      <Filter>Source Files\co</Filter>
+      <Filter>Source Files\async</Filter>
     </ClCompile>
     <ClCompile Include="src\co\sequence.cppm">
-      <Filter>Source Files\co</Filter>
+      <Filter>Source Files\async</Filter>
     </ClCompile>
     <ClCompile Include="src\co\task.cppm">
-      <Filter>Source Files\co</Filter>
+      <Filter>Source Files\async</Filter>
     </ClCompile>
     <ClCompile Include="src\co\thread_pool.cppm">
-      <Filter>Source Files\co</Filter>
+      <Filter>Source Files\async</Filter>
     </ClCompile>
     <ClCompile Include="src\dir\list_dir.cppm">
       <Filter>Source Files\dir</Filter>
@@ -100,47 +103,47 @@
     <ClCompile Include="src\os\exec.cppm">
       <Filter>Source Files\os</Filter>
     </ClCompile>
-    <ClCompile Include="src\os\file.cppm">
-      <Filter>Source Files\os</Filter>
-    </ClCompile>
-    <ClCompile Include="src\os\pipes.cppm">
-      <Filter>Source Files\os</Filter>
-    </ClCompile>
-    <ClCompile Include="src\os\read_file.cppm">
-      <Filter>Source Files\os</Filter>
-    </ClCompile>
-    <ClCompile Include="src\os\read_lines.cppm">
-      <Filter>Source Files\os</Filter>
-    </ClCompile>
-    <ClCompile Include="src\os\read_text.cppm">
-      <Filter>Source Files\os</Filter>
-    </ClCompile>
-    <ClCompile Include="src\os\write_text.cppm">
-      <Filter>Source Files\os</Filter>
-    </ClCompile>
-    <ClCompile Include="src\os\windows\exec_impl.cppm">
-      <Filter>Source Files\os\windows</Filter>
-    </ClCompile>
-    <ClCompile Include="src\os\windows\file_impl.cppm">
-      <Filter>Source Files\os\windows</Filter>
-    </ClCompile>
-    <ClCompile Include="src\os\windows\pipes_impl.cppm">
-      <Filter>Source Files\os\windows</Filter>
-    </ClCompile>
-    <ClCompile Include="src\os\linux\exec_impl.cppm">
-      <Filter>Source Files\os\linux</Filter>
-    </ClCompile>
-    <ClCompile Include="src\os\linux\file_impl.cppm">
-      <Filter>Source Files\os\linux</Filter>
-    </ClCompile>
-    <ClCompile Include="src\os\linux\pipes_impl.cppm">
-      <Filter>Source Files\os\linux</Filter>
-    </ClCompile>
     <ClCompile Include="src\os\windows\get_last_error.cppm">
       <Filter>Source Files\os\windows</Filter>
     </ClCompile>
     <ClCompile Include="src\os\linux\get_last_error.cppm">
       <Filter>Source Files\os\linux</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\linux\file_impl.cppm">
+      <Filter>Source Files\io\linux</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\linux\pipes_impl.cppm">
+      <Filter>Source Files\io\linux</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\windows\file_impl.cppm">
+      <Filter>Source Files\io\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\windows\pipes_impl.cppm">
+      <Filter>Source Files\io\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\file.cppm">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\pipes.cppm">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\read_file.cppm">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\read_lines.cppm">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\read_text.cppm">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\write_text.cppm">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
+    <ClCompile Include="src\os\linux\exec_impl.cppm">
+      <Filter>Source Files\os\linux</Filter>
+    </ClCompile>
+    <ClCompile Include="src\os\windows\exec_impl.cppm">
+      <Filter>Source Files\os\windows</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

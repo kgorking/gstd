@@ -4,7 +4,7 @@ import :file;
 import :string;
 import :concepts;
 
-namespace os {
+namespace io {
 	export auto write_text(string filename, Span<const char> auto text) -> std::int64_t {
 		return open(filename, O_WR | O_TRUNC | O_BIN).write(text);
 	}

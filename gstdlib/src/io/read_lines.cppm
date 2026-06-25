@@ -4,9 +4,9 @@ import :file;
 import :sequence;
 import :string;
 
-namespace os {
+namespace io {
 	export sequence<string> read_lines(string filename) {
-		auto f = os::open(filename);
+		auto f = io::open(filename);
 		try {
 			while (!f.end_of_file()) {
 				co_yield f.read_line();

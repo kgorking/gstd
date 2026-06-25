@@ -2,13 +2,13 @@ import gs;
 import std;
 
 test pipes_creation_and_validity = [] {
-	auto p = os::pipes();
+	auto p = io::pipes();
 	test::is_true(p.reader, "reader should be valid");
 	test::is_true(p.writer, "writer should be valid");
 };
 
 test pipes_write_and_read_small_data = [] {
-	auto p = os::pipes();
+	auto p = io::pipes();
 
 	const char test_data[] = "Hello";
 	auto write_result = p.writer.write(std::span<const char>(test_data, 5));
@@ -22,7 +22,7 @@ test pipes_write_and_read_small_data = [] {
 };
 
 test pipes_reader_concept = [] {
-	auto p = os::pipes();
+	auto p = io::pipes();
 
 	string const data = "test";
 	auto w = p.writer.write(data);
@@ -37,7 +37,7 @@ test pipes_reader_concept = [] {
 };
 
 test pipes_writer_concept = [] {
-	auto p = os::pipes();
+	auto p = io::pipes();
 
 	// Verify writer satisfies Writer concept
 	static_assert(Writer<std::remove_reference_t<decltype(p.writer)>>);
@@ -50,7 +50,7 @@ test pipes_writer_concept = [] {
 };
 
 test pipes_line_reader_concept = [] {
-	auto p = os::pipes();
+	auto p = io::pipes();
 
 	// Verify reader satisfies LineReader concept
 	static_assert(LineReader<std::remove_reference_t<decltype(p.reader)>>);
@@ -64,7 +64,7 @@ test pipes_line_reader_concept = [] {
 };
 
 test pipes_line_writer_concept = [] {
-	auto p = os::pipes();
+	auto p = io::pipes();
 
 	// Verify writer satisfies LineWriter concept
 	static_assert(LineWriter<std::remove_reference_t<decltype(p.writer)>>);

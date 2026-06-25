@@ -20,7 +20,7 @@ namespace path {
         return s == "/" || s == "\\";
     }
 
-    export string join_path(const string& a, const string& b) {
+    export string join(string a, string b) {
         if (a.empty()) return b;
         if (b.empty()) return a;
         char sep = get_path_separator();
@@ -29,7 +29,7 @@ namespace path {
     }
 
     // Extract the filename (last component) from a path
-    export string get_filename(const string& path) {
+    export string get_filename(string path) {
         if (path.empty()) return path;
         
         size_t pos = path.find_last_of("/\\");
@@ -39,7 +39,7 @@ namespace path {
     }
 
     // Extract the directory part of a path (everything before the last separator)
-    export string get_directory(const string& path) {
+    export string get_directory(string path) {
         if (path.empty()) return path;
         
         size_t pos = path.find_last_of("/\\");
@@ -50,7 +50,7 @@ namespace path {
     }
 
     // Extract the file extension (including the dot)
-    export string get_extension(const string& path) {
+    export string get_extension(string path) {
         string filename = get_filename(path);
         if (filename.empty()) return "";
         
@@ -61,7 +61,7 @@ namespace path {
     }
 
     // Remove the extension from a path
-    export string remove_extension(const string& path) {
+    export string remove_extension(string path) {
         string filename = get_filename(path);
         string extension = get_extension(path);
         
@@ -72,7 +72,7 @@ namespace path {
     }
 
     // Check if a path has an extension
-    export bool has_extension(const string& path) {
+    export bool has_extension(string path) {
         return !get_extension(path).empty();
     }
 
@@ -82,7 +82,7 @@ namespace path {
         string filename;
     };
 
-    export PathInfo split_path(const string& path) {
+    export PathInfo split_path(string path) {
         return PathInfo {
             get_directory(path),
             get_filename(path)
@@ -95,7 +95,7 @@ namespace path {
         string extension;
     };
 
-    export FilenameInfo split_filename(const string& path) {
+    export FilenameInfo split_filename(string path) {
         string filename = get_filename(path);
         string extension = get_extension(path);
         
@@ -106,7 +106,7 @@ namespace path {
     }
 
     // Normalize a path (handle both / and \ as separators, works on any platform)
-    /*export string normalize_path(const string& path) {
+    /*export string normalize_path(string path) {
         string result = path;
         char sep = get_path_separator();
         
@@ -124,7 +124,7 @@ namespace path {
 
     // Go up N levels in a path
     // Example: go_up_levels("/aa/bb/cc/dd/", 2) returns "/aa/bb/"
-    export string go_up_levels(const string& path, size_t levels) {
+    export string go_up_levels(string path, size_t levels) {
         if (path.empty() || levels == 0) return path;
 
         string result = get_directory(path);

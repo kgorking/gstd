@@ -3,7 +3,7 @@ import std;
 import :file;
 import :string;
 
-namespace os {
+namespace io {
 	export string read_text(string const& filename) {
 		string text;
 		std::vector<char> buffer(4096);

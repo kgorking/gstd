@@ -12,7 +12,7 @@ import :string;
 import :co;
 import :thread_pool;
 
-export namespace os {
+export namespace io {
 	template<auto operation>
 	class async_io_awaiter {
 	private:

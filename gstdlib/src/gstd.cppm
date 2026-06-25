@@ -5,7 +5,6 @@ export import :sequence;
 export import :string;
 
 // coroutine/task
-export import :co;
 export import :task;
 export import :channel;
 
