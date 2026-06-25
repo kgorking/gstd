@@ -175,6 +175,14 @@ public:
         return string(data_, last_char_start, end_);
     }
 
+    // Get first character as a string
+    string front() const {
+        if (empty()) return string();
+
+		std::ptrdiff_t const char_len = utf8::char_len(data_->data[start_]);
+        return string(data_, start_, std::min(start_ + char_len, end_));
+    }
+
     // Find functions
     std::ptrdiff_t find(int c, std::ptrdiff_t pos = 0) const {
         if (pos < 0) pos = 0;
