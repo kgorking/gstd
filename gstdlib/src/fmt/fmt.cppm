@@ -11,3 +11,14 @@ string fmt(std::format_string<Args...> format_str, Args&&... args) {
 	return string(std::move(builder));
 }
 
+export template<typename... Args>
+void print(std::format_string<Args...> format_str, Args&&... args) {
+	std::print(format_str, std::forward<Args>(args)...);
+}
+
+
+export template<typename... Args>
+void println(std::format_string<Args...> format_str, Args&&... args) {
+	std::println(format_str, std::forward<Args>(args)...);
+}
+
