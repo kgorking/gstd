@@ -52,18 +52,6 @@
     <ClCompile Include="src\string.cppm">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\co\channel.cppm">
-      <Filter>Source Files\async</Filter>
-    </ClCompile>
-    <ClCompile Include="src\co\sequence.cppm">
-      <Filter>Source Files\async</Filter>
-    </ClCompile>
-    <ClCompile Include="src\co\task.cppm">
-      <Filter>Source Files\async</Filter>
-    </ClCompile>
-    <ClCompile Include="src\co\thread_pool.cppm">
-      <Filter>Source Files\async</Filter>
-    </ClCompile>
     <ClCompile Include="src\dir\list_dir.cppm">
       <Filter>Source Files\dir</Filter>
     </ClCompile>
@@ -90,9 +78,6 @@
     </ClCompile>
     <ClCompile Include="src\testing\testing.cppm">
       <Filter>Source Files\testing</Filter>
-    </ClCompile>
-    <ClCompile Include="src\strconv\strconv.cppm">
-      <Filter>Source Files\strutil</Filter>
     </ClCompile>
     <ClCompile Include="src\strutil\lines.cppm">
       <Filter>Source Files\strutil</Filter>
@@ -156,6 +141,18 @@
     </ClCompile>
     <ClCompile Include="src\strutil\string_builder.cppm">
       <Filter>Source Files\strutil</Filter>
+    </ClCompile>
+    <ClCompile Include="src\async\channel.cppm">
+      <Filter>Source Files\async</Filter>
+    </ClCompile>
+    <ClCompile Include="src\async\sequence.cppm">
+      <Filter>Source Files\async</Filter>
+    </ClCompile>
+    <ClCompile Include="src\async\task.cppm">
+      <Filter>Source Files\async</Filter>
+    </ClCompile>
+    <ClCompile Include="src\async\thread_pool.cppm">
+      <Filter>Source Files\async</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

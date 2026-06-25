@@ -30,9 +30,6 @@ export import :read_text;
 export import :write_text;
 export import :dir;
 
-// strconv
-export import :strconv;
-
 // strutil
 export import :lines;
 export import :string_reader;

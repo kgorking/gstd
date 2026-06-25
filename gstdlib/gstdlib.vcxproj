@@ -19,11 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\async\channel.cppm" />
+    <ClCompile Include="src\async\sequence.cppm" />
+    <ClCompile Include="src\async\task.cppm" />
+    <ClCompile Include="src\async\thread_pool.cppm" />
     <ClCompile Include="src\concepts.cppm" />
-    <ClCompile Include="src\co\channel.cppm" />
-    <ClCompile Include="src\co\sequence.cppm" />
-    <ClCompile Include="src\co\task.cppm" />
-    <ClCompile Include="src\co\thread_pool.cppm" />
     <ClCompile Include="src\dir\list_dir.cppm" />
     <ClCompile Include="src\dir\path.cppm" />
     <ClCompile Include="src\fmt\fmt.cppm" />
@@ -60,7 +60,6 @@
     </ClCompile>
     <ClCompile Include="src\os\windows\exec_impl.cppm" />
     <ClCompile Include="src\os\windows\get_last_error.cppm" />
-    <ClCompile Include="src\strconv\strconv.cppm" />
     <ClCompile Include="src\string.cppm" />
     <ClCompile Include="src\strutil\lines.cppm" />
     <ClCompile Include="src\strutil\string_builder.cppm" />
