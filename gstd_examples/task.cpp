@@ -9,9 +9,10 @@ task<void> print_letters(char c) {
 	co_return;
 }
 
-int main() {
+int dmain() {
 	auto tasks = std::views::iota('a', 'z')
 		| std::views::transform(print_letters)
 		| std::ranges::to<std::vector>();
 	wait_all(tasks);
+	return 0;
 }

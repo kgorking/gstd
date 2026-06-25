@@ -36,5 +36,8 @@ export import :lines;
 export import :string_reader;
 export import :string_writer;
 
+// net/http
+export import :http;
+
 // testing
 export import :testing;

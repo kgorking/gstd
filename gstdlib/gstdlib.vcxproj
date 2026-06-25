@@ -49,6 +49,7 @@
     <ClCompile Include="src\io\windows\pipes_impl.cppm" />
     <ClCompile Include="src\io\Writer.cppm" />
     <ClCompile Include="src\io\write_text.cppm" />
+    <ClCompile Include="src\net\http\http.cppm" />
     <ClCompile Include="src\os\exec.cppm" />
     <ClCompile Include="src\os\linux\exec_impl.cppm">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

@@ -41,6 +41,9 @@
     <Filter Include="Source Files\net">
       <UniqueIdentifier>{cd40e722-b146-4627-aa48-e0ad50dbb940}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\net\http">
+      <UniqueIdentifier>{39b43b8b-e8d6-4437-ae42-06987c7416de}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\concepts.cppm">
@@ -156,6 +159,9 @@
     </ClCompile>
     <ClCompile Include="src\types.cppm">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\net\http\http.cppm">
+      <Filter>Source Files\net\http</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

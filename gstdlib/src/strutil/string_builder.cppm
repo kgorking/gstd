@@ -1,5 +1,6 @@
 export module gs:string_builder;
 import std;
+import :concepts;
 import :types;
 
 // Simple helper class for building strings with format
@@ -29,6 +30,26 @@ public:
 			capacity = new_capacity;
 		}
 		buffer[size++] = c;
+	}
+
+	void push_span(Span<char const> auto span) {
+		if (size >= capacity) {
+			// Grow capacity exponentially
+			int64 new_capacity = (capacity == 0) ? 8 : capacity * 2;
+			while (new_capacity < span.size())
+				new_capacity *= 2;
+
+			char* new_buffer = new char[new_capacity + 1];
+			if (buffer) {
+				std::memcpy(new_buffer, buffer, size);
+				new_buffer[size] = 0;
+				delete[] buffer;
+			}
+			buffer = new_buffer;
+			capacity = new_capacity;
+		}
+		std::memcpy(buffer + size, span.data(), span.size());
+		size += span.size();
 	}
 
 	void pop_back() {

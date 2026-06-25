@@ -16,6 +16,15 @@ void print(std::format_string<Args...> format_str, Args&&... args) {
 	std::print(format_str, std::forward<Args>(args)...);
 }
 
+export template<typename... Args>
+void print(Args&&... args) {
+	std::string format_str;
+	for(int i=0; i<sizeof...(Args); ++i) {
+		format_str += "{}";
+	}
+	std::cout << std::vformat(format_str, std::make_format_args(args...));
+}
+
 
 export template<typename... Args>
 void println(std::format_string<Args...> format_str, Args&&... args) {
