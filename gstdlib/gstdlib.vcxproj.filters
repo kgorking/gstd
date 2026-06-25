@@ -38,6 +38,9 @@
     <Filter Include="Source Files\fmt">
       <UniqueIdentifier>{0ad4bf23-ec77-4192-8542-57fac053bd04}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\net">
+      <UniqueIdentifier>{cd40e722-b146-4627-aa48-e0ad50dbb940}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\concepts.cppm">
