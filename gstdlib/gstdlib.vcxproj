@@ -26,6 +26,7 @@
     <ClCompile Include="src\co\thread_pool.cppm" />
     <ClCompile Include="src\dir\list_dir.cppm" />
     <ClCompile Include="src\dir\path.cppm" />
+    <ClCompile Include="src\fmt\fmt.cppm" />
     <ClCompile Include="src\gstd.cppm" />
     <ClCompile Include="src\io\file.cppm" />
     <ClCompile Include="src\io\LineReader.cppm" />
@@ -62,6 +63,7 @@
     <ClCompile Include="src\strconv\strconv.cppm" />
     <ClCompile Include="src\string.cppm" />
     <ClCompile Include="src\strutil\lines.cppm" />
+    <ClCompile Include="src\strutil\string_builder.cppm" />
     <ClCompile Include="src\strutil\string_reader.cppm" />
     <ClCompile Include="src\strutil\string_writer.cppm" />
     <ClCompile Include="src\strutil\utf8.cppm" />

@@ -35,6 +35,9 @@
     <Filter Include="Source Files\io\linux">
       <UniqueIdentifier>{399f0ff8-40cb-420e-b19d-8d5c579311fc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\fmt">
+      <UniqueIdentifier>{0ad4bf23-ec77-4192-8542-57fac053bd04}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\concepts.cppm">
@@ -144,6 +147,12 @@
     </ClCompile>
     <ClCompile Include="src\os\windows\exec_impl.cppm">
       <Filter>Source Files\os\windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\fmt\fmt.cppm">
+      <Filter>Source Files\fmt</Filter>
+    </ClCompile>
+    <ClCompile Include="src\strutil\string_builder.cppm">
+      <Filter>Source Files\strutil</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

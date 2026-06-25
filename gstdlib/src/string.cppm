@@ -2,50 +2,11 @@ export module gs:string;
 import std;
 import :utf8;
 import :sequence;
+import :string_builder;
 
 // Note: This string class stores UTF-8 encoded text as char bytes internally.
 // However, all size, indexing, and substring operations work at the CHARACTER level, not byte level.
 // This properly handles multi-byte UTF-8 characters (e.g., é = 1 char/2 bytes, 🚀 = 1 char/4 bytes).
-
-// Helper class for building strings with format
-class StringBuilder {
-public:
-	using value_type = char;
-	char* buffer = nullptr;
-	std::ptrdiff_t size = 0;
-	std::ptrdiff_t capacity = 0;
-
-	inline ~StringBuilder() {
-		delete[] buffer;
-	}
-
-	// Support for std::back_insert_iterator
-	inline void push_back(char c) {
-		if (size >= capacity) {
-			// Grow capacity exponentially
-			std::ptrdiff_t new_capacity = (capacity == 0) ? 8 : capacity * 2;
-			char* new_buffer = new char[new_capacity + 1];
-			if (buffer) {
-				std::memcpy(new_buffer, buffer, size);
-				new_buffer[size] = 0;
-				delete[] buffer;
-			}
-			buffer = new_buffer;
-			capacity = new_capacity;
-		}
-		buffer[size++] = c;
-	}
-
-	inline void pop_back() {
-		if (size > 0) {
-			size--;
-			buffer[size] = 0;
-		}
-	}
-	inline bool empty() const {
-		return size == 0;
-	}
-};
 
 struct StringData {
 	char const* data = nullptr;
@@ -390,7 +351,7 @@ public:
     string(std::shared_ptr<StringData> data, std::ptrdiff_t start, std::ptrdiff_t end)
         : data_(data), start_(start), end_(end) {}
 
-    string(StringBuilder&& builder) : data_(nullptr), start_(0), end_(0) {
+    string(string_builder&& builder) : data_(nullptr), start_(0), end_(0) {
         if (builder.size > 0 && builder.buffer) {
             data_ = std::make_shared<StringData>();
             // Add null terminator to the builder's buffer
@@ -408,14 +369,6 @@ public:
     }
 };
 static_assert(Span<string, const char>, "string should satisfy the Span concept");
-
-// Format a string
-export template<typename... Args>
-string fmt(std::format_string<Args...> format_str, Args&&... args) {
-	StringBuilder builder;
-	std::format_to(std::back_inserter(builder), format_str, std::forward<Args>(args)...);
-	return string(std::move(builder));
-}
 
 // Non-member operators
 export std::ostream& operator<<(std::ostream& os, const string& str) {

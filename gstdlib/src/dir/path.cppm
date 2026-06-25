@@ -1,5 +1,6 @@
 export module gs:path;
 import :string;
+import :fmt;
 
 namespace path {
     // Get the platform-specific path separator

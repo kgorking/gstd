@@ -215,7 +215,7 @@ export namespace io {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
 
-			StringBuilder result;
+			string_builder result;
 			char buffer[256];
 
 			while (true) {

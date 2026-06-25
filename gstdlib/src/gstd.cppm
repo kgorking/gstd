@@ -3,6 +3,7 @@ export module gs;
 export import :concepts;
 export import :sequence;
 export import :string;
+export import :fmt;
 
 // coroutine/task
 export import :task;
