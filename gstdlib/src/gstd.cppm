@@ -1,5 +1,6 @@
 export module gs;
 
+export import :types;
 export import :concepts;
 export import :sequence;
 export import :string;
