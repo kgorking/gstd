@@ -154,5 +154,8 @@
     <ClCompile Include="src\async\thread_pool.cppm">
       <Filter>Source Files\async</Filter>
     </ClCompile>
+    <ClCompile Include="src\types.cppm">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
