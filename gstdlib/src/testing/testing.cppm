@@ -5,39 +5,38 @@ import :registry;
 
 export class test {
 public:
-	// Non-copyable, non-movable for simplicity
+	// Non-copyable, non-movable
 	test(const test&) = delete;
 	test(test&&) = delete;
 	test& operator=(const test&) = delete;
 	test& operator=(test&&) = delete;
 
-	test(std::invocable auto&& fn, std::source_location loc = std::source_location::current()) {
-		gs::testing::test_registry::register_test(std::forward<decltype(fn)>(fn), loc);
-	}
-
-	template<auto Expected, typename ActualType>
-	static void equals(ActualType&& actual, const char* message = nullptr, std::source_location loc = std::source_location::current()) {
-		bool cmp = false;
-		if constexpr (std::integral<std::decay_t<ActualType>> && std::integral<std::decay_t<decltype(Expected)>>) {
-			cmp = std::cmp_equal(actual, Expected);
+	constexpr test(std::invocable auto&& fn, std::source_location loc = std::source_location::current()) {
+		if consteval {
+			fn();
 		}
 		else {
-			cmp = (actual == Expected);
+			gs::testing::test_registry::register_test(std::forward<decltype(fn)>(fn), loc);
 		}
+	}
 
-		if (!cmp) {
-			std::string failure_msg = std::format("{} != {} on line {}", actual, Expected, loc.line());
-			if (message && *message) {
-				failure_msg += " - ";
-				failure_msg += message;
+	template<typename T = bool>
+	constexpr static void is_true(bool condition, const char* message = nullptr, std::source_location loc = std::source_location::current()) {
+		if consteval {
+			if (!condition) {
+				throw;
 			}
-			gs::testing::record_assertion_failure(failure_msg);
+		}
+		else {
+			if (!condition) {
+				register_failure("is_true", message, loc);
+			}
 		}
 	}
 
 	template<typename ActualType, typename ExpectedType>
 		requires requires(ActualType t, ExpectedType u) { t == u; }
-	static void equals(ActualType const& actual, ExpectedType const& expected, const char* message = nullptr, std::source_location loc = std::source_location::current()) {
+	constexpr static void equals(ActualType const& actual, ExpectedType const& expected, const char* message = nullptr, std::source_location loc = std::source_location::current()) {
 		bool cmp = false;
 		if constexpr (std::signed_integral<ActualType> != std::signed_integral<ExpectedType>) {
 			if constexpr (std::signed_integral<ActualType>) {
@@ -52,23 +51,23 @@ public:
 		}
 
 		if (!cmp) {
-			std::string failure_msg = std::format("{} != {} on line {}", actual, expected, loc.line());
+			std::string failure_msg = std::format("{} != {}", actual, expected);
 			if (message && *message) {
 				failure_msg += " - ";
 				failure_msg += message;
 			}
-			gs::testing::record_assertion_failure(failure_msg);
+			register_failure("equals", failure_msg.c_str(), loc);
 		}
 	}
 
-	static void is_true(bool condition, std::string_view message = "", std::source_location loc = std::source_location::current()) {
-		if (!condition) {
-			std::string failure_msg;
-			if (!message.empty()) {
-				failure_msg = std::format("Assertion failed on line {}: {}", loc.line(), message);
-			} else {
-				failure_msg = std::format("Assertion failed on line {}", loc.line());
-			}
+private:
+	constexpr static void register_failure(const char* op, const char* message, std::source_location loc) noexcept {
+		if (message) {
+			std::string failure_msg = std::format("{} failed on line {}: {}", op, loc.line(), message);
+			gs::testing::record_assertion_failure(failure_msg);
+		}
+		else {
+			std::string failure_msg = std::format("{} failed on line {}", op, loc.line());
 			gs::testing::record_assertion_failure(failure_msg);
 		}
 	}

@@ -8,7 +8,7 @@ test string_basic = [] {
     test::is_true(!s.empty(), "string should not be empty");
 
     string sub = s.substr(6, 5);
-    test::equals<5Z>(sub.size(), "substr size should be 5");
+    test::equals(sub.size(), 5Z, "substr size should be 5");
     test::equals(sub, "world", "substr should be 'world'");
 
     string empty;

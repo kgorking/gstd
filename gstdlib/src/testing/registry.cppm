@@ -15,7 +15,8 @@ export namespace gs::testing {
 		struct test_entry {
 			std::string name;
 			std::uint_least32_t source_line = 0;
-			std::function<void()> run;
+			void (*run)();
+			//std::function<void()> run;
 		};
 
 		static test_registry& instance() {
@@ -28,13 +29,13 @@ export namespace gs::testing {
 		std::mutex registry_mutex;
 
 	public:
-		static void register_test(std::function<void()> test_fn, std::source_location loc) {
+		constexpr static void register_test(void (*test_fn)(), std::source_location loc) {
 			auto trace = std::stacktrace::current();
 			auto lambda_name = parse_stacktrace_description_for_name(trace[2].description());
 			auto& reg = instance();
 
 			std::lock_guard<std::mutex> lock(reg.registry_mutex);
-			reg.tests[loc.file_name()].emplace_back(test_entry{lambda_name, loc.line(), std::move(test_fn)});
+			reg.tests[loc.file_name()].emplace_back(test_entry{ lambda_name, loc.line(), test_fn });
 		}
 
 		static std::string parse_stacktrace_description_for_name(std::string_view desc) {

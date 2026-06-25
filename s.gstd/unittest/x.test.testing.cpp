@@ -1,7 +1,6 @@
 import gs;
 
 test simpleTest2 = [] {
-	test::is_true(42 == 21, "42 should equal 21");
-	test::equals(42,  21);
-	test::equals<21>(42);
+	test::is_true(42 == 41);
+	test::equals(42, 41);
 };
