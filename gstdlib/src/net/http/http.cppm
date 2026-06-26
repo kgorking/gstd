@@ -1,4 +1,5 @@
 module;
+#define NOMINMAX
 #include <windows.h>
 #include <winhttp.h>
 #pragma comment(lib, "winhttp.lib")
@@ -8,20 +9,30 @@ import std;
 import :string;
 import :string_builder;
 import :types;
+import :Reader;
 
-struct request_handle {
-	HINTERNET session;
-	HINTERNET connect;
-	HINTERNET request;
+struct request {
+	HINTERNET hSession;
+	HINTERNET hConnect;
+	HINTERNET hRequest;
 
-	~request_handle() {
-		WinHttpCloseHandle(request);
-		WinHttpCloseHandle(connect);
-		WinHttpCloseHandle(session);
+	int64 read(std::span<char> buf) {
+		DWORD bytes_read = 0;
+		if (!WinHttpReadData(hRequest, buf.data(), std::min(std::numeric_limits<DWORD>::max(), (DWORD)buf.size()), &bytes_read)) {
+			return 0;
+		}
+		return bytes_read;
+	}
+
+	~request() {
+		WinHttpCloseHandle(hRequest);
+		WinHttpCloseHandle(hConnect);
+		WinHttpCloseHandle(hSession);
 	}
 };
+static_assert(Reader<request>);
 
-request_handle open_request(string url, wchar_t const* method) {
+request open_request(string url, wchar_t const* method) {
 	int url_len = MultiByteToWideChar(CP_UTF8, 0, url.c_str(), static_cast<int>(url.size_bytes()), nullptr, 0);
 	std::wstring url_w(url_len, L'\0');
 	MultiByteToWideChar(CP_UTF8, 0, url.c_str(), static_cast<int>(url.size_bytes()), url_w.data(), url_len);

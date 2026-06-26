@@ -36,9 +36,14 @@ export import :lines;
 export import :string_reader;
 export import :string_writer;
 
+// net
+export import :socket;
+export import :listener;
+
 // net/http
 export import :http_get;
 export import :http_post;
+export import :http_server;
 
 // testing
 export import :testing;

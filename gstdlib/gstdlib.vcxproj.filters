@@ -169,5 +169,17 @@
     <ClCompile Include="src\net\http\post.cppm">
       <Filter>Source Files\net\http</Filter>
     </ClCompile>
+    <ClCompile Include="src\net\http\server.cppm">
+      <Filter>Source Files\net\http</Filter>
+    </ClCompile>
+    <ClCompile Include="src\net\listener.cppm">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
+    <ClCompile Include="src\net\socket.cppm">
+      <Filter>Source Files\net</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\copy.cppm">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

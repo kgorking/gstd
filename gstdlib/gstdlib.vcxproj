@@ -28,6 +28,7 @@
     <ClCompile Include="src\dir\path.cppm" />
     <ClCompile Include="src\fmt\fmt.cppm" />
     <ClCompile Include="src\gstd.cppm" />
+    <ClCompile Include="src\io\copy.cppm" />
     <ClCompile Include="src\io\file.cppm" />
     <ClCompile Include="src\io\LineReader.cppm" />
     <ClCompile Include="src\io\LineWriter.cppm" />
@@ -49,9 +50,12 @@
     <ClCompile Include="src\io\windows\pipes_impl.cppm" />
     <ClCompile Include="src\io\Writer.cppm" />
     <ClCompile Include="src\io\write_text.cppm" />
+    <ClCompile Include="src\net\socket.cppm" />
+    <ClCompile Include="src\net\listener.cppm" />
     <ClCompile Include="src\net\http\http.cppm" />
     <ClCompile Include="src\net\http\get.cppm" />
     <ClCompile Include="src\net\http\post.cppm" />
+    <ClCompile Include="src\net\http\server.cppm" />
     <ClCompile Include="src\os\exec.cppm" />
     <ClCompile Include="src\os\linux\exec_impl.cppm">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
