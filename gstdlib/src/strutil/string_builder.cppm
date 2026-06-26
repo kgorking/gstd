@@ -11,6 +11,13 @@ public:
 	int64 size = 0;
 	int64 capacity = 0;
 
+	explicit string_builder(int64 initial_capacity = 0) : size(0), capacity(initial_capacity) {
+		if (initial_capacity > 0) {
+			buffer = new char[initial_capacity + 1];
+			buffer[0] = 0;
+		}
+	}
+
 	~string_builder() {
 		delete[] buffer;
 	}
@@ -33,10 +40,10 @@ public:
 	}
 
 	void push_span(Span<char const> auto span) {
-		if (size >= capacity) {
+		if (size + std::ssize(span) >= capacity) {
 			// Grow capacity exponentially
 			int64 new_capacity = (capacity == 0) ? 8 : capacity * 2;
-			while (new_capacity < std::ssize(span))
+			while (new_capacity < size + std::ssize(span))
 				new_capacity *= 2;
 
 			char* new_buffer = new char[new_capacity + 1];

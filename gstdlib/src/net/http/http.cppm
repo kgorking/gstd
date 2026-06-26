@@ -79,10 +79,14 @@ request_handle open_request(string url, wchar_t const* method) {
 }
 
 string read_response(HINTERNET hRequest) {
-	string_builder builder;
-	char buffer[4096];
-	DWORD bytes_read = 0;
+	DWORD size = 0;
+	if (!WinHttpQueryDataAvailable(hRequest, &size))
+		throw std::system_error(GetLastError(), std::system_category(), "WinHttpQueryDataAvailable failed");
 
+	string_builder builder(size);
+
+	char buffer[32 * 1024];
+	DWORD bytes_read = 0;
 	while (WinHttpReadData(hRequest, buffer, sizeof(buffer), &bytes_read) && bytes_read > 0) {
 		builder.push_span(std::span<char const>(buffer, bytes_read));
 	}
