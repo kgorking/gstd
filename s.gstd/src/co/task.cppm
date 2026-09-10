@@ -24,8 +24,10 @@ struct awaiter {
     void await_resume() requires (std::is_void_v<ValueType>) {
 		auto& promise = h.promise();
 		if (promise.exception) std::rethrow_exception(promise.exception);
-		promise.suspended.clear();
-		promise.suspended.notify_one();
+		if (!promise.done.test()) {
+			promise.suspended.clear();
+			promise.suspended.notify_one();
+		}
 	}
 
     auto await_resume() -> ValueType requires (!std::is_void_v<ValueType>) {
@@ -35,9 +37,11 @@ struct awaiter {
 		if (promise.exception)
             std::rethrow_exception(promise.exception);
 
-		ValueType vt = std::move(promise.value);
-		promise.suspended.clear();
-		promise.suspended.notify_one();
+		ValueType vt = promise.value;
+		if (!promise.done.test()) {
+			promise.suspended.clear();
+			promise.suspended.notify_one();
+		}
 		return vt;
     }
 };

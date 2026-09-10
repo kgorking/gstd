@@ -16,20 +16,21 @@ struct awaiter {
 	}
 
 	void await_suspend(std::coroutine_handle<> current) noexcept {
-		h.promise().continuation.store(current, std::memory_order_release);
-		if (h.promise().done.test(std::memory_order_acquire)) {
-			auto stored = h.promise().continuation.exchange(nullptr, std::memory_order_acq_rel);
-			if (stored) {
-				thread_pool::instance().enqueue(stored);
-			}
+		auto& promise = h.promise();
+		if (promise.done.test(std::memory_order_acquire)) {
+			thread_pool::instance().enqueue(current);
+			return;
 		}
+		promise.continuation.store(current, std::memory_order_release);
 	}
 
     void await_resume() requires (std::is_void_v<ValueType>) {
 		auto& promise = h.promise();
 		if (promise.exception) std::rethrow_exception(promise.exception);
-		promise.suspended.clear();
-		promise.suspended.notify_one();
+		if (!promise.done.test()) {
+			promise.suspended.clear();
+			promise.suspended.notify_one();
+		}
 	}
 
     auto await_resume() -> ValueType requires (!std::is_void_v<ValueType>) {
@@ -39,9 +40,11 @@ struct awaiter {
 		if (promise.exception)
             std::rethrow_exception(promise.exception);
 
-		ValueType vt = std::move(promise.value);
-		promise.suspended.clear();
-		promise.suspended.notify_one();
+		ValueType vt = promise.value;
+		if (!promise.done.test()) {
+			promise.suspended.clear();
+			promise.suspended.notify_one();
+		}
 		return vt;
     }
 };
@@ -164,15 +167,17 @@ public:
 
 	template<typename T = ValueType>
     T result() const requires (!std::is_void_v<T>) {
-		std::println("result(): waiting for suspended");
 		// Wait until a value is ready
-		auto& suspended = _handle.promise().suspended;
+		auto& promise = _handle.promise();
+		auto& suspended = promise.suspended;
 		suspended.wait(false);
 
-		// Snag the value, and signal that we're done consuming it
-		T value = std::move(_handle.promise().value);
-		suspended.clear();
-		suspended.notify_one();
+		// Keep the final value available so multiple awaiters can observe it.
+		T value = promise.value;
+		if (!promise.done.test()) {
+			suspended.clear();
+			suspended.notify_one();
+		}
 
 		return value;
     }
