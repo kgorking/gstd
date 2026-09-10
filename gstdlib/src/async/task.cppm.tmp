@@ -89,17 +89,16 @@ struct task_promise_base {
 		set_suspended();
 		done.test_and_set();
 		done.notify_one();
-
-		auto cont = continuation.exchange(nullptr, std::memory_order_acq_rel);
-		if (cont) {
-			cont.resume();
-			//thread_pool::instance().enqueue(cont);
-		}
 	}
 
 	void set_suspended() noexcept {
 		suspended.test_and_set();
 		suspended.notify_one();
+		auto cont = continuation.exchange(nullptr, std::memory_order_acq_rel);
+		if (cont) {
+			cont.resume();
+			//thread_pool::instance().enqueue(cont);
+		}
 	}
 };
 
@@ -109,109 +108,10 @@ struct task_promise : task_promise_base<ValueType> {
 
 	auto get_return_object() noexcept -> task<ValueType>;
 
-	auto yield_value(ValueType v) noexcept {
+	auto yield_value(ValueType&& v) noexcept {
 		this->wait_until_not_suspended();
-		value = std::move(v);
+		value = std::forward<ValueType>(v);
 		this->set_suspended();
 		return std::suspend_never{}; // let it rip on the scheduled thread
 	}
-	void return_value(ValueType v) noexcept {
-		value = std::move(v);
-		this->set_done();
-	}
-};
-
-template<>
-struct task_promise<void> : task_promise_base<void> {
-	auto get_return_object() noexcept -> task<void>;
-	void return_void() noexcept {
-		this->set_done();
-	}
-};
-
-export template<typename ValueType = void>
-class task {
-public:
-    using promise_type = task_promise<ValueType>;
-    using value_type = ValueType;
-
-private:
-    std::coroutine_handle<promise_type> _handle = nullptr;
-
-public:
-    // constructors / destructor
-    task() noexcept = default;
-    explicit task(std::coroutine_handle<promise_type> h) noexcept : _handle(h) {}
-    task(task&& other) noexcept : _handle(other._handle) { other._handle = nullptr; }
-	task(task const& other) : _handle(other._handle) {}
-
-	task& operator=(task&& other) noexcept {
-		_handle = std::exchange(other._handle, nullptr);
-		return *this;
-	}
-	task& operator=(task const& other) {
-		_handle = other._handle;
-		return *this;
-	}
-
-    bool done() const noexcept { return !_handle || _handle.promise().done.test(); }
-
-	void wait() const {
-		if (!done()) {
-			_handle.promise().wait_until_done();
-		}
-	}
-
-	template<typename T = ValueType>
-    T result() const requires (!std::is_void_v<T>) {
-		std::println("result(): waiting for suspended");
-		// Wait until a value is ready
-		auto& suspended = _handle.promise().suspended;
-		suspended.wait(false);
-
-		// Snag the value, and signal that we're done consuming it
-		T value = std::move(_handle.promise().value);
-		suspended.clear();
-		suspended.notify_one();
-
-		return value;
-    }
-
-    auto operator co_await() & noexcept {
-        return awaiter<ValueType, promise_type>{_handle};
-    }
-
-    auto operator co_await() && noexcept {
-        return awaiter<ValueType, promise_type>{std::exchange(_handle, nullptr)};
-    }
-};
-
-// out-of-line definitions now that 'task' is complete
-
-template<typename ValueType>
-auto task_promise<ValueType>::get_return_object() noexcept -> task<ValueType> {
-	auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
-    return task<ValueType>{handle};
-}
-
-auto task_promise<void>::get_return_object() noexcept -> task<void> {
-	auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
-    return task<void>{handle};
-}
-
-// Wait for multiple tasks and collect their results
-export template<typename... ValueTypes>
-auto wait_all(task<ValueTypes>... tasks)
-	requires requires { (tasks.wait(), ...); }
-{
-	return std::make_tuple(tasks.result()...);
-}
-
-export auto wait_all(std::ranges::range auto&& tasks)
-	requires requires { tasks.at(0).wait(); }
-{
-	for (auto& task : tasks)
-		task.wait();
-}
-
-
+	void return_value(ValueType&& v) noexcept {

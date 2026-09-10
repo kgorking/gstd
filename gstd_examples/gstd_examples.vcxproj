@@ -153,6 +153,7 @@
   <ItemGroup>
     <ClCompile Include="http_get.cpp" />
     <ClCompile Include="task.cpp" />
+    <ClCompile Include="task_join.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\gstdlib\gstdlib.vcxproj">

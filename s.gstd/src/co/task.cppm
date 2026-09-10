@@ -97,15 +97,15 @@ struct task_promise : task_promise_base<ValueType> {
 
 	auto get_return_object() noexcept -> task<ValueType>;
 
-	auto yield_value(ValueType&& v) noexcept {
+	auto yield_value(ValueType v) noexcept {
 		this->wait_until_not_suspended();
-		value = std::forward<ValueType>(v);
+		value = std::move(v);
 		this->set_suspended();
 		return std::suspend_never{}; // let it rip on the scheduled thread
 	}
-	void return_value(ValueType&& v) noexcept {
+	void return_value(ValueType v) noexcept {
 		this->wait_until_not_suspended();
-		value = std::forward<ValueType>(v);
+		value = std::move(v);
 		this->set_suspended();
 		this->set_done();
 	}

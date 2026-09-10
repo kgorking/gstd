@@ -15,6 +15,7 @@ export import :path;
 export import :dir;
 
 // io
+export import :copy;
 export import :Reader;
 export import :LineReader;
 export import :Writer;
