@@ -87,22 +87,18 @@ public:
         return !_handle || _handle.done();
     }
 
+	// Awaiter support for co_await
 	bool await_ready() const noexcept {
 		return _handle.done();
 	}
 
-	// Awaiter support for co_await
 	void await_suspend(std::coroutine_handle<> current) noexcept {
-		std::println("task::await_suspend: current = {}, h = {}", current.address(), _handle.address());
+		//std::println("task::await_suspend: current = {}, h = {}", current.address(), _handle.address());
 		_handle.promise().continuation = current;
 		_handle.resume();
 	}
 
-	void await_resume() requires (std::is_void_v<ValueType>) {
-		fut.get();
-	}
-
-	auto await_resume() -> ValueType requires (!std::is_void_v<ValueType>) {
+	auto await_resume() -> ValueType {
 		return fut.get();
 	}
 };

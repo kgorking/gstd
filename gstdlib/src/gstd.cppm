@@ -9,6 +9,7 @@ export import :fmt;
 // coroutine/task
 export import :task;
 export import :channel;
+export import :thread_pool;
 
 // dir
 export import :path;

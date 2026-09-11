@@ -42,6 +42,11 @@ public:
 		io_work_queue << h;
     }
 
+	// ??
+	bool await_ready() const noexcept { return false; }
+	void await_suspend(std::coroutine_handle<> current) noexcept { enqueue(current); }
+	void await_resume() { }
+
 private:
     void worker_loop() {
 		while (std::coroutine_handle<> h = work_queue.get())
