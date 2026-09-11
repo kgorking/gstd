@@ -2,7 +2,7 @@ import std;
 import gs;
 
 static task<int> dependency() {
-	co_return 100 + 31;
+	co_return 31;
 }
 
 static task<int> d;
@@ -17,11 +17,11 @@ static task<int> dependent2() {
 }
 
 int main() {
-	int loops = 100;
+	int loops = 1000;
 	while (loops--) {
 		d = dependency();
 		auto const [v1, v2] = wait_all(dependent1(), dependent2());
-		std::println("Results {}: {}, {}", loops, v1, v2);
+		std::println("loop {}: {}, {}", loops, v1, v2);
 	}
 	return 0;
 }

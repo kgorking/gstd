@@ -1,6 +1,10 @@
 import gs;
 import std;
 
+static_assert(std::is_copy_constructible_v<task<int>>);
+static_assert(std::is_copy_assignable_v<task<int>>);
+
+
 static task<int> cpu_heavy_task(int iterations) {
 	int result = 100 + std::rand() % 1024;
 	std::this_thread::sleep_for(std::chrono::milliseconds(result));
@@ -38,6 +42,33 @@ test task_in_task = [] {
 	int result = tester().result();
 	test::is_true(result == 1);
 	};
+
+test task_reused_dependency_is_safe = [] {
+    auto run_round = []() -> task<int> {
+        task<int> shared;
+        auto dependency = []() -> task<int> {
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            co_return 131;
+        };
+        auto dependent = [&shared]() -> task<int> {
+            int const value = co_await shared;
+            co_return value * 2;
+        };
+
+        shared = dependency();
+        auto left = dependent();
+        auto right = dependent();
+        auto [l, r] = wait_all(std::move(left), std::move(right));
+        test::equals(l, 262, "left dependency result should be 262");
+        test::equals(r, 262, "right dependency result should be 262");
+        co_return l + r;
+    };
+
+    for (int i = 0; i < 50; ++i) {
+        auto result = run_round().result();
+        test::equals(result, 524, "looped dependency results should stay stable");
+    }
+};
 
 test task_multiple_parallel_computations = [] {
 	auto parallel_compute = []() -> task<int> {

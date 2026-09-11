@@ -12,115 +12,170 @@ struct awaiter {
     std::coroutine_handle<PromiseType> h;
 
     bool await_ready() const noexcept {
-		// If the task is already suspended, a value is ready.
-		// Skips all the coroutine machinery and just returns the value immediately.
-		return h.promise().suspended.test();
-	}
+        auto& promise = h.promise();
+        return promise.done.load(std::memory_order_acquire)
+            || promise.ready.load(std::memory_order_acquire);
+    }
 
-	auto await_suspend(std::coroutine_handle<PromiseType> current) {
-		return current;
-	}
+    bool await_suspend(std::coroutine_handle<> current) noexcept {
+        auto& promise = h.promise();
+        if (promise.done.load(std::memory_order_acquire)
+            || promise.ready.load(std::memory_order_acquire)) {
+            return false;
+        }
+
+        std::lock_guard lock(promise.mutex);
+        promise.continuations.push_back(current);
+        return true;
+    }
 
     void await_resume() requires (std::is_void_v<ValueType>) {
-		auto& promise = h.promise();
-		if (promise.exception) std::rethrow_exception(promise.exception);
-		if (!promise.done.test()) {
-			promise.suspended.clear();
-			promise.suspended.notify_one();
-		}
-	}
+        auto& promise = h.promise();
+        if (promise.exception) std::rethrow_exception(promise.exception);
+
+        std::unique_lock lock(promise.mutex);
+        promise.cv.wait(lock, [&] {
+            return promise.done.load(std::memory_order_acquire)
+                || promise.ready.load(std::memory_order_acquire);
+        });
+
+        if (!promise.done.load(std::memory_order_acquire)) {
+            promise.ready.store(false, std::memory_order_release);
+            promise.cv.notify_all();
+        }
+    }
 
     auto await_resume() -> ValueType requires (!std::is_void_v<ValueType>) {
-		auto& promise = h.promise();
-		promise.suspended.wait(false);
+        auto& promise = h.promise();
+        if (promise.exception) std::rethrow_exception(promise.exception);
 
-		if (promise.exception)
-            std::rethrow_exception(promise.exception);
+        std::unique_lock lock(promise.mutex);
+        promise.cv.wait(lock, [&] {
+            return promise.done.load(std::memory_order_acquire)
+                || promise.ready.load(std::memory_order_acquire);
+        });
 
-		ValueType vt = promise.value;
-		if (!promise.done.test()) {
-			promise.suspended.clear();
-			promise.suspended.notify_one();
-		}
-		return vt;
+        ValueType vt = promise.value;
+        if (!promise.done.load(std::memory_order_acquire)) {
+            promise.ready.store(false, std::memory_order_release);
+            promise.cv.notify_all();
+        }
+        return vt;
     }
 };
 
-//
 // Promise implementation used by task.
-// The coroutine submits its result or exception through this object
 template<typename ValueType>
 struct task_promise_base {
-	using value_type = ValueType;
-	std::atomic_flag suspended{};
-	std::atomic_flag done{};
-	std::exception_ptr exception = nullptr;
+    using value_type = ValueType;
 
-	// Task are always suspended at the beginning, so we can resume them on the thread pool
-	auto initial_suspend() noexcept {
-		done.clear();
-		auto handle = std::coroutine_handle<task_promise_base>::from_promise(*this);
-		thread_pool::instance().enqueue(handle);
-		return std::suspend_always{};
-	}
-	auto final_suspend() noexcept -> std::suspend_always {
-		set_done();
-		return {};
-	}
-	auto get_return_object() noexcept -> task<ValueType>;
-	void unhandled_exception() noexcept {
-		exception = std::current_exception();
-		set_done();
-	}
+    std::mutex mutex;
+    std::condition_variable cv;
+    std::atomic<bool> ready{false};
+    std::atomic<bool> done{false};
+    std::exception_ptr exception = nullptr;
+    std::vector<std::coroutine_handle<>> continuations;
 
-	void wait_until_suspended() const noexcept {
-		suspended.wait(false);
-	}
-	void wait_until_not_suspended() const noexcept {
-		suspended.wait(true);
-	}
+    auto initial_suspend() noexcept {
+        done.store(false, std::memory_order_release);
+        auto handle = std::coroutine_handle<task_promise_base>::from_promise(*this);
+        thread_pool::instance().enqueue(handle);
+        return std::suspend_always{};
+    }
 
-	void wait_until_done() const noexcept {
-		done.wait(false);
-	}
+    auto final_suspend() noexcept -> std::suspend_always {
+        {
+            std::lock_guard lock(mutex);
+            done.store(true, std::memory_order_release);
+            ready.store(true, std::memory_order_release);
+        }
+        cv.notify_all();
+        resume_waiters();
+        return {};
+    }
 
-	void set_done() noexcept {
-		done.test_and_set();
-		done.notify_one();
-	}
+    void wait_until_done() const noexcept {
+        std::unique_lock lock(mutex);
+        cv.wait(lock, [this] {
+            return done.load(std::memory_order_acquire);
+        });
+    }
 
-	void set_suspended() noexcept {
-		suspended.test_and_set();
-		suspended.notify_one();
-	}
+    void resume_waiters() noexcept {
+        std::vector<std::coroutine_handle<>> waiters;
+        {
+            std::lock_guard lock(mutex);
+            waiters.swap(continuations);
+        }
+        for (auto cont : waiters) {
+            if (cont) cont.resume();
+        }
+    }
+
+    void set_done() noexcept {
+        {
+            std::lock_guard lock(mutex);
+            done.store(true, std::memory_order_release);
+            ready.store(true, std::memory_order_release);
+        }
+        cv.notify_all();
+        resume_waiters();
+    }
+
+    void unhandled_exception() noexcept {
+        exception = std::current_exception();
+        set_done();
+    }
 };
 
 template<typename ValueType>
 struct task_promise : task_promise_base<ValueType> {
-	ValueType value{};
+    ValueType value{};
 
-	auto get_return_object() noexcept -> task<ValueType>;
+    auto get_return_object() noexcept -> task<ValueType>;
 
-	auto yield_value(ValueType v) noexcept {
-		this->wait_until_not_suspended();
-		value = std::move(v);
-		this->set_suspended();
-		return std::suspend_never{}; // let it rip on the scheduled thread
-	}
-	void return_value(ValueType v) noexcept {
-		this->wait_until_not_suspended();
-		value = std::move(v);
-		this->set_suspended();
-		this->set_done();
-	}
+    auto yield_value(ValueType v) noexcept {
+        std::unique_lock lock(this->mutex);
+        this->cv.wait(lock, [this] {
+            return !this->ready.load(std::memory_order_acquire);
+        });
+        value = std::move(v);
+        this->ready.store(true, std::memory_order_release);
+        lock.unlock();
+        this->cv.notify_all();
+        this->resume_waiters();
+
+        std::unique_lock ready_lock(this->mutex);
+        this->cv.wait(ready_lock, [this] {
+            return !this->ready.load(std::memory_order_acquire);
+        });
+        return std::suspend_never{};
+    }
+
+    void return_value(ValueType v) noexcept {
+        {
+            std::lock_guard lock(this->mutex);
+            value = std::move(v);
+            this->done.store(true, std::memory_order_release);
+            this->ready.store(true, std::memory_order_release);
+        }
+        this->cv.notify_all();
+        this->resume_waiters();
+    }
 };
 
 template<>
 struct task_promise<void> : task_promise_base<void> {
-	auto get_return_object() noexcept -> task<void>;
-	void return_void() noexcept {
-		this->set_done();
-	}
+    auto get_return_object() noexcept -> task<void>;
+    void return_void() noexcept {
+        {
+            std::lock_guard lock(this->mutex);
+            this->done.store(true, std::memory_order_release);
+            this->ready.store(true, std::memory_order_release);
+        }
+        this->cv.notify_all();
+        this->resume_waiters();
+    }
 };
 
 export template<typename ValueType = void>
@@ -130,62 +185,93 @@ public:
     using value_type = ValueType;
 
 private:
-    std::coroutine_handle<promise_type> _handle = nullptr;
+    struct handle_state {
+        std::coroutine_handle<promise_type> handle = nullptr;
+        ~handle_state() {
+            if (handle) {
+                handle.destroy();
+            }
+        }
+    };
+
+    std::shared_ptr<handle_state> _state;
+
+    std::coroutine_handle<promise_type> handle() const noexcept {
+        return _state ? _state->handle : nullptr;
+    }
 
 public:
-    // constructors / destructor
     task() noexcept = default;
-    explicit task(std::coroutine_handle<promise_type> h) noexcept : _handle(h) {}
-    task(task&& other) noexcept : _handle(other._handle) { other._handle = nullptr; }
-    task(const task&) = delete;
-	auto operator=(task&&) = delete;
+    explicit task(std::coroutine_handle<promise_type> h) noexcept
+        : _state(std::make_shared<handle_state>()) {
+        _state->handle = h;
+    }
+    task(task&& other) noexcept = default;
+    task(task const& other) noexcept = default;
+    task& operator=(task&& other) noexcept = default;
+    task& operator=(task const& other) noexcept = default;
 
-    bool done() const noexcept { return !_handle || _handle.promise().done.test(); }
+    bool done() const noexcept {
+        auto h = handle();
+        return !h || h.promise().done.load(std::memory_order_acquire);
+    }
 
-	void wait() const {
-		if (!done()) {
-			_handle.promise().wait_until_done();
-		}
-	}
+    void wait() const {
+        auto h = handle();
+        if (!done()) {
+            h.promise().wait_until_done();
+        }
+    }
 
-	template<typename T = ValueType>
+    template<typename T = ValueType>
     T result() const requires (!std::is_void_v<T>) {
-		// Wait until a value is ready
-		auto& suspended = _handle.promise().suspended;
-		suspended.wait(false);
+        auto h = handle();
+        auto& promise = h.promise();
+        {
+            std::unique_lock lock(promise.mutex);
+            promise.cv.wait(lock, [&] {
+                return promise.done.load(std::memory_order_acquire)
+                    || promise.ready.load(std::memory_order_acquire);
+            });
+        }
 
-		// Snag the value, and signal that we're done consuming it
-		T value = std::move(_handle.promise().value);
-		suspended.clear();
-		suspended.notify_one();
-
-		return value;
+        T value = promise.value;
+        if (!promise.done.load(std::memory_order_acquire)) {
+            promise.ready.store(false, std::memory_order_release);
+            promise.cv.notify_all();
+        }
+        return value;
     }
 
     auto operator co_await() & noexcept {
-        return awaiter<ValueType, promise_type>{_handle};
+        return awaiter<ValueType, promise_type>{handle()};
     }
 
     auto operator co_await() && noexcept {
-        return awaiter<ValueType, promise_type>{std::exchange(_handle, nullptr)};
+        return awaiter<ValueType, promise_type>{handle()};
     }
 };
-
-// out-of-line definitions now that 'task' is complete
-
 template<typename ValueType>
 auto task_promise<ValueType>::get_return_object() noexcept -> task<ValueType> {
-	auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
+    auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
     return task<ValueType>{handle};
 }
 
 auto task_promise<void>::get_return_object() noexcept -> task<void> {
-	auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
+    auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
     return task<void>{handle};
 }
 
-// Utility to wait for multiple tasks and collect their results
 export template<typename... ValueTypes>
-auto wait_all(task<ValueTypes>&... tasks) {
-	return std::make_tuple(tasks.result()...);
+auto wait_all(task<ValueTypes>... tasks)
+    requires requires { (tasks.wait(), ...); }
+{
+    return std::make_tuple(tasks.result()...);
+}
+
+export auto wait_all(std::ranges::range auto&& tasks)
+    requires requires { tasks.at(0).wait(); }
+{
+    for (auto& task : tasks)
+        task.wait();
 }
