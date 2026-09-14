@@ -25,7 +25,7 @@ export namespace os {	// Async read awaiter
 
 		bool await_ready() const { return false; }  // Always suspend
 
-		void await_suspend(std::coroutine_handle<> cont) {
+		bool await_suspend(std::coroutine_handle<> cont) {
 			overlapped = get_scheduler().register_operation(cont);
 
 			// Set the file position in the OVERLAPPED structure
@@ -42,16 +42,19 @@ export namespace os {	// Async read awaiter
 			);
 
 			if (success) {
-				// Synchronous completion - bytes_read is valid, set result only (position updated in await_resume)
+				// Synchronous completion - bytes_read is valid.
+				// Don't suspend; await_resume will pick up the result.
 				get_scheduler().set_operation_result(overlapped, static_cast<std::int64_t>(bytes_read), false);
-				cont.resume();
+				return false;
 			}
 			else if (GetLastError() != ERROR_IO_PENDING) {
-				// Error occurred
+				// Error occurred - don't suspend; await_resume will throw.
 				get_scheduler().set_operation_result(overlapped, 0, true);
-				cont.resume();
+				return false;
 			}
-			// If ERROR_IO_PENDING, await_resume will update position when result arrives
+			// If ERROR_IO_PENDING, suspend; the IOCP dispatcher thread
+			// will resume us when the result arrives.
+			return true;
 		}
 
 		std::int64_t await_resume() {
@@ -82,7 +85,7 @@ export namespace os {	// Async read awaiter
 
 		bool await_ready() const { return false; }
 
-		void await_suspend(std::coroutine_handle<> cont) {
+		bool await_suspend(std::coroutine_handle<> cont) {
 			overlapped = get_scheduler().register_operation(cont);
 
 			// Set the file position in the OVERLAPPED structure
@@ -99,16 +102,18 @@ export namespace os {	// Async read awaiter
 			);
 
 			if (success) {
-				// Synchronous completion - bytes_written is valid, set result only (position updated in await_resume)
+				// Synchronous completion - don't suspend; await_resume picks up result.
 				get_scheduler().set_operation_result(overlapped, static_cast<std::int64_t>(bytes_written), false);
-				cont.resume();
+				return false;
 			}
 			else if (GetLastError() != ERROR_IO_PENDING) {
-				// Error occurred
+				// Error occurred - don't suspend; await_resume will throw.
 				get_scheduler().set_operation_result(overlapped, 0, true);
-				cont.resume();
+				return false;
 			}
-			// If ERROR_IO_PENDING, await_resume will update position when result arrives
+			// If ERROR_IO_PENDING, suspend; the IOCP dispatcher thread
+			// will resume us when the result arrives.
+			return true;
 		}
 
 		std::int64_t await_resume() {
@@ -149,7 +154,6 @@ export namespace os {	// Async read awaiter
 			open(path, O_RD | O_BIN);
 			if (handle != INVALID_HANDLE_VALUE) {
 				is_real_file = true;
-				get_scheduler().associate_handle(handle);
 			}
 		}
 
@@ -160,7 +164,6 @@ export namespace os {	// Async read awaiter
 			open(path, flags);
 			if (handle != INVALID_HANDLE_VALUE) {
 				is_real_file = true;
-				get_scheduler().associate_handle(handle);
 			}
 		}
 
@@ -175,9 +178,11 @@ export namespace os {	// Async read awaiter
 		file(const file&) = delete;
 		file& operator=(const file&) = delete;
 
-		file(file&& other) noexcept : handle(other.handle), eof_flag(other.eof_flag), is_real_file(other.is_real_file) {
+		file(file&& other) noexcept : handle(other.handle), eof_flag(other.eof_flag), file_position(other.file_position), is_real_file(other.is_real_file) {
 			other.handle = INVALID_HANDLE_VALUE;
 			other.eof_flag = false;
+			other.file_position = 0;
+			other.is_real_file = false;
 		}
 
 		file& operator=(file&& other) noexcept {
@@ -185,9 +190,12 @@ export namespace os {	// Async read awaiter
 				close();
 				handle = other.handle;
 				eof_flag = other.eof_flag;
+				file_position = other.file_position;
 				is_real_file = other.is_real_file;
 				other.handle = INVALID_HANDLE_VALUE;
 				other.eof_flag = false;
+				other.file_position = 0;
+				other.is_real_file = false;
 			}
 			return *this;
 		}
@@ -222,13 +230,15 @@ export namespace os {	// Async read awaiter
 				FILE_SHARE_READ,
 				nullptr,
 				creation_disposition,
-				FILE_ATTRIBUTE_NORMAL,
+				FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
 				nullptr
 			);
 
 			if (handle == INVALID_HANDLE_VALUE) {
 				return false;
 			}
+
+			get_scheduler().associate_handle(handle);
 
 			// If O_ATE flag is set, seek to end
 			if (flags & O_ATE) {

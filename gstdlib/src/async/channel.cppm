@@ -11,6 +11,7 @@ class channel {
     data_type data{};
     std::condition_variable cv{};
     std::mutex m{};
+	std::exception_ptr exception_ptr_;
     bool stopped = false;
 
 public:
@@ -34,9 +35,19 @@ public:
         cv.notify_one(); // wake up get() if it was waiting
     }
 
+	void set_exception(std::exception_ptr p) {
+		std::unique_lock lock(m);
+		exception_ptr_ = p;
+		stopped = true;
+		cv.notify_all(); // wake up all waiting threads
+	}
+
     T get() {
         std::unique_lock lock(m);
-        T val;
+		if (exception_ptr_)
+			std::rethrow_exception(exception_ptr_);
+
+		T val;
         if constexpr (Capacity > 0) {
             cv.wait(lock, [this] { return stopped || !data.empty(); });
             if (stopped && data.empty()) return T{};
@@ -56,8 +67,53 @@ public:
     void close() {
         {
             std::unique_lock lock(m);
+			if (stopped)
+				return;
             stopped = true;
         }
         cv.notify_all(); // wake up all waiting threads
     }
+};
+
+template<>
+class channel<void> {
+	std::condition_variable cv{};
+	std::mutex m{};
+	std::exception_ptr exception_ptr_;
+	bool stopped = false;
+
+public:
+	void set() {
+		std::unique_lock lock(m);
+		cv.wait(lock);
+		if (stopped) return; // abort if channel was stopped
+		cv.notify_one(); // wake up get() if it was waiting
+	}
+
+	void set_exception(std::exception_ptr p) {
+		std::unique_lock lock(m);
+		exception_ptr_ = p;
+		stopped = true;
+		cv.notify_all(); // wake up all waiting threads
+	}
+
+	void get() {
+		std::unique_lock lock(m);
+		if (exception_ptr_)
+			std::rethrow_exception(exception_ptr_);
+
+		cv.wait(lock);
+		if (stopped) return;
+		cv.notify_one(); // wake up set() if it was waiting
+	}
+
+	void close() {
+		{
+			std::unique_lock lock(m);
+			if (stopped)
+				return;
+			stopped = true;
+		}
+		cv.notify_all(); // wake up all waiting threads
+	}
 };

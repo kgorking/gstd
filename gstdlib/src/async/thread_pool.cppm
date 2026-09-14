@@ -10,9 +10,13 @@ private:
     channel<std::coroutine_handle<>, std::numeric_limits<int>::max()> io_work_queue;
     std::vector<std::jthread> workers;
     std::vector<std::jthread> io_workers;
+	thread_local inline static bool is_io_thread = false;
+	thread_local inline static bool is_worker_thread = false;
 
 public:
     explicit thread_pool(int64 num_threads = std::jthread::hardware_concurrency() - 1) {
+		workers.reserve(num_threads);
+		io_workers.reserve(num_threads);
         for (int64 i = 0; i < num_threads; ++i) {
             workers.emplace_back([this] { worker_loop(); });
             io_workers.emplace_back([this] { io_worker_loop(); });
@@ -32,28 +36,53 @@ public:
         return pool;
     }
 
-	template<typename PromiseType>
-    void enqueue(std::coroutine_handle<PromiseType> h) {
-		work_queue << h;
-    }
+	[[nodiscard]]
+	static auto switch_to_thread() {
+		struct waiter {
+			bool await_ready() const noexcept { return is_worker_thread; }
+			void await_suspend(std::coroutine_handle<> h) {
+				if (is_worker_thread) {
+					h.resume();
+				}
+				else {
+					thread_pool::instance().enqueue(h);
+				}
 
-	template<typename PromiseType>
-    void enqueue_io(std::coroutine_handle<PromiseType> h) {
-		io_work_queue << h;
-    }
+			}
+			void await_resume() {}
+		};
+		return waiter{};
+	}
 
-	// ??
-	bool await_ready() const noexcept { return false; }
-	void await_suspend(std::coroutine_handle<> current) noexcept { enqueue(current); }
-	void await_resume() { }
+	[[nodiscard]]
+	static auto switch_to_io() {
+		struct waiter {
+			bool await_ready() const noexcept { return is_io_thread; }
+			void await_suspend(std::coroutine_handle<> h) {
+				if (is_io_thread) {
+					h.resume();
+				}
+				else {
+					thread_pool::instance().enqueue_io(h);
+				}
+			}
+			void await_resume() {}
+		};
+		return waiter{};
+	}
 
 private:
+    void enqueue(std::coroutine_handle<> h) { work_queue << h; }
+    void enqueue_io(std::coroutine_handle<> h) { io_work_queue << h; }
+
     void worker_loop() {
+		is_worker_thread = true;
 		while (std::coroutine_handle<> h = work_queue.get())
 			h.resume();
     }
 
     void io_worker_loop() {
+		is_io_thread = true;
 		while (std::coroutine_handle<> h = io_work_queue.get())
 			h.resume();
     }

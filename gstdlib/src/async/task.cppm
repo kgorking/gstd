@@ -24,26 +24,33 @@ struct final_awaiter {
 template<typename ValueType>
 struct task_promise_base {
     using value_type = ValueType;
-	std::promise<ValueType> prom;
+	std::exception_ptr exception;
     std::coroutine_handle<> continuation = nullptr;
 
 	auto initial_suspend() noexcept		{ return std::suspend_always{}; }
-    void unhandled_exception() noexcept { prom.set_exception(std::current_exception()); }
+    void unhandled_exception() noexcept { exception = std::current_exception(); }
 };
 
 template<typename ValueType>
 struct task_promise : task_promise_base<ValueType> {
-    auto get_return_object() noexcept -> task<ValueType>;
+	ValueType value{};
+	
+	auto get_return_object() noexcept -> task<ValueType>;
 	auto final_suspend() noexcept { return final_awaiter<task_promise<ValueType>>{}; }
-	auto yield_value(ValueType v) noexcept -> std::suspend_always { this->prom.set_value(std::move(v)); return {}; }
-    void return_value(ValueType v) noexcept { this->prom.set_value(std::move(v)); }
+	auto yield_value(ValueType v) noexcept -> std::suspend_always {
+		this->value = std::move(v);
+		return {};
+	}
+    void return_value(ValueType v) noexcept {
+		this->value = std::move(v);
+	}
 };
 
 template<>
 struct task_promise<void> : task_promise_base<void> {
 	auto get_return_object() noexcept -> task<void>;
 	auto final_suspend() noexcept { return final_awaiter<task_promise<void>>{}; }
-	void return_void() noexcept { this->prom.set_value(); }
+	void return_void() noexcept { }
 };
 
 export template<typename ValueType = void>
@@ -53,65 +60,75 @@ public:
     using value_type = ValueType;
 
 private:
-    std::coroutine_handle<promise_type> _handle = nullptr;
-	std::shared_future<ValueType> fut;
+    std::coroutine_handle<promise_type> h = nullptr;
 
 public:
     task() noexcept = default;
-    explicit task(std::coroutine_handle<promise_type> h, std::shared_future<ValueType> f) noexcept : _handle(h), fut(std::move(f)) {}
-    task(task&& other) noexcept : _handle(other._handle), fut(std::move(other.fut)) { other._handle = nullptr; }
-    task(task const& other) : _handle(other._handle), fut(other.fut) {}
+    task(task&& other) noexcept : h(std::exchange(other.h, nullptr)) { }
+    task(task const& other) noexcept : h(other.h) {}
+    explicit task(std::coroutine_handle<promise_type> h) noexcept : h(h) {}
 
 	task& operator=(task&& other) noexcept {
-        _handle = std::exchange(other._handle, nullptr);
-		fut = std::move(other.fut);
+        h = std::exchange(other.h, nullptr);
         return *this;
     }
 
     task& operator=(task const& other) {
-        _handle = other._handle;
-		fut = other.fut;
+        h = other.h;
         return *this;
     }
 
+	// Wait for the task to complete, re-throwing any exception that occurred.
 	void wait() {
-		fut.wait();
+		while (h && !h.done()) {
+			h.resume();
+			if (h && h.promise().exception)
+				std::rethrow_exception(h.promise().exception);
+		}
 	}
 
+	// Get the next value from the task, waiting for it to complete if necessary.
 	ValueType result() requires(!std::is_void_v<ValueType>) {
-		_handle.resume();
+		if (h && !h.done())
+			h.resume();
 		return await_resume();
 	}
 
 	bool done() const noexcept {
-        return !_handle || _handle.done();
+        return !h || h.done();
     }
 
-	// Awaiter support for co_await
+	// Awaiter support for co_await.
+	// Each co_await drives the awaited task forward by one step
+	// (up to its next co_yield or co_return) and then continues
+	// the awaiting coroutine without suspending, so yielded values
+	// are passed back correctly.
 	bool await_ready() const noexcept {
-		return _handle.done();
+		return !h || h.done();
 	}
 
-	void await_suspend(std::coroutine_handle<> current) noexcept {
-		//std::println("task::await_suspend: current = {}, h = {}", current.address(), _handle.address());
-		_handle.promise().continuation = current;
-		_handle.resume();
+	bool await_suspend(std::coroutine_handle<>) noexcept {
+		h.resume();
+		return false;
 	}
 
 	auto await_resume() -> ValueType {
-		return fut.get();
+		if (h.promise().exception)
+			std::rethrow_exception(h.promise().exception);
+		if constexpr (!std::is_void_v< ValueType>)
+			return h.promise().value;
 	}
 };
 
 template<typename ValueType>
 auto task_promise<ValueType>::get_return_object() noexcept -> task<ValueType> {
     auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
-    return task<ValueType>{handle, this->prom.get_future().share()};
+    return task<ValueType>{handle};
 }
 
 auto task_promise<void>::get_return_object() noexcept -> task<void> {
     auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
-    return task<void>{handle, this->prom.get_future().share()};
+    return task<void>{handle};
 }
 
 export template<typename... ValueTypes>

@@ -6,18 +6,21 @@ static_assert(std::is_copy_assignable_v<task<int>>);
 
 
 static task<int> cpu_heavy_task(int iterations) {
+	co_await thread_pool::switch_to_thread();
 	int result = 100 + std::rand() % 1024;
 	std::this_thread::sleep_for(std::chrono::milliseconds(result));
 	co_return 1;
 }
 
 static task<void> cpu_heavy_void_task(int iterations) {
+	co_await thread_pool::switch_to_thread();
 	int result = 100 + std::rand() % 400;
 	std::this_thread::sleep_for(std::chrono::milliseconds(result));
 	co_return;
 }
 
 static task<int> cpu_sleep_task() {
+	co_await thread_pool::switch_to_thread();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	co_return 5;
 }
@@ -32,15 +35,15 @@ test task_in_task = [] {
 
 	auto tester = [&] -> task<int> {
 		auto y = yielder();
-		if (1 != co_await y) co_return 0;
-		if (2 != co_await y) co_return 0;
-		if (3 != co_await y) co_return 0;
-		if (1122 != co_await y) co_return 0;
+		if (1 != co_await y) co_return -1;
+		if (2 != co_await y) co_return -1;
+		if (3 != co_await y) co_return -1;
+		if (1122 != co_await y) co_return -1;
 		co_return 1;
 		};
 
 	int result = tester().result();
-	test::is_true(result == 1);
+	test::equals(result, 1);
 	};
 
 test task_reused_dependency_is_safe = [] {
@@ -146,6 +149,7 @@ test task_channel_buffered = [] {
 	channel<int, 3> ch;
 
 	auto message_sender = [&ch]() -> task<void> {
+		co_await thread_pool::switch_to_thread();
 		for (int i = 1; i <= 3; ++i) {
 			ch << i;
 		}
@@ -164,6 +168,7 @@ test task_channel_unbuffered = [] {
 	channel<int> ch;
 
 	auto message_sender = [&ch]() -> task<void> {
+		co_await thread_pool::switch_to_thread();
 		for (int i = 1; i <= 3; ++i) {
 			ch << i;
 		}
