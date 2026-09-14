@@ -40,16 +40,13 @@ public:
 	static auto switch_to_thread() {
 		struct waiter {
 			bool await_ready() const noexcept { return is_worker_thread; }
-			void await_suspend(std::coroutine_handle<> h) {
-				if (is_worker_thread) {
-					h.resume();
-				}
-				else {
-					thread_pool::instance().enqueue(h);
-				}
-
+			bool await_suspend(std::coroutine_handle<> h) noexcept {
+				if (is_worker_thread)
+					return false;
+				thread_pool::instance().enqueue(h);
+				return true;
 			}
-			void await_resume() {}
+			void await_resume() noexcept {}
 		};
 		return waiter{};
 	}
@@ -58,15 +55,13 @@ public:
 	static auto switch_to_io() {
 		struct waiter {
 			bool await_ready() const noexcept { return is_io_thread; }
-			void await_suspend(std::coroutine_handle<> h) {
-				if (is_io_thread) {
-					h.resume();
-				}
-				else {
-					thread_pool::instance().enqueue_io(h);
-				}
+			bool await_suspend(std::coroutine_handle<> h) noexcept {
+				if (is_io_thread)
+					return false;
+				thread_pool::instance().enqueue_io(h);
+				return true;
 			}
-			void await_resume() {}
+			void await_resume() noexcept {}
 		};
 		return waiter{};
 	}
