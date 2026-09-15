@@ -27,22 +27,22 @@ struct task_promise_base {
 	std::exception_ptr exception;
     std::coroutine_handle<> continuation = nullptr;
 
-	auto initial_suspend() noexcept		{ return std::suspend_always{}; }
+	auto initial_suspend() noexcept		{ return std::suspend_never{}; }
     void unhandled_exception() noexcept { exception = std::current_exception(); }
 };
 
 template<typename ValueType>
 struct task_promise : task_promise_base<ValueType> {
-	ValueType value{};
+	std::optional<ValueType> value{};
 	
 	auto get_return_object() noexcept -> task<ValueType>;
 	auto final_suspend() noexcept { return final_awaiter<task_promise<ValueType>>{}; }
-	auto yield_value(ValueType v) noexcept -> std::suspend_always {
-		this->value = std::move(v);
+	auto yield_value(ValueType&& v) noexcept -> std::suspend_always {
+		this->value = std::forward<ValueType>(v);
 		return {};
 	}
-    void return_value(ValueType v) noexcept {
-		this->value = std::move(v);
+    void return_value(ValueType&& v) noexcept {
+		this->value = std::forward<ValueType>(v);
 	}
 };
 
@@ -80,11 +80,14 @@ public:
 
 	// Wait for the task to complete, re-throwing any exception that occurred.
 	void wait() {
-		while (h && !h.done()) {
+		while (!done()) {
 			h.resume();
-			if (h && h.promise().exception)
-				std::rethrow_exception(h.promise().exception);
 		}
+	}
+
+	void resume() {
+		if (h && !h.done())
+			h.resume();
 	}
 
 	// Get the next value from the task, waiting for it to complete if necessary.
@@ -108,6 +111,12 @@ public:
 	}
 
 	bool await_suspend(std::coroutine_handle<>) noexcept {
+		if constexpr (!std::is_void_v< ValueType>) {
+			if (h.promise().value) {
+				return true;
+			}
+		}
+
 		h.resume();
 		return false;
 	}
@@ -115,8 +124,9 @@ public:
 	auto await_resume() -> ValueType {
 		if (h.promise().exception)
 			std::rethrow_exception(h.promise().exception);
-		if constexpr (!std::is_void_v< ValueType>)
-			return h.promise().value;
+		if constexpr (!std::is_void_v< ValueType>) {
+			return std::exchange(h.promise().value, std::nullopt).value();
+		}
 	}
 };
 

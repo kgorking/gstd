@@ -156,24 +156,42 @@ export namespace io {
 				throw std::system_error(std::make_error_code(std::errc::io_error));
 			}
 
-			if (bytes_read == 0) {
-				eof_flag = true;
-			}
-			else {
-				file_position += bytes_read;
-			}
+			eof_flag = (bytes_read == 0);
+			file_position += bytes_read;
 
 			return static_cast<int64>(bytes_read);
 		}
 
+		int64 write(Span<const char> auto buf) {
+			if (handle == INVALID_HANDLE_VALUE) {
+				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
+			}
+
+			DWORD bytes_written = 0;
+			if (!WriteFile(handle, buf.data(), static_cast<DWORD>(buf.size()), &bytes_written, nullptr)) {
+				throw std::system_error(std::make_error_code(std::errc::io_error), get_last_std_error());
+			}
+
+			file_position += bytes_written;
+			return static_cast<int64>(bytes_written);
+		}
+
 		task<int64> read_async(Span<char> auto buf) {
-			co_await thread_pool::switch_to_io();
-			co_return read(buf);
+			channel<int64> ch;
+			auto helper = [&]() -> task<void> {
+				co_await thread_pool::switch_to_io();
+				ch << read(buf);
+				}();
+			co_return ch.get();
 		}
 
 		task<int64> write_async(Span<const char> auto buf) {
-			co_await thread_pool::switch_to_io();
-			co_return write(buf);
+			channel<int64> ch;
+			auto helper = [&]() -> task<void> {
+				co_await thread_pool::switch_to_io();
+				ch << write(buf);
+				}();
+			co_return ch.get();
 		}
 
 		string read_line() {
@@ -214,20 +232,6 @@ export namespace io {
 			}
 
 			return result;
-		}
-
-		int64 write(Span<const char> auto buf) {
-			if (handle == INVALID_HANDLE_VALUE) {
-				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
-			}
-
-			DWORD bytes_written = 0;
-			if (!WriteFile(handle, buf.data(), static_cast<DWORD>(buf.size()), &bytes_written, nullptr)) {
-				throw std::system_error(std::make_error_code(std::errc::io_error), get_last_std_error());
-			}
-
-			file_position += bytes_written;
-			return static_cast<int64>(bytes_written);
 		}
 
 		int64 write_line(string line) {

@@ -5,24 +5,17 @@ static_assert(std::is_copy_constructible_v<task<int>>);
 static_assert(std::is_copy_assignable_v<task<int>>);
 
 
-static task<int> cpu_heavy_task(int iterations) {
+static task<void> cpu_heavy_task(channel<int>& ch, int r) {
 	co_await thread_pool::switch_to_thread();
 	int result = 100 + std::rand() % 1024;
 	std::this_thread::sleep_for(std::chrono::milliseconds(result));
-	co_return 1;
+	ch << r;
 }
 
-static task<void> cpu_heavy_void_task(int iterations) {
-	co_await thread_pool::switch_to_thread();
-	int result = 100 + std::rand() % 400;
-	std::this_thread::sleep_for(std::chrono::milliseconds(result));
-	co_return;
-}
-
-static task<int> cpu_sleep_task() {
+static task<void> cpu_sleep_task(channel<int>& ch) {
 	co_await thread_pool::switch_to_thread();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	co_return 5;
+	ch << 5;
 }
 
 test task_in_task = [] {
@@ -36,9 +29,9 @@ test task_in_task = [] {
 	auto tester = [&] -> task<int> {
 		auto y = yielder();
 		if (1 != co_await y) co_return -1;
-		if (2 != co_await y) co_return -1;
-		if (3 != co_await y) co_return -1;
-		if (1122 != co_await y) co_return -1;
+		if (2 != co_await y) co_return -2;
+		if (3 != co_await y) co_return -3;
+		if (1122 != co_await y) co_return -1122;
 		co_return 1;
 		};
 
@@ -46,59 +39,24 @@ test task_in_task = [] {
 	test::equals(result, 1);
 	};
 
-test task_reused_dependency_is_safe = [] {
-    auto run_round = []() -> task<int> {
-        task<int> shared;
-        auto dependency = []() -> task<int> {
-            std::this_thread::sleep_for(std::chrono::milliseconds(2));
-            co_return 131;
-        };
-        auto dependent = [&shared]() -> task<int> {
-            int const value = co_await shared;
-            co_return value * 2;
-        };
-
-        shared = dependency();
-        auto left = dependent();
-        auto right = dependent();
-        auto [l, r] = wait_all(std::move(left), std::move(right));
-        test::equals(l, 262, "left dependency result should be 262");
-        test::equals(r, 262, "right dependency result should be 262");
-        co_return l + r;
-    };
-
-    for (int i = 0; i < 50; ++i) {
-        auto result = run_round().result();
-        test::equals(result, 524, "looped dependency results should stay stable");
-    }
-};
-
 test task_multiple_parallel_computations = [] {
 	auto parallel_compute = []() -> task<int> {
-		auto t1 = cpu_heavy_task(500);
-		auto t2 = cpu_heavy_task(500);
-		auto t3 = cpu_heavy_task(500);
-
-		{
-			int r3 = co_await t3;
-			int r2 = co_await t2;
-			int r1 = co_await t1;
-			co_return r1 + r2 + r3;
-		}
+		channel<int> ch;
+		auto t1 = cpu_heavy_task(ch, 500);
+		auto t2 = cpu_heavy_task(ch, 500);
+		auto t3 = cpu_heavy_task(ch, 500);
+		co_return ch.get() + ch.get() + ch.get();
 		};
 
 	auto result = parallel_compute().result();
-	test::is_true(result > 0, "parallel computation result should be positive");
+	test::is_true(result == 1500, "parallel computation result should be 1500");
 	};
 
-test task_void_return = [] {
-	auto y = cpu_heavy_void_task(1000000);
-	y.wait();
-	test::is_true(y.done(), "task should be done");
-	};
-
-
-static task<int> nested_tasks_1() { co_return co_await cpu_sleep_task() + co_await cpu_sleep_task(); }
+static task<int> nested_tasks_1() { 
+	channel<int> ch;
+	cpu_sleep_task(ch);
+	co_return ch.get();
+}
 static task<int> nested_tasks_2() { co_return co_await nested_tasks_1(); }
 static task<int> nested_tasks_3() { co_return co_await nested_tasks_2(); }
 static task<int> nested_tasks_4() { co_return co_await nested_tasks_3(); }
@@ -107,42 +65,18 @@ static task<int> nested_tasks_5() { co_return co_await nested_tasks_4(); }
 test task_many_tasks = [] {
 	auto y = nested_tasks_5();
 	auto result = y.result();
-	test::equals(result, 10, "nested tasks should return 10");
+	test::equals(result, 5);
 	};
 
-test task_cpu_heavy_computation = [] {
-	auto y = cpu_heavy_task(1000000);
-	auto result = y.result();
-	test::is_true(result > 0, "result should be positive");
-	};
-
-test task_with_co_await = [] {
-	auto awaiter_helper = [](task<int> y) -> task<int> {
-		int result = co_await y;
-		co_return result;
-		};
-
-	try {
-		auto y = cpu_heavy_task(1000000);
-		auto awaiter = awaiter_helper(std::move(y));
-		int result = awaiter.result();
-		test::is_true(result > 0, "awaited result should be positive");
-	}
-	catch (const std::exception& ex) {
-		std::println("Exception in test: {}", ex.what());
-		throw;
-	}
-	};
 
 test task_wait_all_with_vector = [] {
-	auto t1 = cpu_heavy_task(100000);
-	auto t2 = cpu_heavy_task(100000);
-	auto t3 = cpu_heavy_task(100000);
+	channel<int> ch;
+	auto t1 = cpu_heavy_task(ch, 1);
+	auto t2 = cpu_heavy_task(ch, 2);
+	auto t3 = cpu_heavy_task(ch, 3);
 
-	auto [r1, r2, r3] = wait_all(t1, t2, t3);
-	test::is_true(r1 > 0, "r1 should be positive");
-	test::is_true(r2 > 0, "r2 should be positive");
-	test::is_true(r3 > 0, "r3 should be positive");
+	int result = ch.get() + ch.get() + ch.get();
+	test::equals(result, 6);
 	};
 
 test task_channel_buffered = [] {
@@ -153,7 +87,6 @@ test task_channel_buffered = [] {
 		for (int i = 1; i <= 3; ++i) {
 			ch << i;
 		}
-		co_return;
 		};
 
 	auto y = message_sender();

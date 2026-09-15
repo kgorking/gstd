@@ -1,22 +1,17 @@
 import std;
 import gs;
 
+static task<void> test(channel<int>& ch, int r) {
+	co_await thread_pool::switch_to_thread();
+	int result = 100 + std::rand() % 1024;
+	std::this_thread::sleep_for(std::chrono::milliseconds(result));
+	ch << r;
+}
+
 int main() {
-	auto yielder = [] -> task<int> {
-		co_yield 1;
-		co_yield 2;
-		co_yield 3;
-		co_return 1122;
-		};
-
-	auto tester = [&] -> task<int> {
-		auto y = yielder();
-		if (1 != co_await y) co_return 2;
-		if (2 != co_await y) co_return 2;
-		if (3 != co_await y) co_return 2;
-		if (1122 != co_await y) co_return 2;
-		co_return 1;
-		};
-
-	return tester().result();
+	channel<int> ch;
+	auto t1 = test(ch, 1);
+	auto t2 = test(ch, 2);
+	auto t3 = test(ch, 3);
+	return ch.get() + ch.get() + ch.get();
 }
