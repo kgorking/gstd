@@ -2,6 +2,7 @@
 export module gs:task;
 
 import std;
+import :channel;
 
 // forward declaration for use in promise
 template<typename ValueType> class task;
@@ -139,12 +140,6 @@ auto task_promise<ValueType>::get_return_object() noexcept -> task<ValueType> {
 auto task_promise<void>::get_return_object() noexcept -> task<void> {
     auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
     return task<void>{handle};
-}
-
-export template<typename... ValueTypes>
-auto wait_all(task<ValueTypes>... tasks) -> std::tuple<ValueTypes...>
-{
-	return std::make_tuple(tasks.result()...);
 }
 
 export void wait_all(std::ranges::range auto&& tasks)

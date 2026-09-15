@@ -7,9 +7,10 @@ export import :string;
 export import :fmt;
 
 // coroutine/task
-export import :task;
 export import :channel;
 export import :thread_pool;
+export import :task;
+export import :wait_all;
 
 // dir
 export import :path;

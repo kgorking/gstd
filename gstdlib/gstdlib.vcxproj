@@ -76,6 +76,7 @@
     <ClCompile Include="src\testing\registry.cppm" />
     <ClCompile Include="src\testing\testing.cppm" />
     <ClCompile Include="src\types.cppm" />
+    <ClCompile Include="wait_all.cppm" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>

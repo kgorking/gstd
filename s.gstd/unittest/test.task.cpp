@@ -12,6 +12,12 @@ static task<void> cpu_heavy_task(channel<int>& ch, int r) {
 	ch << r;
 }
 
+static task<int> cpu_heavy_task(int r) {
+	int result = 100 + std::rand() % 1024;
+	std::this_thread::sleep_for(std::chrono::milliseconds(result));
+	co_return r;
+}
+
 static task<void> cpu_sleep_task(channel<int>& ch) {
 	co_await thread_pool::switch_to_thread();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -69,13 +75,13 @@ test task_many_tasks = [] {
 	};
 
 
-test task_wait_all_with_vector = [] {
-	channel<int> ch;
-	auto t1 = cpu_heavy_task(ch, 1);
-	auto t2 = cpu_heavy_task(ch, 2);
-	auto t3 = cpu_heavy_task(ch, 3);
+test task_wait_all = [] {
+	auto t1 = cpu_heavy_task(1);
+	auto t2 = cpu_heavy_task(2);
+	auto t3 = cpu_heavy_task(3);
 
-	int result = ch.get() + ch.get() + ch.get();
+	auto [r1, r2, r3] = wait_all(t1, t2, t3);
+	int result = r1+r2+r3;
 	test::equals(result, 6);
 	};
 
