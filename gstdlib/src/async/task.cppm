@@ -4,7 +4,7 @@ import std;
 import :channel;
 
 // forward declaration for use in promise
-template<typename, bool> class task;
+template<typename> class task;
 
 template <typename PromiseType>
 struct final_awaiter {
@@ -21,22 +21,22 @@ struct final_awaiter {
 };
 
 // Promise implementation used by task.
-template<typename ValueType, bool InitialSuspend>
+template<typename ValueType>
 struct task_promise_base {
     using value_type = ValueType;
 	std::exception_ptr exception;
     std::coroutine_handle<> continuation = nullptr;
 
-	auto initial_suspend() noexcept		{ if constexpr (InitialSuspend) return std::suspend_always{}; else return std::suspend_never{}; }
+	auto initial_suspend() noexcept		{ return std::suspend_never{}; }
     void unhandled_exception() noexcept { exception = std::current_exception(); }
 };
 
-template<typename ValueType, bool InitialSuspend>
-struct task_promise : task_promise_base<ValueType, InitialSuspend> {
+template<typename ValueType>
+struct task_promise : task_promise_base<ValueType> {
 	std::optional<ValueType> value{};
 	
-	auto get_return_object() noexcept -> task<ValueType, InitialSuspend>;
-	auto final_suspend() noexcept { return final_awaiter<task_promise<ValueType, InitialSuspend>>{}; }
+	auto get_return_object() noexcept -> task<ValueType>;
+	auto final_suspend() noexcept { return final_awaiter<task_promise<ValueType>>{}; }
 	auto yield_value(ValueType&& v) noexcept -> std::suspend_always {
 		this->value = std::forward<ValueType>(v);
 		return {};
@@ -46,17 +46,17 @@ struct task_promise : task_promise_base<ValueType, InitialSuspend> {
 	}
 };
 
-template<bool InitialSuspend>
-struct task_promise<void, InitialSuspend> : task_promise_base<void, InitialSuspend> {
-	auto get_return_object() noexcept -> task<void, InitialSuspend>;
-	auto final_suspend() noexcept { return final_awaiter<task_promise<void, InitialSuspend>>{}; }
+template<>
+struct task_promise<void> : task_promise_base<void> {
+	auto get_return_object() noexcept -> task<void>;
+	auto final_suspend() noexcept { return final_awaiter<task_promise<void>>{}; }
 	void return_void() noexcept { }
 };
 
-export template<typename ValueType = void, bool InitialSuspend = false>
+export template<typename ValueType = void>
 class task {
 public:
-    using promise_type = task_promise<ValueType, InitialSuspend>;
+    using promise_type = task_promise<ValueType>;
     using value_type = ValueType;
 
 private:
@@ -78,46 +78,33 @@ public:
         return *this;
     }
 
-	// Wait for the task to complete, re-throwing any exception that occurred.
-	void wait() {
-		while (!done()) {
-			h.resume();
-		}
-	}
-
-	void resume() {
-		if (h && !h.done())
-			h.resume();
-	}
-
 	// Get the next value from the task, waiting for it to complete if necessary.
 	ValueType result() requires(!std::is_void_v<ValueType>) {
-		if (h && !h.done())
+		if (!h || h.done())
+			throw std::runtime_error("task is not valid or already completed");
+		if (!h.promise().value)
 			h.resume();
 		return await_resume();
 	}
 
-	bool done() const noexcept {
-        return !h || h.done();
-    }
-
 	// Awaiter support for co_await.
-	// Each co_await drives the awaited task forward by one step
-	// (up to its next co_yield or co_return) and then continues
-	// the awaiting coroutine without suspending, so yielded values
-	// are passed back correctly.
+	// false -> the coroutine is suspended
+	// true -> the coroutine is not suspended
 	bool await_ready() const noexcept {
-		return !h || h.done();
+		if constexpr (!std::is_void_v< ValueType>) {
+			return h.promise().value.has_value();
+		}
+		else {
+			return false;
+		}
 	}
 
-	bool await_suspend(std::coroutine_handle<>) noexcept {
-		if constexpr (!std::is_void_v< ValueType>) {
-			if (h.promise().value) {
-				return true;
-			}
-		}
-
+	bool await_suspend(std::coroutine_handle<> /*handle*/) noexcept {
+		//h.promise().continuation = handle;
 		h.resume();
+
+		// true returns control to the caller/resumer of the current coroutine
+		// false resumes the current coroutine.
 		return false;
 	}
 
@@ -130,20 +117,13 @@ public:
 	}
 };
 
-template<typename ValueType, bool InitialSuspend>
-auto task_promise<ValueType, InitialSuspend>::get_return_object() noexcept -> task<ValueType, InitialSuspend> {
+template<typename ValueType>
+auto task_promise<ValueType>::get_return_object() noexcept -> task<ValueType> {
     auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
-    return task<ValueType, InitialSuspend>{handle};
+    return task<ValueType>{handle};
 }
 
-template<bool InitialSuspend>
-auto task_promise<void, InitialSuspend>::get_return_object() noexcept -> task<void, InitialSuspend> {
+auto task_promise<void>::get_return_object() noexcept -> task<void> {
     auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
-    return task<void, InitialSuspend>{handle};
-}
-
-export void wait_all(std::ranges::range auto&& tasks)
-{
-    for (auto& task : tasks)
-        task.wait();
+    return task<void>{handle};
 }

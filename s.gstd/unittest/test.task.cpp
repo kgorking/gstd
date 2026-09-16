@@ -86,7 +86,7 @@ test task_wait_all = [] {
 	};
 
 test task_channel_buffered = [] {
-	channel<int, 3> ch;
+	channel<int> ch;
 
 	auto message_sender = [&ch]() -> task<void> {
 		co_await thread_pool::switch_to_thread();

@@ -11,17 +11,14 @@ static task<int> sleep_task(int ms) {
 int main() {
 	int const duration = 100;
 	auto tasks = std::array{
-		sleep_task(1 * duration)
-		,sleep_task(2 * duration)
-		,sleep_task(3 * duration)
-		,sleep_task(4 * duration)
-		,sleep_task(5 * duration)
+		sleep_task(1 * duration),
+		sleep_task(2 * duration),
+		sleep_task(3 * duration),
+		sleep_task(4 * duration),
+		sleep_task(5 * duration)
 	};
 
-	int num_results = 0;
-	for (int result : yield_all(tasks)) {
+	for (int result : yield_all(tasks))
 		std::println("yield: {}", result);
-		num_results++;
-	}
 }
 
