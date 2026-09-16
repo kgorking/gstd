@@ -19,17 +19,21 @@ class channel {
     bool stopped = false;
 
 public:
-    channel& operator<<(T val) { set(std::move(val)); return *this; }
+	~channel() {
+		close();
+	}
+
+	channel& operator<<(T val) { set(std::move(val)); return *this; }
     channel& operator>>(T& out)  { out = get(); return *this; }
 	T operator*() { return get(); }
 
 	bool is_stopped() const {
-		std::lock_guard lock(m);
+		std::unique_lock lock(m);
 		return stopped;
 	}
 
 	bool is_set() const {
-		std::lock_guard lock(m);
+		std::unique_lock lock(m);
 		if constexpr (Capacity > 0) {
 			return !data.empty();
 		}
@@ -42,16 +46,16 @@ public:
         if constexpr (Capacity > 0) {
             std::unique_lock lock(m);
             cv_not_full.wait(lock, [this] { return stopped || data.size() < Capacity; });
-            if (stopped) return; // abort if channel was stopped
+            if (stopped) return;
             data.push(std::move(val));
         } else {
             std::unique_lock lock(m);
             cv_not_full.wait(lock, [this] { return stopped || !data.has_value(); });
-            if (stopped) return; // abort if channel was stopped
+            if (stopped) return;
             data = std::move(val);
         }
 
-        cv_not_empty.notify_one(); // wake up get() waiting for data
+        cv_not_empty.notify_one();
     }
 
     T get() {
@@ -62,7 +66,6 @@ public:
             if (stopped && data.empty()) return T{};
             val = std::move(data.front());
             data.pop();
-            lock.unlock();
         } else {
 	        std::unique_lock lock(m);
             cv_not_empty.wait(lock, [this] { return stopped || data.has_value(); });
@@ -71,7 +74,7 @@ public:
             data.reset();
         }
 
-        cv_not_full.notify_one(); // wake up set() waiting for space
+        cv_not_full.notify_one();
         return val;
     }
 
@@ -82,8 +85,8 @@ public:
 				return;
             stopped = true;
         }
-        cv_not_full.notify_all(); // wake up all waiting setters
-        cv_not_empty.notify_all(); // wake up all waiting getters
+        cv_not_full.notify_all();
+        cv_not_empty.notify_all();
     }
 };
 

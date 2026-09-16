@@ -10,7 +10,9 @@ export import :fmt;
 export import :channel;
 export import :thread_pool;
 export import :task;
+
 export import :wait_all;
+export import :yield_all;
 
 // dir
 export import :path;

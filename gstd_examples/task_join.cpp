@@ -1,17 +1,27 @@
-import std;
 import gs;
+import std;
 
-static task<void> test(channel<int>& ch, int r) {
-	co_await thread_pool::switch_to_thread();
-	int result = 100 + std::rand() % 1024;
-	std::this_thread::sleep_for(std::chrono::milliseconds(result));
-	ch << r;
+static task<int> sleep_task(int ms) {
+	co_await std::suspend_always{};
+	std::println("sleep_task: {}", ms);
+	std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+	co_return ms;
 }
 
 int main() {
-	channel<int> ch;
-	auto t1 = test(ch, 1);
-	auto t2 = test(ch, 2);
-	auto t3 = test(ch, 3);
-	return ch.get() + ch.get() + ch.get();
+	int const duration = 100;
+	auto tasks = std::array{
+		sleep_task(1 * duration)
+		,sleep_task(2 * duration)
+		,sleep_task(3 * duration)
+		,sleep_task(4 * duration)
+		,sleep_task(5 * duration)
+	};
+
+	int num_results = 0;
+	for (int result : yield_all(tasks)) {
+		std::println("yield: {}", result);
+		num_results++;
+	}
 }
+

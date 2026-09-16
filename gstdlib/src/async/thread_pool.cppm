@@ -16,8 +16,8 @@ private:
 
 	struct threaded_waiter {
 		bool await_ready() const noexcept { return is_worker_thread; }
-		template <typename T>
-		bool await_suspend(std::coroutine_handle<task_promise<T>> h) noexcept {
+		template <typename T, bool InitialSuspend>
+		bool await_suspend(std::coroutine_handle<task_promise<T, InitialSuspend>> h) noexcept {
 			static_assert(std::is_void_v<T>, "switch_to_thread can only be used in void tasks. Use a channel<> to pass values");
 			if (is_worker_thread)
 				return false;
@@ -29,8 +29,8 @@ private:
 
 	struct io_waiter {
 		bool await_ready() const noexcept { return is_io_thread; }
-		template <typename T>
-		bool await_suspend(std::coroutine_handle<task_promise<T>> h) noexcept {
+		template <typename T, bool InitialSuspend>
+		bool await_suspend(std::coroutine_handle<task_promise<T, InitialSuspend>> h) noexcept {
 			static_assert(std::is_void_v<T>, "switch_to_io can only be used in void tasks. Use a channel<> to pass values");
 			if (is_io_thread)
 				return false;
@@ -45,12 +45,14 @@ public:
 		workers.reserve(num_threads);
 		io_workers.reserve(num_threads);
         for (int64 i = 0; i < num_threads; ++i) {
-            workers.emplace_back([this] { worker_loop(); });
-            io_workers.emplace_back([this] { io_worker_loop(); });
+            workers.emplace_back([this](std::stop_token stoken) { worker_loop(stoken); });
+            io_workers.emplace_back([this](std::stop_token stoken) { io_worker_loop(stoken); });
         }
     }
 
     ~thread_pool() {
+		std::ranges::for_each(workers, &std::jthread::request_stop);
+		std::ranges::for_each(io_workers, &std::jthread::request_stop);
         work_queue.close();
         io_work_queue.close();
     }
@@ -74,18 +76,20 @@ public:
 	}
 
 private:
-    void enqueue(std::coroutine_handle<> h) { work_queue << h; }
-    void enqueue_io(std::coroutine_handle<> h) { io_work_queue << h; }
+    void enqueue(std::coroutine_handle<> h) { if (!work_queue.is_stopped()) work_queue << h; }
+    void enqueue_io(std::coroutine_handle<> h) { if (!work_queue.is_stopped()) io_work_queue << h; }
 
-    void worker_loop() {
+    void worker_loop(std::stop_token stoken) {
 		is_worker_thread = true;
-		while (std::coroutine_handle<> h = work_queue.get())
+		std::coroutine_handle<> h = nullptr;
+		while (!stoken.stop_requested() && (h = work_queue.get()))
 			h.resume();
     }
 
-    void io_worker_loop() {
+    void io_worker_loop(std::stop_token stoken) {
 		is_io_thread = true;
-		while (std::coroutine_handle<> h = io_work_queue.get())
+		std::coroutine_handle<> h = nullptr;
+		while (!stoken.stop_requested() && (h = io_work_queue.get()))
 			h.resume();
     }
 };

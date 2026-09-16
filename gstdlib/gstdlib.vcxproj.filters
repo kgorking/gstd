@@ -181,7 +181,10 @@
     <ClCompile Include="src\io\copy.cppm">
       <Filter>Source Files\io</Filter>
     </ClCompile>
-    <ClCompile Include="wait_all.cppm">
+    <ClCompile Include="src\async\wait_all.cppm">
+      <Filter>Source Files\async</Filter>
+    </ClCompile>
+    <ClCompile Include="src\async\yield_all.cppm">
       <Filter>Source Files\async</Filter>
     </ClCompile>
   </ItemGroup>
