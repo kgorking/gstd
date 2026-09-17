@@ -10,7 +10,7 @@ auto wait_all(task<ValueTypes>... tasks) -> std::tuple<ValueTypes...>
 {
 	channel<std::tuple<ValueTypes...>> ch;
 
-	auto helper = [&]() -> task<void> {
+	auto resume_on_thread = [&]() -> task<void> {
 		co_await thread_pool::switch_to_thread();
 		ch << std::make_tuple(co_await tasks...);
 		}();

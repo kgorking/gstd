@@ -45,6 +45,16 @@ public:
         return val;
     }
 
+	bool try_get(T& out) {
+		std::unique_lock lock(m);
+		if (stopped || data.empty())
+			return false;
+
+		out = std::move(data.front());
+		data.pop();
+		return true;
+	}
+
     void close() {
         {
             std::unique_lock lock(m);
