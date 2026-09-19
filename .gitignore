@@ -8,5 +8,5 @@ vc140.pdb
 [Bb]in/
 [Oo]bj/
 [Ll]og/
+/s.gstd/gstd_tests.dir/
 /s.gstd/lines_test.txt
-/s.gstd/gstd_tests.dir/RelWithDebInfo/gstd_tests.tlog/Microsoft.Build.CPPTasks.CL.read.1.tlog
