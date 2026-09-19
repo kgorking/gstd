@@ -35,8 +35,9 @@ private:
 		// The thread whose resume() call suspends this coroutine publishes the
 		// suspended handle afterwards via thread_pool::schedule().
 		template <typename T, bool B>
-		void await_suspend(std::coroutine_handle<task_promise<T,B>>) noexcept {
+		void await_suspend(std::coroutine_handle<task_promise<T,B>> h) noexcept {
 			static_assert(std::is_void_v<T>, "Can only be called from a task<void>. Use a channel<> to pass values between threads.");
+			instance().enqueue(h);
 		}
 		void await_resume() noexcept {}
 	};
@@ -44,8 +45,9 @@ private:
 		bool await_ready() const noexcept { return is_io_thread; } // Don't reschedule if already on an io thread.
 		// Same no-publish rule as threaded_waiter; use schedule_io().
 		template <typename T, bool B>
-		void await_suspend(std::coroutine_handle<task_promise<T,B>>) noexcept {
+		void await_suspend(std::coroutine_handle<task_promise<T,B>> h) noexcept {
 			static_assert(std::is_void_v<T>, "Can only be called from a task<void>. Use a channel<> to pass values between threads.");
+			instance().enqueue_io(h);
 		}
 		void await_resume() noexcept {}
 	};
@@ -108,7 +110,7 @@ public:
 	// must be scheduled exactly once. The task object retains ownership and
 	// must stay alive until the coroutine completes (join on a channel, a
 	// done-counter, or task::done()).
-	template<bool B>
+	/*template<bool B>
 	static void schedule(task<void, B>& t) {
 		auto h = t.native_handle();
 		if (h && h != std::noop_coroutine() && !h.done())
@@ -119,7 +121,7 @@ public:
 		auto h = t.native_handle();
 		if (h && h != std::noop_coroutine() && !h.done())
 			instance().enqueue_io(h);
-	}
+	}*/
 
 private:
 	void enqueue(std::coroutine_handle<> h) {

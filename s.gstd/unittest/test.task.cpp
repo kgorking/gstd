@@ -29,6 +29,7 @@ static task<void> cpu_sleep_task(channel<int>& ch) {
 
 test task_in_task = [] {
 	auto yielder = [] -> task<int> {
+		co_yield 0;
 		co_yield 1;
 		co_yield 2;
 		co_yield 3;
@@ -55,9 +56,9 @@ test task_multiple_parallel_computations = [] {
 		auto t2 = cpu_heavy_task(ch, 500);
 		auto t3 = cpu_heavy_task(ch, 500);
 		// Publish after full suspension (see thread_pool::schedule).
-		thread_pool::schedule(t1);
-		thread_pool::schedule(t2);
-		thread_pool::schedule(t3);
+		//thread_pool::schedule(t1);
+		//thread_pool::schedule(t2);
+		//thread_pool::schedule(t3);
 		int result = ch.get() + ch.get() + ch.get();
 		while (!t1.done() || !t2.done() || !t3.done())
 			std::this_thread::yield();
@@ -71,7 +72,7 @@ test task_multiple_parallel_computations = [] {
 static task<int> nested_tasks_1() {
 	channel<int> ch;
 	auto t = cpu_sleep_task(ch);
-	thread_pool::schedule(t);
+	//thread_pool::schedule(t);
 	int v = ch.get();
 	while (!t.done())
 		std::this_thread::yield();
@@ -110,7 +111,7 @@ test task_channel_buffered = [] {
 		};
 
 	auto y = message_sender();
-	thread_pool::schedule(y);
+	//thread_pool::schedule(y);
 
 	for (int i = 1; i <= 3; ++i) {
 		int const v = ch.get();
@@ -132,7 +133,7 @@ test task_channel_unbuffered = [] {
 		};
 
 	auto y = message_sender();
-	thread_pool::schedule(y);
+	//thread_pool::schedule(y);
 	for (int i = 1; i <= 3; ++i) {
 		int const v = *ch;
 		test::equals(v, i, "channel value should match");

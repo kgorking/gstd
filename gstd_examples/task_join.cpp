@@ -3,8 +3,7 @@ import std;
 
 using namespace std::chrono_literals;
 
-static task<int> sleep_task(int ms) {
-	co_await std::suspend_always{};
+static task<int, true> sleep_task(int ms) {
 	std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 	co_return 1;
 }

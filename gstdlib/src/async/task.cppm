@@ -99,8 +99,6 @@ public:
 		if (this == &other)
 			return *this;
 		// Release old handle: destroy its frame when the last ref goes away.
-		// (Previously this only decremented, leaking the frame and, worse,
-		// leaving stale ref counts behind.)
 		if (h && (0 == --h.promise().ref))
 			h.destroy();
         h = std::exchange(other.h, nullptr);
@@ -118,29 +116,18 @@ public:
     }
 
 	// True when the coroutine has run to completion (or there is no coroutine).
-	// Used to join fire-and-forget helpers before destroying their handles.
 	bool done() const noexcept {
 		return !h || h.done();
 	}
 
 	void resume() {
-		// Guarded: resuming null or already-completed handles is a no-op.
-		// Resuming the same live handle twice (e.g. from two workers) is
-		// undefined behaviour for coroutines, so callers must claim ownership
-		// before calling resume() exactly once.
 		if (h && !h.done())
 			h.resume();
 	}
 
 	void on_promise_destroyed(std::atomic_int64_t* i) {
-		if (h) h.promise().on_done = i;
-	}
-
-	// Borrow the underlying handle for thread_pool::schedule(). The handle
-	// must already be suspended; the task object keeps ownership and must
-	// stay alive until the coroutine completes.
-	[[nodiscard]] auto native_handle() const noexcept -> std::coroutine_handle<> {
-		return h ? std::coroutine_handle<>::from_address(h.address()) : nullptr;
+		if (h)
+			h.promise().on_done = i;
 	}
 
 	// Get the next value from the task, waiting for it to complete if necessary.
@@ -157,7 +144,7 @@ public:
 	// true -> the coroutine is not suspended
 	bool await_ready() const noexcept {
 		// Null handle: nothing to wait for; await_resume() will report the
-		// destroyed task. (Previously this dereferenced null.)
+		// destroyed task.
 		if (!h)
 			return true;
 		if constexpr (!std::is_void_v< ValueType>) {
