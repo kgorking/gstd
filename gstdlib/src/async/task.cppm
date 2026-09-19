@@ -76,11 +76,8 @@ private:
 
 public:
 	[[nodiscard]] task() noexcept = default;
+	[[nodiscard]] task(task const& other) = delete;
     [[nodiscard]] task(task&& other) noexcept : h(std::exchange(other.h, nullptr)) {}
-    [[nodiscard]] task(task const& other) noexcept : h(other.h) {
-		// Shared ownership: each copy adds a ref. Null guard for moved-from sources.
-		if (h) h.promise().ref += 1;
-	}
     [[nodiscard]] explicit task(std::coroutine_handle<promise_type> h) noexcept : h(h) {
 		if (h) h.promise().ref += 1;
 	}
@@ -90,6 +87,7 @@ public:
 		}
 	}
 
+	task& operator=(task const& other) = delete;
 	task& operator=(task&& other) noexcept {
 		if (this == &other)
 			return *this;
@@ -98,16 +96,6 @@ public:
 			h.destroy();
         h = std::exchange(other.h, nullptr);
         return *this;
-    }
-
-    task& operator=(task const& other) {
-		if (this == &other)
-			return *this;
-		if (h && (0 == --h.promise().ref))
-			h.destroy();
-		h = other.h;
-		if (h) h.promise().ref++;
-		return *this;
     }
 
 	// True when the coroutine has run to completion (or there is no coroutine).

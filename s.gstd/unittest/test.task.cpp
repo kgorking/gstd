@@ -1,9 +1,6 @@
 import gs;
 import std;
 
-static_assert(std::is_copy_constructible_v<task<int>>);
-static_assert(std::is_copy_assignable_v<task<int>>);
-
 
 [[nodiscard]]
 static task<void> cpu_heavy_task(channel<int>& ch, int r) {
@@ -91,11 +88,10 @@ test task_many_tasks = [] {
 
 
 test task_wait_all = [] {
-	auto t1 = cpu_heavy_task(1);
-	auto t2 = cpu_heavy_task(2);
-	auto t3 = cpu_heavy_task(3);
-
-	auto [r1, r2, r3] = wait_all(t1, t2, t3);
+	auto [r1, r2, r3] = wait_all(
+		cpu_heavy_task(1),
+		cpu_heavy_task(2),
+		cpu_heavy_task(3));
 	int result = r1+r2+r3;
 	test::equals(result, 6);
 	};
