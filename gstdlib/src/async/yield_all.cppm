@@ -54,8 +54,7 @@ task<void> await_on_thread_v2(task<ValueType>& t, std::atomic_int64_t& current_s
 };
 
 export template<typename ValueType, int N>
-auto yield_all(std::array<task<ValueType>, N>& tasks) -> sequence<ValueType>
-{
+auto yield_all(std::array<task<ValueType>, N>& tasks) -> sequence<ValueType> {
 	// Avoid false sharing between threads.
 	#pragma warning(push)
 	#pragma warning(disable : 4324)
