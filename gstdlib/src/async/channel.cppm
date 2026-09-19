@@ -9,6 +9,7 @@ class channel {
     using data_type = std::queue<T>;
 	mutable std::mutex m{};
     mutable std::condition_variable cv_not_empty{};
+	std::atomic_uint64_t count{ 0 };
     data_type data{};
     bool stopped = false;
 
@@ -32,6 +33,7 @@ public:
 			throw std::runtime_error("channel is closed");
 
         data.push(std::move(val));
+		count += 1;
         cv_not_empty.notify_one();
     }
 
@@ -41,11 +43,15 @@ public:
         if (stopped && data.empty()) return T{};
         T val = std::move(data.front());
         data.pop();
+		count -= 1;
 
         return val;
     }
 
 	bool try_get(T& out) {
+		if (0 == count)
+			return false;
+
 		std::unique_lock lock(m);
 		if (stopped || data.empty())
 			return false;

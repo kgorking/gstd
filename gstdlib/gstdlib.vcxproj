@@ -107,6 +107,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>
     <MSVCPreviewEnabled>true</MSVCPreviewEnabled>
+    <VCToolsVersion>14.51.36231</VCToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>

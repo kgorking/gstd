@@ -1,0 +1,18 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "gstd_tests.dir\\RelWithDebInfo\\x.test.testing.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\s.gstd\\gstd_tests.dir\\RelWithDebInfo\\vc145.pdb",
+                "gstd_tests.dir\\RelWithDebInfo\\"
+            ],
+            "requires": [
+                {
+                    "logical-name": "gs"
+                }
+            ]
+        }
+    ]
+}

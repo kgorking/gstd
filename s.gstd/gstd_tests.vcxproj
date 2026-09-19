@@ -37,6 +37,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <EnableASAN>true</EnableASAN>
     <MSVCPreviewEnabled>true</MSVCPreviewEnabled>
+    <VCToolsVersion>14.51.36231</VCToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>

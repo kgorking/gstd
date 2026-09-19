@@ -7,12 +7,22 @@ import :task;
 
 export class thread_pool {
 private:
-	std::array<std::atomic<std::coroutine_handle<>>*, 64> worker_handles{};
+	using shared_handle = std::atomic<std::coroutine_handle<>>*;
+	static constexpr int Cacheline = 64;
+	static constexpr int N = 24;
+	static constexpr int N_bytes = N * sizeof(shared_handle);
+	static constexpr int N_per_cacheline = Cacheline / sizeof(shared_handle);
+	static constexpr int N_cachelines = N_bytes / Cacheline;
+
+	std::array<shared_handle, N> worker_handles{};
+	std::array<bool, N_cachelines> worker_dirty{};
 
 	channel<std::coroutine_handle<>> work_queue;
 	channel<std::coroutine_handle<>> io_work_queue;
 	std::vector<std::jthread> workers;
 	std::vector<std::jthread> io_workers;
+
+	std::latch thread_initializition;
 
 	thread_local inline static bool is_worker_thread = false;
 	thread_local inline static bool is_io_thread = false;
@@ -26,7 +36,6 @@ private:
 		}
 		void await_resume() noexcept {}
 	};
-
 	struct io_waiter {
 		bool await_ready() const noexcept { return is_io_thread; } // Don't reschedule if already on an io thread.
 		template <typename T>
@@ -38,7 +47,8 @@ private:
 	};
 
 public:
-	explicit thread_pool(int64 num_threads = std::jthread::hardware_concurrency() - 1) {
+	explicit thread_pool(int64 num_threads = std::jthread::hardware_concurrency() - 1)
+		: thread_initializition(num_threads) {
 		if (num_threads <= 0)
 			throw std::runtime_error("Bad thread count");
 
@@ -48,6 +58,9 @@ public:
 			workers.emplace_back([this, i](std::stop_token stoken) { worker_loop(stoken, i); });
 			io_workers.emplace_back([this](std::stop_token stoken) { io_worker_loop(stoken); });
 		}
+
+		// Wait for worker threads to finish their initializations
+		thread_initializition.wait();
 	}
 
 	~thread_pool() {
@@ -83,30 +96,51 @@ public:
 
 private:
 	void enqueue(std::coroutine_handle<> h) {
-		for (uint64 i = 0; i < worker_handles.size(); i++) {
-			std::coroutine_handle<> expected = nullptr;
-			if (worker_handles[i] && worker_handles[i]->compare_exchange_weak(expected, h)) {
-				worker_handles[i]->notify_one();
-				return;
+		for (uint64 j = 0; j < worker_dirty.size(); j++) {
+			// If there has been no changes in the cacheline of workers, just skip them all
+			if (!worker_dirty[j])
+				continue;
+
+			uint64 const first = j * N_per_cacheline;
+			uint64 const last = (1 + j) * N_per_cacheline;
+
+			for (uint64 i = first; i < last; i++) {
+				std::coroutine_handle<> expected = nullptr;
+				if (worker_handles[i]->compare_exchange_weak(expected, h)) {
+					//std::println("enqued in slot {}", i);
+					worker_handles[i]->notify_one();
+					return;
+				}
 			}
+
+			worker_dirty[j] = false;
 		}
 
-		std::println("enqued in slot queue");
+		//std::println("enqued in slot queue");
 		work_queue << h;
 	}
 	void enqueue_io(std::coroutine_handle<> h) { io_work_queue << h; }
 
-	void worker_loop(std::stop_token stoken, uint64 i) {
+	void worker_loop(std::stop_token stoken, uint64 const i) {
 		is_worker_thread = true;
+
+		// Receive work here from main thread
 		std::atomic<std::coroutine_handle<>> shared_h;
 		worker_handles[i] = &shared_h;
 
+		// Notify main thread with this when work is completed
+		bool *cacheline_dirty = &worker_dirty[i / N_per_cacheline];
+		*cacheline_dirty = true;
+
+		// Signal that this threads initialization is done
+		thread_initializition.count_down();
+
+		// Worker loop
 		while (!stoken.stop_requested()) {
-			std::coroutine_handle<> h = nullptr;
-			if (shared_h != nullptr) {
+			std::coroutine_handle<> h = shared_h.exchange(nullptr);
+			if (h && !h.done()) {
 				// Do work from the local slot
-				h = shared_h;
-				shared_h = nullptr;
+				*cacheline_dirty = true;
 				h.resume();
 			}
 			else if (work_queue.try_get(h)) {
@@ -120,8 +154,6 @@ private:
 		}
 
 		worker_handles[i] = nullptr;
-		//while (!stoken.stop_requested() && (h = work_queue.get()))
-		//	h.resume();
 	}
 
 	void io_worker_loop(std::stop_token stoken) {

@@ -11,12 +11,13 @@ public:
 	test& operator=(const test&) = delete;
 	test& operator=(test&&) = delete;
 
-	constexpr test(std::invocable auto&& fn, std::source_location loc = std::source_location::current()) {
+	template<std::invocable Fn>
+	constexpr test(Fn&& fn, std::source_location loc = std::source_location::current()) {
 		if consteval {
 			fn();
 		}
 		else {
-			gs::testing::test_registry::register_test(std::forward<decltype(fn)>(fn), loc);
+			gs::testing::test_registry::register_test(std::forward<Fn>(fn), loc);
 		}
 	}
 

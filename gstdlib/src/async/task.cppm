@@ -61,12 +61,17 @@ public:
 
 private:
     std::coroutine_handle<promise_type> h = nullptr;
+	bool copy = false;
 
 public:
     task() noexcept = default;
     task(task&& other) noexcept : h(std::exchange(other.h, nullptr)) { }
-    task(task const& other) noexcept : h(other.h) {}
+    task(task const& other) noexcept : h(other.h), copy(true) {}
     explicit task(std::coroutine_handle<promise_type> h) noexcept : h(h) {}
+	~task() {
+		if (!copy)
+			h.destroy();
+	}
 
 	task& operator=(task&& other) noexcept {
         h = std::exchange(other.h, nullptr);
@@ -75,15 +80,17 @@ public:
 
     task& operator=(task const& other) {
         h = other.h;
+		copy = true;
         return *this;
     }
 
 	// Get the next value from the task, waiting for it to complete if necessary.
 	ValueType result() requires(!std::is_void_v<ValueType>) {
-		if (!h || h.done())
-			throw std::runtime_error("task is not valid or already completed");
-		if (!h.promise().value)
+		if (!h.promise().value) {
+			if (!h || h.done())
+				throw std::runtime_error("task is not valid or already completed");
 			h.resume();
+		}
 		return await_resume();
 	}
 
@@ -101,7 +108,8 @@ public:
 
 	bool await_suspend(std::coroutine_handle<> /*handle*/) noexcept {
 		//h.promise().continuation = handle;
-		h.resume();
+		//if (!h.done())
+			h.resume();
 
 		// true returns control to the caller/resumer of the current coroutine
 		// false resumes the current coroutine.
