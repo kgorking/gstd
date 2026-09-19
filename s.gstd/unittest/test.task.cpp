@@ -5,6 +5,7 @@ static_assert(std::is_copy_constructible_v<task<int>>);
 static_assert(std::is_copy_assignable_v<task<int>>);
 
 
+[[nodiscard]]
 static task<void> cpu_heavy_task(channel<int>& ch, int r) {
 	co_await thread_pool::switch_to_thread();
 	int result = 100 + std::rand() % 1024;
@@ -12,12 +13,14 @@ static task<void> cpu_heavy_task(channel<int>& ch, int r) {
 	ch << r;
 }
 
+[[nodiscard]]
 static task<int> cpu_heavy_task(int r) {
 	int result = 100 + std::rand() % 1024;
 	std::this_thread::sleep_for(std::chrono::milliseconds(result));
 	co_return r;
 }
 
+[[nodiscard]]
 static task<void> cpu_sleep_task(channel<int>& ch) {
 	co_await thread_pool::switch_to_thread();
 	std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -60,7 +63,7 @@ test task_multiple_parallel_computations = [] {
 
 static task<int> nested_tasks_1() { 
 	channel<int> ch;
-	cpu_sleep_task(ch);
+	auto t = cpu_sleep_task(ch);
 	co_return ch.get();
 }
 static task<int> nested_tasks_2() { co_return co_await nested_tasks_1(); }

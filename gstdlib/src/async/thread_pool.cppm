@@ -143,7 +143,7 @@ private:
 				*cacheline_dirty = true;
 				h.resume();
 			}
-			else if (work_queue.try_get(h)) {
+			else if (work_queue.try_get(h) && !h.done()) {
 				// Do work from the global list
 				h.resume();
 			}

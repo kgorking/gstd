@@ -10,12 +10,7 @@ template <typename PromiseType>
 struct final_awaiter {
 	bool await_ready() noexcept { return false; }
 	std::coroutine_handle<> await_suspend(std::coroutine_handle<PromiseType> h) noexcept {
-		// Resume the continuation directly instead of calling handle.resume()
-		// recursively from inside the current frame -- the compiler compiles
-		// this into a tail call, so a long chain of co_await'd tasks never
-		// blows the stack.
-		auto continuation = h.promise().continuation;
-		return continuation ? continuation : std::noop_coroutine();
+		return h.promise().continuation;
 	}
 	void await_resume() noexcept {}
 };
@@ -25,7 +20,8 @@ template<typename ValueType>
 struct task_promise_base {
     using value_type = ValueType;
 	std::exception_ptr exception;
-    std::coroutine_handle<> continuation = nullptr;
+    std::coroutine_handle<> continuation = std::noop_coroutine();
+	std::atomic_int64_t ref{ 0 };
 
 	auto initial_suspend() noexcept		{ return std::suspend_never{}; }
     void unhandled_exception() noexcept { exception = std::current_exception(); }
@@ -61,34 +57,39 @@ public:
 
 private:
     std::coroutine_handle<promise_type> h = nullptr;
-	bool copy = false;
 
 public:
-    task() noexcept = default;
-    task(task&& other) noexcept : h(std::exchange(other.h, nullptr)) { }
-    task(task const& other) noexcept : h(other.h), copy(true) {}
-    explicit task(std::coroutine_handle<promise_type> h) noexcept : h(h) {}
+	[[nodiscard]] task() noexcept = default;
+    [[nodiscard]] task(task&& other) noexcept : h(std::exchange(other.h, nullptr)) {}
+    [[nodiscard]] task(task const& other) noexcept : h(other.h) {
+		h.promise().ref += 1;
+	}
+    [[nodiscard]] explicit task(std::coroutine_handle<promise_type> h) noexcept : h(h) {
+		h.promise().ref += 1;
+	}
 	~task() {
-		if (!copy)
+		if (h && (0 == --h.promise().ref)) {
 			h.destroy();
+		}
 	}
 
 	task& operator=(task&& other) noexcept {
+		if (h) h.promise().ref--;
         h = std::exchange(other.h, nullptr);
         return *this;
     }
 
     task& operator=(task const& other) {
-        h = other.h;
-		copy = true;
-        return *this;
+		if (h) h.promise().ref--;
+		h = other.h;
+		if (h) h.promise().ref++;
+		return *this;
     }
 
 	// Get the next value from the task, waiting for it to complete if necessary.
 	ValueType result() requires(!std::is_void_v<ValueType>) {
-		if (!h.promise().value) {
-			if (!h || h.done())
-				throw std::runtime_error("task is not valid or already completed");
+		// Keep resuming until I have a value
+		while (!h.promise().value) {
 			h.resume();
 		}
 		return await_resume();
@@ -99,28 +100,28 @@ public:
 	// true -> the coroutine is not suspended
 	bool await_ready() const noexcept {
 		if constexpr (!std::is_void_v< ValueType>) {
-			return h.promise().value.has_value();
+			return h.done() && h.promise().value.has_value();
 		}
 		else {
-			return false;
+			return h.done();
 		}
 	}
 
-	bool await_suspend(std::coroutine_handle<> /*handle*/) noexcept {
-		//h.promise().continuation = handle;
-		//if (!h.done())
-			h.resume();
-
-		// true returns control to the caller/resumer of the current coroutine
-		// false resumes the current coroutine.
-		return false;
+	auto await_suspend(std::coroutine_handle<> handle) noexcept {
+		h.promise().continuation = handle;
+		return h;
 	}
 
 	auto await_resume() -> ValueType {
-		if (h.promise().exception)
+		if (h && h.promise().exception)
 			std::rethrow_exception(h.promise().exception);
-		if constexpr (!std::is_void_v< ValueType>) {
-			return std::exchange(h.promise().value, std::nullopt).value();
+
+		if constexpr (!std::is_void_v<ValueType>) {
+			if (!h)
+				throw std::runtime_error("task is destroyed");
+			ValueType vt = std::move(*h.promise().value);
+			h.promise().value.reset();
+			return vt;
 		}
 	}
 };

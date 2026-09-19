@@ -46,9 +46,8 @@ int main() {
 			sleep_task(0)
 		};
 
-		for (int result : yield_all(tasks))
-		//for (int result : yield_all(tasks).take(5))
-			counter += result;// std::println("yield: {}", result);
+		for (int result : yield_all(tasks))//.take(5))
+			counter += result;
 	}
 
 	auto const end = std::chrono::system_clock::now();
