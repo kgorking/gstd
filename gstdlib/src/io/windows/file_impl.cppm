@@ -178,20 +178,30 @@ export namespace io {
 
 		task<int64> read_async(Span<char> auto buf) {
 			channel<int64> ch;
-			auto helper = [&]() -> task<void> {
+			// Initial-suspended: published via schedule_io() only after full
+			// suspension, never from inside await_suspend (see schedule()).
+			auto helper = [&]() -> task<void, true> {
 				co_await thread_pool::switch_to_io();
 				ch << read(buf);
 				}();
-			co_return ch.get();
+			thread_pool::schedule_io(helper);
+			int64 v = ch.get();
+			while (!helper.done())
+				std::this_thread::yield();
+			co_return v;
 		}
 
 		task<int64> write_async(Span<const char> auto buf) {
 			channel<int64> ch;
-			auto helper = [&]() -> task<void> {
+			auto helper = [&]() -> task<void, true> {
 				co_await thread_pool::switch_to_io();
 				ch << write(buf);
 				}();
-			co_return ch.get();
+			thread_pool::schedule_io(helper);
+			int64 v = ch.get();
+			while (!helper.done())
+				std::this_thread::yield();
+			co_return v;
 		}
 
 		string read_line() {

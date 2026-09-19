@@ -125,7 +125,10 @@ public:
     sequence& operator=(const sequence&) = delete;
 
     ~sequence() {
-        if (_handle && !_handle.done())
+        // Destroy the frame in all cases. Skipping completed handles (the old
+        // `!done()` check) leaked every fully-consumed generator frame,
+        // including yield_all's helpers/results per call.
+        if (_handle)
             _handle.destroy();
         _handle = nullptr;
     }

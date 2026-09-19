@@ -12,7 +12,7 @@ test yield_all_test = [] {
 
 	int expected = 0;
 	int num_results = 0;
-	for (int result : yield_all(tasks)) {
+	for (int result : yield_all(std::move(tasks))) {
 		num_results += 1;
 		expected += result;
 	}

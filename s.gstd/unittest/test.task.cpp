@@ -54,17 +54,28 @@ test task_multiple_parallel_computations = [] {
 		auto t1 = cpu_heavy_task(ch, 500);
 		auto t2 = cpu_heavy_task(ch, 500);
 		auto t3 = cpu_heavy_task(ch, 500);
-		co_return ch.get() + ch.get() + ch.get();
+		// Publish after full suspension (see thread_pool::schedule).
+		thread_pool::schedule(t1);
+		thread_pool::schedule(t2);
+		thread_pool::schedule(t3);
+		int result = ch.get() + ch.get() + ch.get();
+		while (!t1.done() || !t2.done() || !t3.done())
+			std::this_thread::yield();
+		co_return result;
 		};
 
 	auto result = parallel_compute().result();
 	test::is_true(result == 1500, "parallel computation result should be 1500");
 	};
 
-static task<int> nested_tasks_1() { 
+static task<int> nested_tasks_1() {
 	channel<int> ch;
 	auto t = cpu_sleep_task(ch);
-	co_return ch.get();
+	thread_pool::schedule(t);
+	int v = ch.get();
+	while (!t.done())
+		std::this_thread::yield();
+	co_return v;
 }
 static task<int> nested_tasks_2() { co_return co_await nested_tasks_1(); }
 static task<int> nested_tasks_3() { co_return co_await nested_tasks_2(); }
@@ -99,11 +110,14 @@ test task_channel_buffered = [] {
 		};
 
 	auto y = message_sender();
+	thread_pool::schedule(y);
 
 	for (int i = 1; i <= 3; ++i) {
 		int const v = ch.get();
 		test::equals(v, i, "channel value should match");
 	}
+	while (!y.done())
+		std::this_thread::yield();
 	};
 
 test task_channel_unbuffered = [] {
@@ -118,8 +132,11 @@ test task_channel_unbuffered = [] {
 		};
 
 	auto y = message_sender();
+	thread_pool::schedule(y);
 	for (int i = 1; i <= 3; ++i) {
 		int const v = *ch;
 		test::equals(v, i, "channel value should match");
 	}
+	while (!y.done())
+		std::this_thread::yield();
 	};

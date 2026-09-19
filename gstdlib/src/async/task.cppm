@@ -22,14 +22,22 @@ struct final_awaiter {
 	void await_resume() noexcept {}
 };
 
-// Promise implementation used by task.
-template<typename ValueType, bool InitialSuspend>
-struct task_promise_base {
-    using value_type = ValueType;
-	std::exception_ptr exception;
+// Non-templated header: the first members, in order, of EVERY task promise.
+// Lets thread_pool hold a frame alive across resume() through a type-erased
+// handle (see worker_loop). This is valid because every task_promise derives
+// from this header with no reordering, so the header subobject is at offset 0
+// (verified empirically on MSVC; both void instantiations read the same ref).
+struct task_promise_header {
+	std::exception_ptr exception{};
     std::coroutine_handle<> continuation = std::noop_coroutine();
 	std::atomic_int64_t ref{ 0 };
 	std::atomic_int64_t* on_done = nullptr;
+};
+
+// Promise implementation used by task.
+template<typename ValueType, bool InitialSuspend>
+struct task_promise_base : task_promise_header {
+    using value_type = ValueType;
 
 	auto initial_suspend() noexcept {
 		if constexpr (InitialSuspend)
@@ -75,10 +83,11 @@ public:
 	[[nodiscard]] task() noexcept = default;
     [[nodiscard]] task(task&& other) noexcept : h(std::exchange(other.h, nullptr)) {}
     [[nodiscard]] task(task const& other) noexcept : h(other.h) {
-		h.promise().ref += 1;
+		// Shared ownership: each copy adds a ref. Null guard for moved-from sources.
+		if (h) h.promise().ref += 1;
 	}
     [[nodiscard]] explicit task(std::coroutine_handle<promise_type> h) noexcept : h(h) {
-		h.promise().ref += 1;
+		if (h) h.promise().ref += 1;
 	}
 	~task() {
 		if (h && (0 == --h.promise().ref)) {
@@ -87,13 +96,22 @@ public:
 	}
 
 	task& operator=(task&& other) noexcept {
-		if (h) h.promise().ref--;
+		if (this == &other)
+			return *this;
+		// Release old handle: destroy its frame when the last ref goes away.
+		// (Previously this only decremented, leaking the frame and, worse,
+		// leaving stale ref counts behind.)
+		if (h && (0 == --h.promise().ref))
+			h.destroy();
         h = std::exchange(other.h, nullptr);
         return *this;
     }
 
     task& operator=(task const& other) {
-		if (h) h.promise().ref--;
+		if (this == &other)
+			return *this;
+		if (h && (0 == --h.promise().ref))
+			h.destroy();
 		h = other.h;
 		if (h) h.promise().ref++;
 		return *this;
@@ -106,11 +124,23 @@ public:
 	}
 
 	void resume() {
-		h.resume();
+		// Guarded: resuming null or already-completed handles is a no-op.
+		// Resuming the same live handle twice (e.g. from two workers) is
+		// undefined behaviour for coroutines, so callers must claim ownership
+		// before calling resume() exactly once.
+		if (h && !h.done())
+			h.resume();
 	}
 
 	void on_promise_destroyed(std::atomic_int64_t* i) {
-		h.promise().on_done = i;
+		if (h) h.promise().on_done = i;
+	}
+
+	// Borrow the underlying handle for thread_pool::schedule(). The handle
+	// must already be suspended; the task object keeps ownership and must
+	// stay alive until the coroutine completes.
+	[[nodiscard]] auto native_handle() const noexcept -> std::coroutine_handle<> {
+		return h ? std::coroutine_handle<>::from_address(h.address()) : nullptr;
 	}
 
 	// Get the next value from the task, waiting for it to complete if necessary.
@@ -126,6 +156,10 @@ public:
 	// false -> the coroutine is suspended
 	// true -> the coroutine is not suspended
 	bool await_ready() const noexcept {
+		// Null handle: nothing to wait for; await_resume() will report the
+		// destroyed task. (Previously this dereferenced null.)
+		if (!h)
+			return true;
 		if constexpr (!std::is_void_v< ValueType>) {
 			return h.done() && h.promise().value.has_value();
 		}
@@ -135,6 +169,12 @@ public:
 	}
 
 	auto await_suspend(std::coroutine_handle<> handle) noexcept {
+		// Single-concurrent-awaiter requirement: at most one coroutine may
+		// await a given task handle at a time. Concurrent awaits overwrite
+		// this single continuation slot, so the loser never resumes and the
+		// winner may resume a stale handle. Sequential re-await (await,
+		// complete, await again) is fine. Callers must guarantee this, e.g.
+		// by moving (not sharing) each input task to its single consumer.
 		h.promise().continuation = handle;
 		return h;
 	}

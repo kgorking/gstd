@@ -46,7 +46,7 @@ int main() {
 			sleep_task(0)
 		};
 
-		for (int result : yield_all(tasks))
+		for (int result : yield_all(std::move(tasks)))
 			counter += result;
 	}
 
