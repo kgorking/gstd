@@ -91,7 +91,6 @@ public:
 	task& operator=(task&& other) noexcept {
 		if (this == &other)
 			return *this;
-		// Release old handle: destroy its frame when the last ref goes away.
 		if (h && (0 == --h.promise().ref))
 			h.destroy();
         h = std::exchange(other.h, nullptr);
@@ -126,8 +125,6 @@ public:
 	// false -> the coroutine is suspended
 	// true -> the coroutine is not suspended
 	bool await_ready() const noexcept {
-		// Null handle: nothing to wait for; await_resume() will report the
-		// destroyed task.
 		if (!h)
 			return true;
 		if constexpr (!std::is_void_v< ValueType>) {
@@ -139,12 +136,6 @@ public:
 	}
 
 	auto await_suspend(std::coroutine_handle<> handle) noexcept {
-		// Single-concurrent-awaiter requirement: at most one coroutine may
-		// await a given task handle at a time. Concurrent awaits overwrite
-		// this single continuation slot, so the loser never resumes and the
-		// winner may resume a stale handle. Sequential re-await (await,
-		// complete, await again) is fine. Callers must guarantee this, e.g.
-		// by moving (not sharing) each input task to its single consumer.
 		h.promise().continuation = handle;
 		return h;
 	}
