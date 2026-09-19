@@ -29,8 +29,8 @@ private:
 
 	struct threaded_waiter {
 		bool await_ready() const noexcept { return is_worker_thread; } // Don't reschedule if already on a worker thread.
-		template <typename T>
-		void await_suspend(std::coroutine_handle<task_promise<T>> h) noexcept {
+		template <typename T, bool B>
+		void await_suspend(std::coroutine_handle<task_promise<T,B>> h) noexcept {
 			static_assert(std::is_void_v<T>, "Can only be called from a task<void>. Use a channel<> to pass values between threads.");
 			thread_pool::instance().enqueue(h);
 		}
@@ -38,8 +38,8 @@ private:
 	};
 	struct io_waiter {
 		bool await_ready() const noexcept { return is_io_thread; } // Don't reschedule if already on an io thread.
-		template <typename T>
-		void await_suspend(std::coroutine_handle<task_promise<T>> h) noexcept {
+		template <typename T, bool B>
+		void await_suspend(std::coroutine_handle<task_promise<T,B>> h) noexcept {
 			static_assert(std::is_void_v<T>, "Can only be called from a task<void>. Use a channel<> to pass values between threads.");
 			thread_pool::instance().enqueue_io(h);
 		}

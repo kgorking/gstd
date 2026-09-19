@@ -125,7 +125,7 @@ public:
     sequence& operator=(const sequence&) = delete;
 
     ~sequence() {
-        if (_handle)
+        if (_handle && !_handle.done())
             _handle.destroy();
         _handle = nullptr;
     }

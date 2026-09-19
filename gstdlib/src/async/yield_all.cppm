@@ -6,75 +6,57 @@ import :sequence;
 import :task;
 import :thread_pool;
 
-struct scope_reference {
-	std::atomic_int64_t& sc;
-	std::atomic<bool>& done;
+template<typename ValueType, int N>
+struct yield_all_state {
+	// Avoid false sharing between threads.
+	struct alignas(64) val_wrap {
+		ValueType v{};
+		std::atomic_bool flag{ false };
+	};
 
-	~scope_reference() noexcept {
-		if (0 == --sc) {
-			done = true;
-			done.notify_one();
-		}
-	}
-
-	operator bool() const {
-		return false == done;
-	}
-};
-struct scope_counter {
-	std::atomic_int64_t count{ 1 };
-	std::atomic<bool> done{ false };
-
-	~scope_counter() noexcept {
-		if (0 != --count)
-			done.wait(false);
-	}
-
-	scope_reference get() {
-		count += 1;
-		return { count, done };
-	}
+	std::array<val_wrap, N> results{};
+	std::atomic_int64_t current_slot{ 0 };
 };
 
-template<typename ValueType, typename Slots>
-task<void> await_on_thread_v2(task<ValueType>& t, std::atomic_int64_t& current_slot, Slots& result_dest, scope_counter& scnt) {
-	// Make sure yield_all's local variables do not go out of scope
-	auto ref = scnt.get();
-
+template<typename ValueType, int N>
+task<void, true> await_on_thread_v2(task<ValueType> t, yield_all_state<ValueType, N>& state) {
 	// Switch to a worker thread
 	co_await thread_pool::switch_to_thread();
 
 	// Evaluate the input task and store its result in the next
 	// available slot in the yield_all's stack.
 	ValueType v = co_await t;
-	int64 const idx = current_slot.fetch_add(1, std::memory_order_relaxed);
-	result_dest[idx].v = std::move(v);
-	result_dest[idx].flag = true;
-	result_dest[idx].flag.notify_one();
+	int64 const idx = state.current_slot.fetch_add(1, std::memory_order_relaxed);
+	state.results[idx].v = std::move(v);
+	state.results[idx].flag = true;
+	state.results[idx].flag.notify_one();
 };
 
 export template<typename ValueType, int N>
-auto yield_all(std::array<task<ValueType>, N>& tasks) -> sequence<ValueType> {
-	// Avoid false sharing between threads.
-	#pragma warning(push)
-	#pragma warning(disable : 4324)
-	struct alignas(64) val_wrap {
-		ValueType v{};
-		std::atomic_bool flag{ false };
-	};
-	#pragma warning(pop)
-
-	std::array<task<void>, N> helpers{};
-	std::array<val_wrap, N> results{};
-	std::atomic_int64_t current_slot{ 0 };
-	scope_counter cnt;
+auto yield_all(std::array<task<ValueType>, N> tasks) -> sequence<ValueType> {
+	auto state = yield_all_state<ValueType, N>{};
+	std::atomic_int64_t done{ 0 };
 
 	// Set up the helper tasks
-	for (int i = 0; i < N; ++i)
-		helpers[i] = await_on_thread_v2(tasks[i], current_slot, results, cnt);
-
-	for (int n = 0; n < N; ++n) {
-		results[n].flag.wait(false);
-		co_yield results[n].v;
+	std::array<task<void, true>, N> helpers{};
+	for (int i = 0; i < N; ++i) {
+		helpers[i] = await_on_thread_v2(tasks[i], state);
+		helpers[i].on_promise_destroyed(&done);
+		helpers[i].resume();
 	}
+
+	// Wait for results and yield them as soon as they arrive
+	for (int n = 0; n < N; ++n) {
+		state.results[n].flag.wait(false);
+		co_yield state.results[n].v;
+	}
+
+	int64 current_done = done;
+	while (current_done < std::ssize(tasks)) {
+		done.wait(current_done);
+		current_done = done;
+	}
+
+	//while (done != std::ssize(tasks))
+	//	std::this_thread::yield();
 }

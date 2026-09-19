@@ -4,35 +4,48 @@ import std;
 import :channel;
 
 // forward declaration for use in promise
-template<typename> class task;
+template<typename, bool> class task;
 
 template <typename PromiseType>
 struct final_awaiter {
-	bool await_ready() noexcept { return false; }
-	std::coroutine_handle<> await_suspend(std::coroutine_handle<PromiseType> h) noexcept {
+	std::atomic_int64_t* on_done = nullptr;
+	bool await_ready() noexcept {
+		return false;
+	}
+	auto await_suspend(std::coroutine_handle<PromiseType> h) noexcept {
+		if (on_done) {
+			on_done->fetch_add(1);
+			on_done->notify_one();
+		}
 		return h.promise().continuation;
 	}
 	void await_resume() noexcept {}
 };
 
 // Promise implementation used by task.
-template<typename ValueType>
+template<typename ValueType, bool InitialSuspend>
 struct task_promise_base {
     using value_type = ValueType;
 	std::exception_ptr exception;
     std::coroutine_handle<> continuation = std::noop_coroutine();
 	std::atomic_int64_t ref{ 0 };
+	std::atomic_int64_t* on_done = nullptr;
 
-	auto initial_suspend() noexcept		{ return std::suspend_never{}; }
+	auto initial_suspend() noexcept {
+		if constexpr (InitialSuspend)
+			return std::suspend_always{};
+		else
+			return std::suspend_never{};
+	}
     void unhandled_exception() noexcept { exception = std::current_exception(); }
 };
 
-template<typename ValueType>
-struct task_promise : task_promise_base<ValueType> {
+template<typename ValueType, bool InitialSuspend>
+struct task_promise : task_promise_base<ValueType, InitialSuspend> {
 	std::optional<ValueType> value{};
 	
-	auto get_return_object() noexcept -> task<ValueType>;
-	auto final_suspend() noexcept { return final_awaiter<task_promise<ValueType>>{}; }
+	auto get_return_object() noexcept -> task<ValueType, InitialSuspend>;
+	auto final_suspend() noexcept { return final_awaiter<task_promise<ValueType, InitialSuspend>>{this->on_done}; }
 	auto yield_value(ValueType&& v) noexcept -> std::suspend_always {
 		this->value = std::forward<ValueType>(v);
 		return {};
@@ -42,17 +55,17 @@ struct task_promise : task_promise_base<ValueType> {
 	}
 };
 
-template<>
-struct task_promise<void> : task_promise_base<void> {
-	auto get_return_object() noexcept -> task<void>;
-	auto final_suspend() noexcept { return final_awaiter<task_promise<void>>{}; }
+template<bool InitialSuspend>
+struct task_promise<void, InitialSuspend> : task_promise_base<void, InitialSuspend> {
+	auto get_return_object() noexcept -> task<void, InitialSuspend>;
+	auto final_suspend() noexcept { return final_awaiter<task_promise<void,InitialSuspend>>{this->on_done}; }
 	void return_void() noexcept { }
 };
 
-export template<typename ValueType = void>
+export template<typename ValueType = void, bool InitialSuspend = false>
 class task {
 public:
-    using promise_type = task_promise<ValueType>;
+    using promise_type = task_promise<ValueType, InitialSuspend>;
     using value_type = ValueType;
 
 private:
@@ -85,6 +98,20 @@ public:
 		if (h) h.promise().ref++;
 		return *this;
     }
+
+	// True when the coroutine has run to completion (or there is no coroutine).
+	// Used to join fire-and-forget helpers before destroying their handles.
+	bool done() const noexcept {
+		return !h || h.done();
+	}
+
+	void resume() {
+		h.resume();
+	}
+
+	void on_promise_destroyed(std::atomic_int64_t* i) {
+		h.promise().on_done = i;
+	}
 
 	// Get the next value from the task, waiting for it to complete if necessary.
 	ValueType result() requires(!std::is_void_v<ValueType>) {
@@ -126,13 +153,14 @@ public:
 	}
 };
 
-template<typename ValueType>
-auto task_promise<ValueType>::get_return_object() noexcept -> task<ValueType> {
+template<typename ValueType, bool InitialSuspend>
+auto task_promise<ValueType, InitialSuspend>::get_return_object() noexcept -> task<ValueType, InitialSuspend> {
     auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
-    return task<ValueType>{handle};
+    return task<ValueType, InitialSuspend>{handle};
 }
 
-auto task_promise<void>::get_return_object() noexcept -> task<void> {
+template<bool InitialSuspend>
+auto task_promise<void, InitialSuspend>::get_return_object() noexcept -> task<void, InitialSuspend> {
     auto handle = std::coroutine_handle<task_promise>::from_promise(*this);
-    return task<void>{handle};
+    return task<void, InitialSuspend>{handle};
 }

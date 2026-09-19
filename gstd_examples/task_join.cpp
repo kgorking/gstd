@@ -46,7 +46,7 @@ int main() {
 			sleep_task(0)
 		};
 
-		for (int result : yield_all(tasks))//.take(5))
+		for (int result : yield_all(tasks))
 			counter += result;
 	}
 
