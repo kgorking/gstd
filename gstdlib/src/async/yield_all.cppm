@@ -15,7 +15,21 @@ struct yield_all_state {
 	};
 
 	std::array<val_wrap, N> results{};
+	std::array<task<void, true>, N> helpers{};
 	std::atomic_int64_t current_slot{ 0 };
+	std::atomic_int64_t done;
+
+	~yield_all_state() {
+		int64 cur = done.load(std::memory_order_acquire);
+		while (cur < N) {
+			done.wait(cur);
+			cur = done.load(std::memory_order_acquire);
+		}
+		for (auto& hh : helpers) {
+			while (!hh.done())
+				std::this_thread::yield();
+		}
+	}
 };
 
 template<typename ValueType, bool B, int N>
@@ -35,32 +49,11 @@ task<void, true> await_on_thread_v2(task<ValueType, B> t, yield_all_state<ValueT
 export template<typename ValueType, bool B, int N>
 auto yield_all(std::array<task<ValueType, B>, N>&& tasks) -> sequence<ValueType> {
 	auto state = yield_all_state<ValueType, N>{};
-	std::array<task<void, true>, N> helpers{};
-
-	// Teardown guard: declared LAST so it is destroyed FIRST on every exit
-	// path (normal return AND early destroy via take/break). Blocks until
-	// every helper finalized, so a pending/queued helper frame is never
-	// destroyed out from under the pool (stale handle -> 0xC0000005).
-	struct teardown_guard {
-		std::array<task<void, true>, N>* hs;
-		std::atomic_int64_t done;
-		~teardown_guard() {
-			int64 cur = done.load(std::memory_order_acquire);
-			while (cur < N) {
-				done.wait(cur);
-				cur = done.load(std::memory_order_acquire);
-			}
-			for (auto& hh : *hs) {
-				while (!hh.done())
-					std::this_thread::yield();
-			}
-		}
-	} teardown{ &helpers };
 
 	for (int i = 0; i < N; ++i) {
-		helpers[i] = await_on_thread_v2(std::move(tasks[i]), state);
-		helpers[i].on_promise_destroyed(&teardown.done);
-		helpers[i].resume();
+		state.helpers[i] = await_on_thread_v2(std::move(tasks[i]), state);
+		state.helpers[i].on_promise_destroyed(&state.done);
+		state.helpers[i].resume();
 	}
 
 	// Wait for results and yield them as soon as they arrive

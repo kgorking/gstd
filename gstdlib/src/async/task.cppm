@@ -22,11 +22,6 @@ struct final_awaiter {
 	void await_resume() noexcept {}
 };
 
-// Non-templated header: the first members, in order, of EVERY task promise.
-// Lets thread_pool hold a frame alive across resume() through a type-erased
-// handle (see worker_loop). This is valid because every task_promise derives
-// from this header with no reordering, so the header subobject is at offset 0
-// (verified empirically on MSVC; both void instantiations read the same ref).
 struct task_promise_header {
 	std::exception_ptr exception{};
     std::coroutine_handle<> continuation = std::noop_coroutine();
