@@ -12,7 +12,7 @@ private:
 	static constexpr int N_per_cacheline = Cacheline / sizeof(shared_handle);
 
 	std::vector<shared_handle> worker_handles{};
-	std::array<bool, 64> worker_dirty{};
+	std::array<std::unique_ptr<std::atomic_uint8_t>, 64> worker_free{}; // 8*64 = 512 threads supported
 
 	channel<std::coroutine_handle<>> work_queue;
 	channel<std::coroutine_handle<>> io_work_queue;
@@ -46,8 +46,10 @@ private:
 public:
 	explicit thread_pool(int64 num_threads = std::jthread::hardware_concurrency())
 		: thread_initializition(num_threads) {
-		if (num_threads <= 0)
+		if (num_threads <= 0 || num_threads > 8*64)
 			throw std::runtime_error("Bad thread count");
+
+		std::ranges::generate(worker_free, &std::make_unique<std::atomic_uint8_t>);
 
 		worker_handles.resize(num_threads);
 		workers.reserve(num_threads);
@@ -93,30 +95,34 @@ public:
 	}
 
 private:
-	void enqueue(std::coroutine_handle<> h) {
-		for (uint64 j = 0; j < worker_dirty.size(); j++) {
+	template <typename PromiseType>
+	void enqueue(std::coroutine_handle<PromiseType> h) {
+		for (uint64 j = 0; j < worker_free.size(); j++) {
+			std::atomic_uint8_t& workers_free = *worker_free[j].get();
+
 			// If there has been no changes in the cacheline of workers, just skip them all
-			if (!worker_dirty[j])
-				continue;
+			while (workers_free) {
+				uint64 const index = std::countl_zero(workers_free.load());
+				uint64 const first = j * N_per_cacheline;
+				uint64 const i = first + index;
 
-			uint64 const first = j * N_per_cacheline;
-			uint64 const last = std::min((1 + j) * N_per_cacheline, worker_handles.size());
-
-			for (uint64 i = first; i < last; i++) {
+				//std::println("enqued in slot {}", i);
 				std::coroutine_handle<> expected = nullptr;
 				if (worker_handles[i]->compare_exchange_weak(expected, h)) {
 					//std::println("enqued in slot {}", i);
 					worker_handles[i]->notify_one();
 					return;
 				}
-			}
 
-			worker_dirty[j] = false;
+				uint8 const bit = (1 << index);
+				workers_free &= ~bit;
+			}
 		}
 
 		//std::println("enqued in slot queue");
 		work_queue << h;
 	}
+
 	void enqueue_io(std::coroutine_handle<> h) { io_work_queue << h; }
 
 	void worker_loop(std::stop_token stoken, uint64 const i) {
@@ -126,9 +132,10 @@ private:
 		std::atomic<std::coroutine_handle<>> shared_h;
 		worker_handles[i] = &shared_h;
 
-		// Notify main thread with this when work is completed
-		bool *cacheline_dirty = &worker_dirty[i / N_per_cacheline];
-		*cacheline_dirty = true;
+		// Notify main thread when this thread is ready for work
+		uint8 const workgroup_bit = 1 << (i % 8);
+		std::atomic_uint8_t* cacheline_worker_free = worker_free[i / N_per_cacheline].get();
+		*cacheline_worker_free |= workgroup_bit;
 
 		// Signal that this threads initialization is done
 		thread_initializition.count_down();
@@ -137,8 +144,9 @@ private:
 		while (!stoken.stop_requested()) {
 			std::coroutine_handle<> h = shared_h.exchange(nullptr);
 			if (h) {
-				*cacheline_dirty = true;
+				*cacheline_worker_free &= ~workgroup_bit;
 				h.resume();
+				*cacheline_worker_free |= workgroup_bit;
 			}
 			else if (work_queue.try_get(h)) {
 				h.resume();
@@ -146,7 +154,6 @@ private:
 			else {
 				// Wait for work being ready
 				shared_h.wait(nullptr);
-				//std::this_thread::yield();
 			}
 		}
 

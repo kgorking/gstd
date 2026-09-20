@@ -111,6 +111,58 @@ struct pool {
 
 } // namespace frame_cache_detail
 
+// One allocator per frame_cache_mode. Each takes the pool for stats/caps
+// and the requested frame size, and returns a usable frame.
+namespace frame_cache_alloc {
+
+inline void* alloc_disabled(frame_cache_detail::pool& p, std::size_t n) {
+	p.alloc_miss.fetch_add(1, std::memory_order_relaxed);
+	return ::operator new(n);
+}
+
+inline void* alloc_tls_only(frame_cache_detail::pool& p, std::size_t n) {
+	if (void* hit = frame_cache_detail::pool::take_from(frame_cache_detail::local().v, n)) {
+		p.alloc_hit_tls.fetch_add(1, std::memory_order_relaxed);
+		return hit;
+	}
+	p.alloc_miss.fetch_add(1, std::memory_order_relaxed);
+	return ::operator new(n);
+}
+
+inline void* alloc_shared_only(frame_cache_detail::pool& p, std::size_t n) {
+	void* hit = nullptr;
+	{
+		std::lock_guard lock(p.m);
+		hit = frame_cache_detail::pool::take_from(p.shared, n);
+	}
+	if (hit) {
+		p.alloc_hit_shared.fetch_add(1, std::memory_order_relaxed);
+		return hit;
+	}
+	p.alloc_miss.fetch_add(1, std::memory_order_relaxed);
+	return ::operator new(n);
+}
+
+inline void* alloc_hybrid(frame_cache_detail::pool& p, std::size_t n) {
+	if (void* hit = frame_cache_detail::pool::take_from(frame_cache_detail::local().v, n)) {
+		p.alloc_hit_tls.fetch_add(1, std::memory_order_relaxed);
+		return hit;
+	}
+	void* shared_hit = nullptr;
+	{
+		std::lock_guard lock(p.m);
+		shared_hit = frame_cache_detail::pool::take_from(p.shared, n);
+	}
+	if (shared_hit) {
+		p.alloc_hit_shared.fetch_add(1, std::memory_order_relaxed);
+		return shared_hit;
+	}
+	p.alloc_miss.fetch_add(1, std::memory_order_relaxed);
+	return ::operator new(n);
+}
+
+} // namespace frame_cache_alloc
+
 void* frame_cache::alloc(std::size_t n) {
 	auto& p = frame_cache_detail::pool::instance();
 	p.alloc_total.fetch_add(1, std::memory_order_relaxed);
@@ -121,37 +173,17 @@ void* frame_cache::alloc(std::size_t n) {
 		p.sizes_count[n] += 1;
 	}
 
-	if (mode == frame_cache_mode::tls_only || mode == frame_cache_mode::hybrid) {
-		if (void* hit = frame_cache_detail::pool::take_from(frame_cache_detail::local().v, n)) {
-			p.alloc_hit_tls.fetch_add(1, std::memory_order_relaxed);
-			return hit;
-		}
-		if (mode == frame_cache_mode::tls_only) {
-			p.alloc_miss.fetch_add(1, std::memory_order_relaxed);
-			return ::operator new(n);
-		}
-		// hybrid: fall through to shared
+	switch (mode) {
+	case frame_cache_mode::tls_only:
+		return frame_cache_alloc::alloc_tls_only(p, n);
+	case frame_cache_mode::shared_only:
+		return frame_cache_alloc::alloc_shared_only(p, n);
+	case frame_cache_mode::hybrid:
+		return frame_cache_alloc::alloc_hybrid(p, n);
+	case frame_cache_mode::disabled:
+	default:
+		return frame_cache_alloc::alloc_disabled(p, n);
 	}
-
-	if (mode == frame_cache_mode::shared_only || mode == frame_cache_mode::hybrid) {
-		void* hit = nullptr;
-		{
-			std::lock_guard lock(p.m);
-			hit = frame_cache_detail::pool::take_from(p.shared, n);
-		}
-		if (hit) {
-			p.alloc_hit_shared.fetch_add(1, std::memory_order_relaxed);
-			return hit;
-		}
-	}
-
-	if (mode != frame_cache_mode::disabled) {
-		p.alloc_miss.fetch_add(1, std::memory_order_relaxed);
-	}
-	else {
-		p.alloc_miss.fetch_add(1, std::memory_order_relaxed);
-	}
-	return ::operator new(n);
 }
 
 void frame_cache::release(void* ptr, std::size_t n) noexcept {

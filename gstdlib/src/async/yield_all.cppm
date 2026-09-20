@@ -17,13 +17,6 @@ struct yield_all_state {
 
 	std::array<val_wrap, N> results{};
 	std::atomic_int64_t current_slot{ 0 };
-
-	~yield_all_state() {
-		for (auto& hh : results) {
-			while (!hh.t.done())
-				std::this_thread::yield();
-		}
-	}
 };
 
 template<typename ValueType, bool B, int N>
@@ -42,9 +35,22 @@ task<void, true> await_on_thread_v2(task<ValueType, B> t, yield_all_state<ValueT
 
 export template<typename ValueType, bool B, int N>
 auto yield_all(std::array<task<ValueType, B>, N>&& tasks) -> sequence<ValueType> {
-	auto state = yield_all_state<ValueType, N>{};
+	thread_local auto state = yield_all_state<ValueType, N>{};
 
+	struct state_join {
+		yield_all_state<ValueType, N>* state{};
+
+		~state_join() {
+			for (auto& hh : state->results) {
+				while (!hh.t.done())
+					std::this_thread::yield();
+			}
+		}
+	} sj{&state};
+
+	state.current_slot = 0;
 	for (int i = 0; i < N; ++i) {
+		state.results[i].flag = false;
 		state.results[i].t = await_on_thread_v2(std::move(tasks[i]), state);
 		state.results[i].t.resume();
 	}
