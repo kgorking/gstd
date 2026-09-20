@@ -4,6 +4,7 @@ export module gs:sequence;
 import std;
 import :types;
 import :concepts;
+import :frame_pool;
 
 template <typename MapFn, typename ...Ts>
     requires std::invocable<MapFn, Ts...>
@@ -15,6 +16,10 @@ public:
     struct promise_type {
         T current{};
         std::function<bool()> pending_fn;
+
+        static void* operator new(std::size_t n) { return frame_cache::alloc(n); }
+        static void operator delete(void* p, std::size_t n) noexcept { frame_cache::release(p, n); }
+        static void operator delete(void* p) noexcept { frame_cache::release_unsized(p); }
 
         auto get_return_object() noexcept -> sequence {
             return sequence{std::coroutine_handle<promise_type>::from_promise(*this)};

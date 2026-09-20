@@ -10,23 +10,17 @@ template<typename ValueType, int N>
 struct yield_all_state {
 	// Avoid false sharing between threads.
 	struct alignas(64) val_wrap {
+		task<void, true> t;
 		ValueType v{};
 		std::atomic_bool flag{ false };
 	};
 
 	std::array<val_wrap, N> results{};
-	std::array<task<void, true>, N> helpers{};
 	std::atomic_int64_t current_slot{ 0 };
-	std::atomic_int64_t done;
 
 	~yield_all_state() {
-		int64 cur = done.load(std::memory_order_acquire);
-		while (cur < N) {
-			done.wait(cur);
-			cur = done.load(std::memory_order_acquire);
-		}
-		for (auto& hh : helpers) {
-			while (!hh.done())
+		for (auto& hh : results) {
+			while (!hh.t.done())
 				std::this_thread::yield();
 		}
 	}
@@ -51,9 +45,8 @@ auto yield_all(std::array<task<ValueType, B>, N>&& tasks) -> sequence<ValueType>
 	auto state = yield_all_state<ValueType, N>{};
 
 	for (int i = 0; i < N; ++i) {
-		state.helpers[i] = await_on_thread_v2(std::move(tasks[i]), state);
-		state.helpers[i].on_promise_destroyed(&state.done);
-		state.helpers[i].resume();
+		state.results[i].t = await_on_thread_v2(std::move(tasks[i]), state);
+		state.results[i].t.resume();
 	}
 
 	// Wait for results and yield them as soon as they arrive

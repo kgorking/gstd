@@ -2,31 +2,34 @@ export module gs:task;
 
 import std;
 import :channel;
+import :frame_pool;
 
 // forward declaration for use in promise
 template<typename, bool> class task;
 
 template <typename PromiseType>
 struct final_awaiter {
-	std::atomic_int64_t* on_done = nullptr;
 	bool await_ready() noexcept {
 		return false;
 	}
 	auto await_suspend(std::coroutine_handle<PromiseType> h) noexcept {
-		if (on_done) {
-			on_done->fetch_add(1);
-			on_done->notify_one();
-		}
 		return h.promise().continuation;
 	}
 	void await_resume() noexcept {}
 };
 
 struct task_promise_header {
-	std::exception_ptr exception{};
     std::coroutine_handle<> continuation = std::noop_coroutine();
 	std::atomic_int64_t ref{ 0 };
-	std::atomic_int64_t* on_done = nullptr;
+	std::exception_ptr exception{};
+
+	// Coroutine frame caching: routes frame alloc/free through frame_cache
+	// (TLS-only vs shared-only vs hybrid, see gs:frame_pool). Shared base so
+	// all task<ValueType, InitialSuspend> instantiations share one size-
+	// segregated pool.
+	static void* operator new(std::size_t n) { return frame_cache::alloc(n); }
+	static void operator delete(void* p, std::size_t n) noexcept { frame_cache::release(p, n); }
+	static void operator delete(void* p) noexcept { frame_cache::release_unsized(p); }
 };
 
 // Promise implementation used by task.
@@ -48,7 +51,7 @@ struct task_promise : task_promise_base<ValueType, InitialSuspend> {
 	std::optional<ValueType> value{};
 	
 	auto get_return_object() noexcept -> task<ValueType, InitialSuspend>;
-	auto final_suspend() noexcept { return final_awaiter<task_promise<ValueType, InitialSuspend>>{this->on_done}; }
+	auto final_suspend() noexcept { return final_awaiter<task_promise<ValueType, InitialSuspend>>{}; }
 	auto yield_value(ValueType&& v) noexcept -> std::suspend_always {
 		this->value = std::forward<ValueType>(v);
 		return {};
@@ -61,7 +64,7 @@ struct task_promise : task_promise_base<ValueType, InitialSuspend> {
 template<bool InitialSuspend>
 struct task_promise<void, InitialSuspend> : task_promise_base<void, InitialSuspend> {
 	auto get_return_object() noexcept -> task<void, InitialSuspend>;
-	auto final_suspend() noexcept { return final_awaiter<task_promise<void,InitialSuspend>>{this->on_done}; }
+	auto final_suspend() noexcept { return final_awaiter<task_promise<void,InitialSuspend>>{}; }
 	void return_void() noexcept { }
 };
 
@@ -105,11 +108,6 @@ public:
 	void resume() {
 		if (h && !h.done())
 			h.resume();
-	}
-
-	void on_promise_destroyed(std::atomic_int64_t* i) {
-		if (h)
-			h.promise().on_done = i;
 	}
 
 	// Get the next value from the task, waiting for it to complete if necessary.

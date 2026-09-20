@@ -7,6 +7,7 @@ export import :string;
 export import :fmt;
 
 // coroutine/task
+export import :frame_pool;
 export import :channel;
 export import :thread_pool;
 export import :task;

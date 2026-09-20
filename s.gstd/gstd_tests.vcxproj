@@ -295,35 +295,23 @@
     <ClCompile>
       <AdditionalOptions>%(AdditionalOptions) /utf-8</AdditionalOptions>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
-      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
-      <BufferSecurityCheck>
-      </BufferSecurityCheck>
-      <CallingConvention>
-      </CallingConvention>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <ExceptionHandling>Sync</ExceptionHandling>
-      <FloatingPointModel>
-      </FloatingPointModel>
-      <ForceConformanceInForLoopScope>
-      </ForceConformanceInForLoopScope>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <MinimalRebuild>
-      </MinimalRebuild>
       <Optimization>MaxSpeed</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <RemoveUnreferencedCodeData>
-      </RemoveUnreferencedCodeData>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <SupportJustMyCode>
-      </SupportJustMyCode>
-      <TreatWChar_tAsBuiltInType>
-      </TreatWChar_tAsBuiltInType>
+      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
       <UseFullPaths>false</UseFullPaths>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_MSVC_STL_HARDENING=1;_MSVC_STL_DESTRUCTOR_TOMBSTONES=1;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <ProgramDataBaseFileName>E:\source\repos\gstd\s.gstd\gstd_tests.dir\RelWithDebInfo\</ProgramDataBaseFileName>
-      <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
+      <WarningLevel>Level4</WarningLevel>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <ConformanceMode>true</ConformanceMode>
+      <BuildStlModules>true</BuildStlModules>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_MSVC_STL_HARDENING=1;_MSVC_STL_DESTRUCTOR_TOMBSTONES=1;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>

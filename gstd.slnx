@@ -9,11 +9,9 @@
 	</Configurations>
 	<Project Path="gstdlib/gstdlib.vcxproj" Id="91d6f2c7-4f22-4f3b-86b7-7e141335e314">
 		<BuildType Solution="MinSizeRel|*" Project="Release" />
-		<BuildType Solution="RelWithDebInfo|*" Project="Debug" />
 	</Project>
 	<Project Path="gstd_examples/gstd_examples.vcxproj" Id="d71ea78a-9e48-48e1-bdb6-768e0f37ccdb">
 		<BuildType Solution="MinSizeRel|*" Project="Release" />
-		<BuildType Solution="RelWithDebInfo|*" Project="Debug" />
 	</Project>
 	<Project Path="s.gstd/gstd_tests.vcxproj" Id="4c73622e-623d-3c9c-8613-9f71744a3ec9" />
 </Solution>

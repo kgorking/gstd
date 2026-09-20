@@ -9,13 +9,10 @@ export class thread_pool {
 private:
 	using shared_handle = std::atomic<std::coroutine_handle<>>*;
 	static constexpr int Cacheline = 64;
-	static constexpr int N = 24;
-	static constexpr int N_bytes = N * sizeof(shared_handle);
 	static constexpr int N_per_cacheline = Cacheline / sizeof(shared_handle);
-	static constexpr int N_cachelines = N_bytes / Cacheline;
 
-	std::array<shared_handle, N> worker_handles{};
-	std::array<bool, N_cachelines> worker_dirty{};
+	std::vector<shared_handle> worker_handles{};
+	std::array<bool, 64> worker_dirty{};
 
 	channel<std::coroutine_handle<>> work_queue;
 	channel<std::coroutine_handle<>> io_work_queue;
@@ -29,11 +26,6 @@ private:
 
 	struct threaded_waiter {
 		bool await_ready() const noexcept { return is_worker_thread; } // Don't reschedule if already on a worker thread.
-		// Suspends WITHOUT publishing. Publishing the handle here would let a
-		// worker resume this coroutine before it has finished suspending
-		// (concurrent driving of one frame -> heap corruption / 0xC0000005).
-		// The thread whose resume() call suspends this coroutine publishes the
-		// suspended handle afterwards via thread_pool::schedule().
 		template <typename T, bool B>
 		void await_suspend(std::coroutine_handle<task_promise<T,B>> h) noexcept {
 			static_assert(std::is_void_v<T>, "Can only be called from a task<void>. Use a channel<> to pass values between threads.");
@@ -43,7 +35,6 @@ private:
 	};
 	struct io_waiter {
 		bool await_ready() const noexcept { return is_io_thread; } // Don't reschedule if already on an io thread.
-		// Same no-publish rule as threaded_waiter; use schedule_io().
 		template <typename T, bool B>
 		void await_suspend(std::coroutine_handle<task_promise<T,B>> h) noexcept {
 			static_assert(std::is_void_v<T>, "Can only be called from a task<void>. Use a channel<> to pass values between threads.");
@@ -53,15 +44,12 @@ private:
 	};
 
 public:
-	explicit thread_pool(int64 num_threads = std::jthread::hardware_concurrency() - 1)
+	explicit thread_pool(int64 num_threads = std::jthread::hardware_concurrency())
 		: thread_initializition(num_threads) {
 		if (num_threads <= 0)
 			throw std::runtime_error("Bad thread count");
-		// The fast-path slot table has N entries; extra workers would write
-		// worker_handles out of bounds, and fewer workers leave null slots.
-		if (num_threads > N)
-			num_threads = N;
 
+		worker_handles.resize(num_threads);
 		workers.reserve(num_threads);
 		io_workers.reserve(num_threads);
 		for (uint64 i = 0; i < (uint64)num_threads; ++i) {
@@ -103,25 +91,6 @@ public:
 	static auto switch_to_io() {
 		return io_waiter{};
 	}
-
-	// Publish an ALREADY-SUSPENDED coroutine to the pool. Call only after the
-	// coroutine has fully suspended (e.g. after resume() returns at a switch
-	// point, or for initial-suspended tasks right after creation). Each handle
-	// must be scheduled exactly once. The task object retains ownership and
-	// must stay alive until the coroutine completes (join on a channel, a
-	// done-counter, or task::done()).
-	/*template<bool B>
-	static void schedule(task<void, B>& t) {
-		auto h = t.native_handle();
-		if (h && h != std::noop_coroutine() && !h.done())
-			instance().enqueue(h);
-	}
-	template<bool B>
-	static void schedule_io(task<void, B>& t) {
-		auto h = t.native_handle();
-		if (h && h != std::noop_coroutine() && !h.done())
-			instance().enqueue_io(h);
-	}*/
 
 private:
 	void enqueue(std::coroutine_handle<> h) {
@@ -165,38 +134,19 @@ private:
 		thread_initializition.count_down();
 
 		// Worker loop.
-		// Exactly-once delivery: each iteration claims at most one handle
-		// (fast-path slot first, then the queue) into the local `h` and
-		// resumes it at the single resume site below. Resuming the same live
-		// handle twice concurrently is undefined behaviour for coroutines
-		// (torn frame, freed-handle resume -> 0xC0000005), so ownership must
-		// be transferred here, never shared.
 		while (!stoken.stop_requested()) {
 			std::coroutine_handle<> h = shared_h.exchange(nullptr);
-			if (!h && !work_queue.try_get(h)) {
+			if (h) {
+				*cacheline_dirty = true;
+				h.resume();
+			}
+			else if (work_queue.try_get(h)) {
+				h.resume();
+			}
+			else {
 				// Wait for work being ready
 				shared_h.wait(nullptr);
-				continue;
-			}
-			// Skip null/shutdown sentinel/completed handles. The done() check
-			// applies to the claimed local only, after ownership transfer.
-			if (h && h != std::noop_coroutine() && !h.done()) {
-				// Do work from the local slot
-				*cacheline_dirty = true;
-				// Lifetime hold: keep the frame alive across resume() AND its
-				// return epilogue. Awaiting coroutines use symmetric transfer,
-				// whose machinery touches the frame after the final suspend
-				// point; the owner may legitimately destroy its handle the
-				// moment completion is signalled (e.g. yield_all's teardown
-				// after its done-counter hits N). Whoever drops the last ref
-				// destroys the frame, always outside resume().
-				// (Valid for task-based handles, which is all this path ever
-				// carries: threaded_waiter only accepts task<void>.)
-				auto hd = std::coroutine_handle<task_promise_header>::from_address(h.address());
-				hd.promise().ref.fetch_add(1, std::memory_order_acq_rel);
-				h.resume();
-				if (hd.promise().ref.fetch_sub(1, std::memory_order_acq_rel) == 1)
-					h.destroy();
+				//std::this_thread::yield();
 			}
 		}
 
