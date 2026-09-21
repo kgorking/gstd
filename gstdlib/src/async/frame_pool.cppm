@@ -163,6 +163,89 @@ inline void* alloc_hybrid(frame_cache_detail::pool& p, std::size_t n) {
 
 } // namespace frame_cache_alloc
 
+// One releaser per frame_cache_mode. Each takes the pool plus the frame
+// pointer/size, and either caches or deletes the frame.
+namespace frame_cache_free {
+
+inline void release_disabled(frame_cache_detail::pool& p, void* ptr, std::size_t) noexcept {
+	p.free_dropped.fetch_add(1, std::memory_order_relaxed);
+	::operator delete(ptr);
+}
+
+inline void release_tls_only(frame_cache_detail::pool& p, void* ptr, std::size_t n) noexcept {
+	auto& tls = frame_cache_detail::local().v;
+	if (tls.size() < p.tls_cap.load(std::memory_order_relaxed)) {
+		try {
+			tls.emplace_back(ptr, n);
+			p.free_to_tls.fetch_add(1, std::memory_order_relaxed);
+			return;
+		}
+		catch (...) {
+			// vector allocation failed: fall through to delete
+		}
+	}
+	p.free_dropped.fetch_add(1, std::memory_order_relaxed);
+	::operator delete(ptr);
+}
+
+inline void release_shared_only(frame_cache_detail::pool& p, void* ptr, std::size_t n) noexcept {
+	bool cached = false;
+	{
+		std::lock_guard lock(p.m);
+		if (p.shared.size() < p.shared_cap.load(std::memory_order_relaxed)) {
+			try {
+				p.shared.emplace_back(ptr, n);
+				cached = true;
+			}
+			catch (...) {
+				cached = false;
+			}
+		}
+	}
+	if (cached) {
+		p.free_to_shared.fetch_add(1, std::memory_order_relaxed);
+		return;
+	}
+	p.free_dropped.fetch_add(1, std::memory_order_relaxed);
+	::operator delete(ptr);
+}
+
+inline void release_hybrid(frame_cache_detail::pool& p, void* ptr, std::size_t n) noexcept {
+	auto& tls = frame_cache_detail::local().v;
+	if (tls.size() < p.tls_cap.load(std::memory_order_relaxed)) {
+		try {
+			tls.emplace_back(ptr, n);
+			p.free_to_tls.fetch_add(1, std::memory_order_relaxed);
+			return;
+		}
+		catch (...) {
+			// vector allocation failed: overflow into shared
+		}
+	}
+	// TLS full: overflow into shared
+	bool cached = false;
+	{
+		std::lock_guard lock(p.m);
+		if (p.shared.size() < p.shared_cap.load(std::memory_order_relaxed)) {
+			try {
+				p.shared.emplace_back(ptr, n);
+				cached = true;
+			}
+			catch (...) {
+				cached = false;
+			}
+		}
+	}
+	if (cached) {
+		p.free_to_shared.fetch_add(1, std::memory_order_relaxed);
+		return;
+	}
+	p.free_dropped.fetch_add(1, std::memory_order_relaxed);
+	::operator delete(ptr);
+}
+
+} // namespace frame_cache_free
+
 void* frame_cache::alloc(std::size_t n) {
 	auto& p = frame_cache_detail::pool::instance();
 	p.alloc_total.fetch_add(1, std::memory_order_relaxed);
@@ -191,48 +274,17 @@ void frame_cache::release(void* ptr, std::size_t n) noexcept {
 	p.free_total.fetch_add(1, std::memory_order_relaxed);
 	auto const mode = p.mode.load(std::memory_order_relaxed);
 
-	if (mode == frame_cache_mode::tls_only || mode == frame_cache_mode::hybrid) {
-		auto& tls = frame_cache_detail::local().v;
-		if (tls.size() < p.tls_cap.load(std::memory_order_relaxed)) {
-			try {
-				tls.emplace_back(ptr, n);
-				p.free_to_tls.fetch_add(1, std::memory_order_relaxed);
-				return;
-			}
-			catch (...) {
-				// vector allocation failed: fall through to shared/delete
-			}
-		}
-		if (mode == frame_cache_mode::tls_only) {
-			p.free_dropped.fetch_add(1, std::memory_order_relaxed);
-			::operator delete(ptr);
-			return;
-		}
-		// hybrid: overflow into shared
+	switch (mode) {
+	case frame_cache_mode::tls_only:
+		return frame_cache_free::release_tls_only(p, ptr, n);
+	case frame_cache_mode::shared_only:
+		return frame_cache_free::release_shared_only(p, ptr, n);
+	case frame_cache_mode::hybrid:
+		return frame_cache_free::release_hybrid(p, ptr, n);
+	case frame_cache_mode::disabled:
+	default:
+		return frame_cache_free::release_disabled(p, ptr, n);
 	}
-
-	if (mode == frame_cache_mode::shared_only || mode == frame_cache_mode::hybrid) {
-		bool cached = false;
-		{
-			std::lock_guard lock(p.m);
-			if (p.shared.size() < p.shared_cap.load(std::memory_order_relaxed)) {
-				try {
-					p.shared.emplace_back(ptr, n);
-					cached = true;
-				}
-				catch (...) {
-					cached = false;
-				}
-			}
-		}
-		if (cached) {
-			p.free_to_shared.fetch_add(1, std::memory_order_relaxed);
-			return;
-		}
-	}
-
-	p.free_dropped.fetch_add(1, std::memory_order_relaxed);
-	::operator delete(ptr);
 }
 
 void frame_cache::release_unsized(void* ptr) noexcept {

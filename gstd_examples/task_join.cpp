@@ -2,7 +2,6 @@ import gs;
 import std;
 
 using namespace std::chrono_literals;
-std::atomic_int64_t cnt{ 0 };
 
 static task<int, true> sleep_task(int64 ms) {
 	std::this_thread::sleep_for(std::chrono::milliseconds(ms));
@@ -63,22 +62,20 @@ int main(int argc, char** argv) {
 	std::locale::global(std::locale("da_DK.UTF-8"));
 	std::cout.imbue(std::locale());
 
-	std::atomic<std::bitset<512>> test;
-
 	// Initialize thread pool
 	std::ignore = thread_pool::instance();
 	std::this_thread::sleep_for(10ms);
 
-	int iterations = 1000000;
+	int iterations = 100000;
 	if (argc > 1)
 		iterations = std::atoi(argv[1]);
 	std::println("iterations per mode: {} (pass count as argv[1])", iterations);
 
 	// A/B: baseline first, then TLS-only (Strategy 1), shared-only
 	// (Strategy 2), hybrid. Stats reset + cache cleared per mode.
-	run_benchmark("disabled   ", frame_cache_mode::disabled, iterations);
-	run_benchmark("tls_only   ", frame_cache_mode::tls_only, iterations);
-	run_benchmark("shared_only", frame_cache_mode::shared_only, iterations);
+	//run_benchmark("disabled   ", frame_cache_mode::disabled, iterations);
+	//run_benchmark("tls_only   ", frame_cache_mode::tls_only, iterations);
+	//run_benchmark("shared_only", frame_cache_mode::shared_only, iterations);
 	run_benchmark("hybrid     ", frame_cache_mode::hybrid, iterations);
 
 	auto const s = frame_cache::snapshot();

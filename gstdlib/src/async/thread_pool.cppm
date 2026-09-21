@@ -49,7 +49,12 @@ public:
 		if (num_threads <= 0 || num_threads > 8*64)
 			throw std::runtime_error("Bad thread count");
 
-		std::ranges::generate(worker_free, &std::make_unique<std::atomic_uint8_t>);
+		// Zero-init: only bits for real workers are ever set (by worker_loop),
+		// so groups past worker_handles.size() stay empty and are never picked.
+		for (auto& w : worker_free) {
+			w = std::make_unique<std::atomic_uint8_t>();
+			w->store(0, std::memory_order_relaxed);
+		}
 
 		worker_handles.resize(num_threads);
 		workers.reserve(num_threads);
@@ -97,25 +102,22 @@ public:
 private:
 	template <typename PromiseType>
 	void enqueue(std::coroutine_handle<PromiseType> h) {
-		for (uint64 j = 0; j < worker_free.size(); j++) {
-			std::atomic_uint8_t& workers_free = *worker_free[j].get();
+		uint64 const num = worker_handles.size();
+		for (uint64 j = 0, first = 0; first < num; ++j, first += N_per_cacheline) {
+			uint8 mask = worker_free[j]->load(std::memory_order_acquire);
+			while (mask) {
+				uint64 const bit = std::countr_zero(mask);
+				mask &= static_cast<uint8>(~(1u << bit));
+				uint64 const i = first + bit;
+				if (i >= num)
+					break;
 
-			// If there has been no changes in the cacheline of workers, just skip them all
-			while (workers_free) {
-				uint64 const index = std::countl_zero(workers_free.load());
-				uint64 const first = j * N_per_cacheline;
-				uint64 const i = first + index;
-
-				//std::println("enqued in slot {}", i);
 				std::coroutine_handle<> expected = nullptr;
-				if (worker_handles[i]->compare_exchange_weak(expected, h)) {
-					//std::println("enqued in slot {}", i);
+				if (worker_handles[i]->compare_exchange_weak(expected, h, std::memory_order_acq_rel)) {
 					worker_handles[i]->notify_one();
 					return;
 				}
-
-				uint8 const bit = (1 << index);
-				workers_free &= ~bit;
+				// Slot went busy under us; try the next hinted worker.
 			}
 		}
 
@@ -144,6 +146,7 @@ private:
 		while (!stoken.stop_requested()) {
 			std::coroutine_handle<> h = shared_h.exchange(nullptr);
 			if (h) {
+				// Mark busy while resuming so enqueuers skip us; set idle below.
 				*cacheline_worker_free &= ~workgroup_bit;
 				h.resume();
 				*cacheline_worker_free |= workgroup_bit;
