@@ -4,6 +4,8 @@ import std;
 import :types;
 import :channel;
 import :task;
+import :bit;
+import :thread_signal;
 
 export class thread_pool {
 private:
@@ -12,9 +14,8 @@ private:
 	static constexpr int N_per_cacheline = Cacheline / sizeof(shared_handle);
 
 	std::vector<shared_handle> worker_handles{};
-	std::array<std::unique_ptr<std::atomic_uint8_t>, 64> worker_free{}; // 8*64 = 512 threads supported
+	thread_signal worker_signal;
 
-	channel<std::coroutine_handle<>> work_queue;
 	channel<std::coroutine_handle<>> io_work_queue;
 	std::vector<std::jthread> workers;
 	std::vector<std::jthread> io_workers;
@@ -45,16 +46,10 @@ private:
 
 public:
 	explicit thread_pool(int64 num_threads = std::jthread::hardware_concurrency())
-		: thread_initializition(num_threads) {
+		: thread_initializition(num_threads)
+		, worker_signal(num_threads){
 		if (num_threads <= 0 || num_threads > 8*64)
 			throw std::runtime_error("Bad thread count");
-
-		// Zero-init: only bits for real workers are ever set (by worker_loop),
-		// so groups past worker_handles.size() stay empty and are never picked.
-		for (auto& w : worker_free) {
-			w = std::make_unique<std::atomic_uint8_t>();
-			w->store(0, std::memory_order_relaxed);
-		}
 
 		worker_handles.resize(num_threads);
 		workers.reserve(num_threads);
@@ -69,7 +64,6 @@ public:
 	}
 
 	~thread_pool() {
-		work_queue.close();
 		io_work_queue.close();
 		std::ranges::for_each(workers, &std::jthread::request_stop);
 		std::ranges::for_each(io_workers, &std::jthread::request_stop);
@@ -102,27 +96,13 @@ public:
 private:
 	template <typename PromiseType>
 	void enqueue(std::coroutine_handle<PromiseType> h) {
-		uint64 const num = worker_handles.size();
-		for (uint64 j = 0, first = 0; first < num; ++j, first += N_per_cacheline) {
-			uint8 mask = worker_free[j]->load(std::memory_order_acquire);
-			while (mask) {
-				uint64 const bit = std::countr_zero(mask);
-				mask &= static_cast<uint8>(~(1u << bit));
-				uint64 const i = first + bit;
-				if (i >= num)
-					break;
-
-				std::coroutine_handle<> expected = nullptr;
-				if (worker_handles[i]->compare_exchange_weak(expected, h, std::memory_order_acq_rel)) {
-					worker_handles[i]->notify_one();
-					return;
-				}
-				// Slot went busy under us; try the next hinted worker.
-			}
+		uint64 index = worker_signal.get();
+		std::coroutine_handle<> expected = nullptr;
+		while (!worker_handles[index]->compare_exchange_weak(expected, h, std::memory_order_acq_rel)) {
+			index = worker_signal.get();
+			expected = nullptr;
 		}
-
-		//std::println("enqued in slot queue");
-		work_queue << h;
+		worker_handles[index]->notify_one();
 	}
 
 	void enqueue_io(std::coroutine_handle<> h) { io_work_queue << h; }
@@ -135,28 +115,26 @@ private:
 		worker_handles[i] = &shared_h;
 
 		// Notify main thread when this thread is ready for work
-		uint8 const workgroup_bit = 1 << (i % 8);
-		std::atomic_uint8_t* cacheline_worker_free = worker_free[i / N_per_cacheline].get();
-		*cacheline_worker_free |= workgroup_bit;
+		worker_signal.set(i);
 
 		// Signal that this threads initialization is done
 		thread_initializition.count_down();
 
 		// Worker loop.
+		uint64 spins = 0;
 		while (!stoken.stop_requested()) {
 			std::coroutine_handle<> h = shared_h.exchange(nullptr);
 			if (h) {
-				// Mark busy while resuming so enqueuers skip us; set idle below.
-				*cacheline_worker_free &= ~workgroup_bit;
+				spins = 0;
+				worker_signal.clear(i);
 				h.resume();
-				*cacheline_worker_free |= workgroup_bit;
-			}
-			else if (work_queue.try_get(h)) {
-				h.resume();
+				worker_signal.set(i);
 			}
 			else {
-				// Wait for work being ready
-				shared_h.wait(nullptr);
+				spins += 1;
+				if (spins >= 2500) {
+					shared_h.wait(nullptr);
+				}
 			}
 		}
 

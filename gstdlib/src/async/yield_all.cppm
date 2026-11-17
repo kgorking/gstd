@@ -57,7 +57,8 @@ auto yield_all(std::array<task<ValueType, B>, N>&& tasks) -> sequence<ValueType>
 
 	// Wait for results and yield them as soon as they arrive
 	for (int n = 0; n < N; ++n) {
-		state.results[n].flag.wait(false);
+		// state.results[n].flag.wait(false);
+		while(!state.results[n].flag) std::this_thread::yield();
 		co_yield state.results[n].v;
 	}
 }

@@ -44,6 +44,9 @@
     <Filter Include="Source Files\net\http">
       <UniqueIdentifier>{39b43b8b-e8d6-4437-ae42-06987c7416de}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\bit">
+      <UniqueIdentifier>{b7b5aad0-c7f3-485a-bd41-0f27f8b06916}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\concepts.cppm">
@@ -188,6 +191,12 @@
       <Filter>Source Files\async</Filter>
     </ClCompile>
     <ClCompile Include="src\async\yield_all.cppm">
+      <Filter>Source Files\async</Filter>
+    </ClCompile>
+    <ClCompile Include="src\bit\bit.cppm">
+      <Filter>Source Files\bit</Filter>
+    </ClCompile>
+    <ClCompile Include="src\async\thread_signal.cppm">
       <Filter>Source Files\async</Filter>
     </ClCompile>
   </ItemGroup>

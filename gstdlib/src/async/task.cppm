@@ -7,6 +7,9 @@ import :frame_pool;
 // forward declaration for use in promise
 template<typename, bool> class task;
 
+// A more fitting name
+export constexpr std::suspend_always task_barrier{};
+
 template <typename PromiseType>
 struct final_awaiter {
 	bool await_ready() noexcept {

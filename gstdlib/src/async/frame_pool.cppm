@@ -48,6 +48,11 @@ export struct frame_cache {
 	// Workers keep their own TLS until thread exit; use between A/B runs.
 	static void clear() noexcept;
 	static void set_capacities(std::size_t tls_cap, std::size_t shared_cap) noexcept;
+	// Size-class histogram for diagnostics. Off by default: when enabled,
+	// alloc takes the shared mutex on every call, so only enable it for
+	// benchmark runs, never for production timing.
+	static void set_size_tracking(bool enabled) noexcept;
+	static bool size_tracking() noexcept;
 };
 
 namespace frame_cache_detail {
@@ -74,6 +79,7 @@ struct pool {
 	std::atomic<frame_cache_mode> mode{ frame_cache_mode::hybrid };
 	std::atomic<std::size_t> tls_cap{ 128 };
 	std::atomic<std::size_t> shared_cap{ 4096 };
+	std::atomic_bool track_sizes{ false };
 
 	std::atomic<std::uint64_t> alloc_total{ 0 };
 	std::atomic<std::uint64_t> alloc_hit_tls{ 0 };
@@ -251,7 +257,11 @@ void* frame_cache::alloc(std::size_t n) {
 	p.alloc_total.fetch_add(1, std::memory_order_relaxed);
 	auto const mode = p.mode.load(std::memory_order_relaxed);
 
-	{
+	// Diagnostic only: skip the shared-mutex round trip unless size
+	// tracking was explicitly enabled. An unconditional lock here would
+	// serialize all allocations - including the TLS fast path and the
+	// disabled-mode baseline - on one mutex.
+	if (p.track_sizes.load(std::memory_order_relaxed)) {
 		std::lock_guard lock(p.m);
 		p.sizes_count[n] += 1;
 	}
@@ -359,4 +369,12 @@ void frame_cache::clear() noexcept {
 void frame_cache::set_capacities(std::size_t tls_cap, std::size_t shared_cap) noexcept {
 	frame_cache_detail::pool::instance().tls_cap.store(tls_cap, std::memory_order_relaxed);
 	frame_cache_detail::pool::instance().shared_cap.store(shared_cap, std::memory_order_relaxed);
+}
+
+void frame_cache::set_size_tracking(bool enabled) noexcept {
+	frame_cache_detail::pool::instance().track_sizes.store(enabled, std::memory_order_relaxed);
+}
+
+bool frame_cache::size_tracking() noexcept {
+	return frame_cache_detail::pool::instance().track_sizes.load(std::memory_order_relaxed);
 }

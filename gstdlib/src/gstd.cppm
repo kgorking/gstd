@@ -6,6 +6,9 @@ export import :sequence;
 export import :string;
 export import :fmt;
 
+// bit
+export import :bit;
+
 // coroutine/task
 export import :frame_pool;
 export import :channel;

@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="task.cpp">
+    <ClCompile Include="await_for_each.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="http_get.cpp">
