@@ -15,10 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="task.cpp">
+    <ClCompile Include="await_for_each.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="http_get.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="task_join.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

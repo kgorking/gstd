@@ -1,12 +1,13 @@
 import gs;
+import std;
+using namespace std::chrono_literals;
 
-auto hello_http = [](http::request const& /*req*/, http::response_writer& rw) {
-	rw.write(http::get("https://raw.githubusercontent.com/kgorking/gstd/refs/heads/main/gstdlib/src/gstd.cppm"));
-	};
+static void hello_http(http::server_request const& /*req*/, http::response_writer& rw) {
+	auto file = http::get("https://raw.githubusercontent.com/kgorking/gstd/refs/heads/main/gstdlib/src/gstd.cppm");
+	io::copy(rw, file);
+};
 
-int main() {
+void xmain() {
 	http::handle_func("/test", hello_http);
-	http::listen_and_serve("::1:8080");
-
-	print(http::get("https://raw.githubusercontent.com/kgorking/gstd/refs/heads/main/gstdlib/src/gstd.cppm"));
+	http::listen_and_serve(":8080");
 }

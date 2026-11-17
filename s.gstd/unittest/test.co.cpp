@@ -11,6 +11,7 @@ task<int> simple_test() {
 }
 
 test test_co_result = [] {
-	auto result = simple_test().result();
+	auto t = simple_test();
+	auto result = t.result();
 	test::equals(result, 50, "coroutine result should be 50");
 };

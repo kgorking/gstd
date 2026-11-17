@@ -14,34 +14,6 @@ import :get_last_error;
 import :types;
 
 export namespace io {
-	template<typename T, auto operation>
-	class async_io_awaiter {
-	private:
-		HANDLE file_handle;
-		uint64* file_position;
-		std::span<T> buffer;
-
-	public:
-		async_io_awaiter(HANDLE h, std::span<T> buf, uint64* pos)
-			: file_handle(h), buffer(buf), file_position(pos) {}
-
-		bool await_ready() const noexcept { return false; }
-
-		void await_suspend(std::coroutine_handle<> cont) {
-			thread_pool::instance().enqueue_io(cont);
-		}
-
-		int64 await_resume() {
-			DWORD bytes_read = 0;
-			if (!operation(file_handle, buffer.data(), static_cast<DWORD>(buffer.size()), &bytes_read, nullptr)) {
-				throw std::system_error(std::make_error_code(std::errc::io_error), get_last_std_error());
-			}
-
-			*file_position += bytes_read;
-			return static_cast<int64>(bytes_read);
-		}
-	};
-
 	constexpr int O_RD = 0x0001; // read
 	constexpr int O_WR = 0x0002; // write
 	constexpr int O_RDWR = O_RD | O_WR; // read/write
@@ -184,30 +156,52 @@ export namespace io {
 				throw std::system_error(std::make_error_code(std::errc::io_error));
 			}
 
-			if (bytes_read == 0) {
-				eof_flag = true;
-			}
-			else {
-				file_position += bytes_read;
-			}
+			eof_flag = (bytes_read == 0);
+			file_position += bytes_read;
 
 			return static_cast<int64>(bytes_read);
 		}
 
-		task<int64> read_async(Span<char> auto buf) {
+		int64 write(Span<const char> auto buf) {
 			if (handle == INVALID_HANDLE_VALUE) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
 
-			co_return co_await async_io_awaiter<char, ReadFile>(handle, buf, &file_position);
+			DWORD bytes_written = 0;
+			if (!WriteFile(handle, buf.data(), static_cast<DWORD>(buf.size()), &bytes_written, nullptr)) {
+				throw std::system_error(std::make_error_code(std::errc::io_error), get_last_std_error());
+			}
+
+			file_position += bytes_written;
+			return static_cast<int64>(bytes_written);
+		}
+
+		task<int64> read_async(Span<char> auto buf) {
+			channel<int64> ch;
+			// Initial-suspended: published via schedule_io() only after full
+			// suspension, never from inside await_suspend (see schedule()).
+			auto helper = [&]() -> task<void> {
+				co_await thread_pool::switch_to_io();
+				ch << read(buf);
+				}();
+			//thread_pool::schedule_io(helper);
+			int64 v = ch.get();
+			while (!helper.done())
+				std::this_thread::yield();
+			co_return v;
 		}
 
 		task<int64> write_async(Span<const char> auto buf) {
-			if (handle == INVALID_HANDLE_VALUE) {
-				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
-			}
-
-			co_return co_await async_io_awaiter<const char, WriteFile>(handle, buf, &file_position);
+			channel<int64> ch;
+			auto helper = [&]() -> task<void> {
+				co_await thread_pool::switch_to_io();
+				ch << write(buf);
+				}();
+			//thread_pool::schedule_io(helper);
+			int64 v = ch.get();
+			while (!helper.done())
+				std::this_thread::yield();
+			co_return v;
 		}
 
 		string read_line() {
@@ -248,20 +242,6 @@ export namespace io {
 			}
 
 			return result;
-		}
-
-		int64 write(Span<const char> auto buf) {
-			if (handle == INVALID_HANDLE_VALUE) {
-				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
-			}
-
-			DWORD bytes_written = 0;
-			if (!WriteFile(handle, buf.data(), static_cast<DWORD>(buf.size()), &bytes_written, nullptr)) {
-				throw std::system_error(std::make_error_code(std::errc::io_error), get_last_std_error());
-			}
-
-			file_position += bytes_written;
-			return static_cast<int64>(bytes_written);
 		}
 
 		int64 write_line(string line) {

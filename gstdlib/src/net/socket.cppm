@@ -8,6 +8,7 @@ export module gs:socket;
 import :Reader;
 import :Writer;
 import :types;
+import :concepts;
 import std;
 
 namespace {
@@ -61,11 +62,11 @@ export namespace net {
 			}
 		}
 
-		int64 write(std::span<const char> data) const {
+		int64 write(Span<const char> auto data) const {
 			return ::send(fd_, data.data(), static_cast<int>(data.size()), 0);
 		}
 
-		int64 read(std::span<char> buf) const {
+		int64 read(Span<char> auto& buf) const {
 			return ::recv(fd_, buf.data(), static_cast<int>(buf.size()), 0);
 		}
 

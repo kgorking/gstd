@@ -44,6 +44,15 @@ public:
 			data_ = std::make_shared<StringData>(pdata, end_);
         }
     }
+    string(const char* s, int64 size) : start_(0), end_(0) {
+        if (s != nullptr) {
+            end_ = size;
+            char *pdata = new char[end_ + 1];
+            std::memcpy(pdata, s, end_);
+            pdata[end_] = 0;
+			data_ = std::make_shared<StringData>(pdata, end_);
+        }
+    }
     string(const string&) = default;
     string(string&&) = default;
     ~string() = default;

@@ -8,4 +8,8 @@ vc140.pdb
 [Bb]in/
 [Oo]bj/
 [Ll]og/
+/s.gstd/gstd_tests.dir/
 /s.gstd/lines_test.txt
+/gstdlib/x64/RelWithDebInfo
+/gstd_examples/x64/RelWithDebInfo
+/x64/RelWithDebInfo

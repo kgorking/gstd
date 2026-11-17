@@ -1,0 +1,117 @@
+// Implements task coroutine support for CPU-heavy work via thread pool.
+export module gs:task;
+
+import std;
+import :thread_pool;
+
+template<typename ValueType> class task; // forward declaration for use in promise
+
+// awaiter support
+template<typename ValueType, typename PromiseType>
+struct awaiter {
+    std::coroutine_handle<PromiseType> h;
+
+    bool await_ready() const noexcept {
+		return h.promise().suspended.test() || h.promise().done.test();
+	}
+
+	void await_suspend(std::coroutine_handle<> current) noexcept {
+		h.promise().continuation.store(current, std::memory_order_release);
+		if (h.promise().done.test(std::memory_order_acquire)) {
+			auto stored = h.promise().continuation.exchange(nullptr, std::memory_order_acq_rel);
+			if (stored) {
+				thread_pool::instance().enqueue(stored);
+			}
+		}
+	}
+
+    void await_resume() requires (std::is_void_v<ValueType>) {
+		auto& promise = h.promise();
+		if (promise.exception) std::rethrow_exception(promise.exception);
+		promise.suspended.clear();
+		promise.suspended.notify_one();
+	}
+
+    auto await_resume() -> ValueType requires (!std::is_void_v<ValueType>) {
+		auto& promise = h.promise();
+		promise.suspended.wait(false);
+
+		if (promise.exception)
+            std::rethrow_exception(promise.exception);
+
+		ValueType vt = std::move(promise.value);
+		promise.suspended.clear();
+		promise.suspended.notify_one();
+		return vt;
+    }
+};
+
+//
+// Promise implementation used by task.
+// The coroutine submits its result or exception through this object
+template<typename ValueType>
+struct task_promise_base {
+	using value_type = ValueType;
+	std::atomic_flag suspended{};
+	std::atomic_flag done{};
+	std::exception_ptr exception = nullptr;
+	std::atomic<std::coroutine_handle<>> continuation{nullptr};
+
+	// Task are always suspended at the beginning, so we can resume them on the thread pool
+	auto initial_suspend() noexcept {
+		done.clear();
+		auto handle = std::coroutine_handle<task_promise_base>::from_promise(*this);
+		thread_pool::instance().enqueue(handle);
+		return std::suspend_always{};
+	}
+	auto final_suspend() noexcept -> std::suspend_always {
+		set_done();
+		return {};
+	}
+	auto get_return_object() noexcept -> task<ValueType>;
+	void unhandled_exception() noexcept {
+		exception = std::current_exception();
+		set_done();
+	}
+
+	void wait_until_suspended() const noexcept {
+		suspended.wait(false);
+	}
+	void wait_until_not_suspended() const noexcept {
+		suspended.wait(true);
+	}
+
+	void wait_until_done() const noexcept {
+		done.wait(false);
+	}
+
+	void set_done() noexcept {
+		set_suspended();
+		done.test_and_set();
+		done.notify_one();
+	}
+
+	void set_suspended() noexcept {
+		suspended.test_and_set();
+		suspended.notify_one();
+		auto cont = continuation.exchange(nullptr, std::memory_order_acq_rel);
+		if (cont) {
+			cont.resume();
+			//thread_pool::instance().enqueue(cont);
+		}
+	}
+};
+
+template<typename ValueType>
+struct task_promise : task_promise_base<ValueType> {
+	ValueType value{};
+
+	auto get_return_object() noexcept -> task<ValueType>;
+
+	auto yield_value(ValueType&& v) noexcept {
+		this->wait_until_not_suspended();
+		value = std::forward<ValueType>(v);
+		this->set_suspended();
+		return std::suspend_never{}; // let it rip on the scheduled thread
+	}
+	void return_value(ValueType&& v) noexcept {

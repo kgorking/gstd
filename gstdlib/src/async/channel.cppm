@@ -4,60 +4,70 @@ import std;
 // Multi-value FIFO channel for synchronizing between threads or coroutines.
 // Has a fixed buffer size - blocks when writing to a full channel or reading from an empty channel.
 // Has Go-like operators just for the fun of it.
-export template<typename T, std::signed_integral auto Capacity = 0>
-    requires (Capacity >= 0)
+export template<typename T>
 class channel {
-    using data_type = std::conditional_t<Capacity == 0, std::optional<T>, std::queue<T>>;
+    using data_type = std::queue<T>;
+	mutable std::mutex m{};
+    mutable std::condition_variable cv_not_empty{};
+	std::atomic_uint64_t count{ 0 };
     data_type data{};
-    std::condition_variable cv{};
-    std::mutex m{};
     bool stopped = false;
 
 public:
-    channel& operator<<(T val) { set(std::move(val)); return *this; }
+	~channel() {
+		close();
+	}
+
+	channel& operator<<(T val) { set(std::move(val)); return *this; }
     channel& operator>>(T& out)  { out = get(); return *this; }
 	T operator*() { return get(); }
 
-    void set(T val) {
-        if constexpr (Capacity > 0) {
-            std::unique_lock lock(m);
-            cv.wait(lock, [this] { return data.size() < Capacity || stopped; });
-            if (stopped) return; // abort if channel was stopped
-            data.push(std::move(val));
-        } else {
-            std::unique_lock lock(m);
-            cv.wait(lock, [this] { return !data.has_value() || stopped; });
-            if (stopped) return; // abort if channel was stopped
-            data = std::move(val);
-        }
+	bool is_stopped() const {
+		std::unique_lock lock(m);
+		return stopped;
+	}
 
-        cv.notify_one(); // wake up get() if it was waiting
+    void set(T val) {
+        std::unique_lock lock(m);
+		if (stopped)
+			throw std::runtime_error("channel is closed");
+
+        data.push(std::move(val));
+		count += 1;
+        cv_not_empty.notify_one();
     }
 
     T get() {
-        std::unique_lock lock(m);
-        T val;
-        if constexpr (Capacity > 0) {
-            cv.wait(lock, [this] { return stopped || !data.empty(); });
-            if (stopped && data.empty()) return T{};
-            val = std::move(data.front());
-            data.pop();
-        } else {
-            cv.wait(lock, [this] { return stopped || data.has_value(); });
-            if (stopped && !data.has_value()) return T{};
-            val = std::move(*data);
-            data.reset();
-        }
+	    std::unique_lock lock(m);
+		cv_not_empty.wait(lock, [this] { return stopped || !data.empty(); });
+        if (stopped && data.empty()) return T{};
+        T val = std::move(data.front());
+        data.pop();
+		count -= 1;
 
-        cv.notify_one(); // wake up set() if it was waiting
         return val;
     }
+
+	bool try_get(T& out) {
+		if (0 == count)
+			return false;
+
+		std::unique_lock lock(m);
+		if (stopped || data.empty())
+			return false;
+
+		out = std::move(data.front());
+		data.pop();
+		return true;
+	}
 
     void close() {
         {
             std::unique_lock lock(m);
+			if (stopped)
+				return;
             stopped = true;
         }
-        cv.notify_all(); // wake up all waiting threads
+        cv_not_empty.notify_all();
     }
 };

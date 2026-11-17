@@ -4,10 +4,15 @@ export module gs:sequence;
 import std;
 import :types;
 import :concepts;
+import :frame_pool;
+import :task;
 
 template <typename MapFn, typename ...Ts>
     requires std::invocable<MapFn, Ts...>
 using map_r = std::remove_cvref_t<std::invoke_result_t<MapFn, Ts...>>;
+
+template <typename Fn, typename ...Args>
+concept invocable_task = std::same_as<task<void>, std::invoke_result_t<Fn, Args...>>;
 
 export template<typename T>
 class sequence {
@@ -15,6 +20,10 @@ public:
     struct promise_type {
         T current{};
         std::function<bool()> pending_fn;
+
+        static void* operator new(std::size_t n) { return frame_cache::alloc(n); }
+        static void operator delete(void* p, std::size_t n) noexcept { frame_cache::release(p, n); }
+        static void operator delete(void* p) noexcept { frame_cache::release_unsized(p); }
 
         auto get_return_object() noexcept -> sequence {
             return sequence{std::coroutine_handle<promise_type>::from_promise(*this)};
@@ -143,7 +152,7 @@ public:
 
     T value() const noexcept {
         return _handle.promise().current;
-    }
+	}
 
     iterator begin() const noexcept {
         return iterator(_handle);
@@ -209,11 +218,35 @@ public:
         }
     }
 
-    void for_each(std::invocable<T> auto&& fn) {
+    void for_each(std::invocable<T&> auto&& fn) {
         while (next()) {
             fn(value());
         }
     }
+
+	void await_for_each(invocable_task<T> auto&& fn) {
+		std::vector<task<void>> tasks;
+
+		while (next()) {
+			task<void> t = fn(value());
+			if (!t.done())
+				tasks.push_back(std::move(t));
+		}
+
+		auto first = tasks.begin();
+		auto last = tasks.end();
+		while (first != last) {
+			for (auto i = first; i != last; ++i) {
+				i->resume();
+				if (!i->done()) {
+					*first++ = std::move(*i);
+				}
+			}
+
+			last = first;
+			first = tasks.begin();
+		}
+	}
 
     template<typename Comp = std::less<>>
     [[nodiscard]]

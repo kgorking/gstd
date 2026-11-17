@@ -61,7 +61,7 @@ export namespace net {
 					port_str = addr_str.substr(close_bracket + 2);
 				} else {
 					auto colon = addr_str.rfind(':');
-					if (colon == std::string::npos || colon == 0) {
+					if (colon == std::string::npos) {
 						close();
 						throw std::invalid_argument("missing port in address: " + addr_str);
 					}

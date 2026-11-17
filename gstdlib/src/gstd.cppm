@@ -6,15 +6,24 @@ export import :sequence;
 export import :string;
 export import :fmt;
 
+// bit
+export import :bit;
+
 // coroutine/task
-export import :task;
+export import :frame_pool;
 export import :channel;
+export import :thread_pool;
+export import :task;
+
+export import :wait_all;
+export import :yield_all;
 
 // dir
 export import :path;
 export import :dir;
 
 // io
+export import :copy;
 export import :Reader;
 export import :LineReader;
 export import :Writer;
