@@ -5,7 +5,7 @@ import :channel;
 import :frame_pool;
 
 // forward declaration for use in promise
-template<typename, bool> class task;
+export template<typename, bool> class task;
 
 // A more fitting name
 export constexpr std::suspend_always task_barrier{};

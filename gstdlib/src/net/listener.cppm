@@ -139,7 +139,7 @@ export namespace net {
 		}
 	};
 
-	export listener listen(string network, string address) {
+	listener listen(string network, string address) {
 		int family;
 		int type;
 		int protocol;
