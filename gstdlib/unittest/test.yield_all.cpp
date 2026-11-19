@@ -20,3 +20,4 @@ test yield_all_test = [] {
 	test::equals(expected, 1+2+3+4+5, "Sum of results does not match expected value");
 	test::equals(num_results, tasks.size(), "Number of results does not match number of tasks");
 	};
+

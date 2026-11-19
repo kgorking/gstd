@@ -16,7 +16,6 @@ export namespace gs::testing {
 			std::string name;
 			std::uint_least32_t source_line = 0;
 			void (*run)();
-			//std::function<void()> run;
 		};
 
 		static test_registry& instance() {
@@ -34,7 +33,6 @@ export namespace gs::testing {
 			auto lambda_name = parse_stacktrace_description_for_name(trace[2].description());
 			auto& reg = instance();
 
-			std::lock_guard<std::mutex> lock(reg.registry_mutex);
 			reg.tests[loc.file_name()].emplace_back(test_entry{ lambda_name, loc.line(), test_fn });
 		}
 
@@ -83,7 +81,10 @@ export namespace gs::testing {
 					try {
 						// Set current test context for assertions
 						current_test_context = &result;
+
+						// Run the test
 						entry.run();
+
 						if (result.failures.empty()) {
 							result.passed = true;
 							passed++;
@@ -105,14 +106,14 @@ export namespace gs::testing {
 					}
 
 					std::lock_guard<std::mutex> lock(reg.registry_mutex);
-					if (result.passed) {
-						std::println("\t\033[32m✓\033[0m {}", result.test_name);
-					}
-					else {
+					if (!result.passed) {
 						std::println("\t\033[31m✗\033[0m {}", result.test_name);
 						for (const auto& failure : result.failures) {
 							std::println("\t  - {}", failure);
 						}
+					}
+					else {
+						std::println("\t\033[32m✓\033[0m {}", result.test_name);
 					}
 
 					current_test_context = nullptr;
@@ -120,9 +121,7 @@ export namespace gs::testing {
 				});
 			}
 
-			std::println("========================================");
 			std::println("Total: {} passed, {} failed", passed, failed);
-			std::println("========================================");
 		}
 
 		static thread_local test_result* current_test_context;

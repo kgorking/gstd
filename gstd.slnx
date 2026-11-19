@@ -13,5 +13,8 @@
 	<Project Path="gstd_examples/gstd_examples.vcxproj" Id="d71ea78a-9e48-48e1-bdb6-768e0f37ccdb">
 		<BuildType Solution="MinSizeRel|*" Project="Release" />
 	</Project>
-	<Project Path="s.gstd/gstd_tests.vcxproj" Id="4c73622e-623d-3c9c-8613-9f71744a3ec9" />
+	<Project Path="tests/tests.vcxproj" Id="39590dc8-b8d9-463b-bfec-233c74588362">
+		<BuildType Solution="MinSizeRel|*" Project="Release" />
+		<BuildType Solution="RelWithDebInfo|*" Project="Debug" />
+	</Project>
 </Solution>
