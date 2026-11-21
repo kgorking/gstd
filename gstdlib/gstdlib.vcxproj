@@ -71,6 +71,8 @@
     <ClCompile Include="src\net\http\get.cppm" />
     <ClCompile Include="src\net\http\post.cppm" />
     <ClCompile Include="src\net\http\server.cppm" />
+    <ClCompile Include="src\net\windows\listener_impl.cppm" />
+    <ClCompile Include="src\net\windows\socket_impl.cppm" />
     <ClCompile Include="src\os\exec.cppm" />
     <ClCompile Include="src\os\linux\exec_impl.cppm">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

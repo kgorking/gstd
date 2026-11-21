@@ -54,7 +54,9 @@ export import :string_writer;
 
 // net
 export import :socket;
+export import :socket_impl;
 export import :listener;
+export import :listener_impl;
 
 // net/http
 export import :http;
