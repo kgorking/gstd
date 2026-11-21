@@ -84,7 +84,7 @@ public:
 	[[nodiscard]] task() noexcept = default;
 	[[nodiscard]] task(task const& other) = delete;
     [[nodiscard]] task(task&& other) noexcept : h(std::exchange(other.h, nullptr)) {}
-    [[nodiscard]] explicit task(std::coroutine_handle<promise_type> h) noexcept : h(h) {
+    [[nodiscard]] explicit task(std::coroutine_handle<promise_type> handle) noexcept : h(handle) {
 		if (h) h.promise().ref += 1;
 	}
 	~task() {

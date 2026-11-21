@@ -76,6 +76,9 @@ public:
     int64 size() const { 
         return end_ - start_; 
     }
+    int32 size32() const { 
+        return static_cast<int32>(end_ - start_);
+    }
 
     // returns count of characters, not bytes
     int64 count() const { 
@@ -385,7 +388,7 @@ export std::ostream& operator<<(std::ostream& os, const string& str) {
 }
 
 // Formatter specialization for std::format support
-export template <> struct std::formatter<::string, char> {
+template <> struct std::formatter<::string, char> {
     constexpr auto parse(std::format_parse_context& ctx) {
         return ctx.begin();
     }
@@ -399,30 +402,14 @@ export template <> struct std::formatter<::string, char> {
     }
 };
 
-export template <> struct std::formatter<int, char> {
-    constexpr auto parse(std::format_parse_context& ctx) {
-        return ctx.begin();
-    }
-
-    auto format(int const s, std::format_context& ctx) const {
-        auto out = ctx.out();
-		char buff[4] = { 0 };
-		int64 const len = utf8::encode_code_point(s, buff, 4);
-        for (int64 i = 0; i < len; ++i) {
-            *out++ = buff[i];
-        }
-        return out;
-    }
-};
-
-export template<>struct std::formatter<char8_t, char> : std::formatter<char, char> {
+template<>struct std::formatter<char8_t, char> : std::formatter<char, char> {
 	auto format(char8_t c, auto& ctx) const {
 		return std::formatter<char, char>::format(static_cast<char>(c), ctx);
 	}
 };
 
 // Specialization of std::hash for string
-export template <> struct std::hash<::string> {
+template <> struct std::hash<::string> {
 	int64 operator()(const ::string& s) const noexcept {
         int64 h = 0;
         for (int64 i = 0; i < s.size_bytes(); ++i) {

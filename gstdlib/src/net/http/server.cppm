@@ -1,10 +1,17 @@
 module;
+#include <cstdlib>
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
+#ifdef _WIN32
 #define WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <http.h>
-#pragma comment(lib, "httpapi.lib")
+#else
+#include <stdexcept>
+#endif
+//#pragma comment(lib, "httpapi.lib")
 
 export module gs:http_server;
 import :string;
@@ -15,6 +22,7 @@ import :fmt;
 import std;
 using namespace std::string_view_literals;
 
+#ifdef _WIN32
 namespace {
 	std::string_view status_reason(int code) {
 		switch (code) {
@@ -38,17 +46,17 @@ namespace {
 
 	std::wstring to_wide(string s) {
 		if (s.empty()) return {};
-		int len = MultiByteToWideChar(CP_UTF8, 0, s.data(), (int)s.size(), nullptr, 0);
+		int len = MultiByteToWideChar(CP_UTF8, 0, s.data(), s.size32(), nullptr, 0);
 		std::wstring w(len, L'\0');
-		MultiByteToWideChar(CP_UTF8, 0, s.data(), (int)s.size(), w.data(), len);
+		MultiByteToWideChar(CP_UTF8, 0, s.data(), s.size32(), w.data(), len);
 		return w;
 	}
 
 	std::string to_utf8(std::wstring_view w) {
 		if (w.empty()) return {};
-		int len = WideCharToMultiByte(CP_UTF8, 0, w.data(), (int)w.size(), nullptr, 0, nullptr, nullptr);
+		int len = WideCharToMultiByte(CP_UTF8, 0, w.data(), static_cast<int>(w.size()), nullptr, 0, nullptr, nullptr);
 		std::string s(len, '\0');
-		WideCharToMultiByte(CP_UTF8, 0, w.data(), (int)w.size(), s.data(), len, nullptr, nullptr);
+		WideCharToMultiByte(CP_UTF8, 0, w.data(), static_cast<int>(w.size()), s.data(), len, nullptr, nullptr);
 		return s;
 	}
 
@@ -67,8 +75,10 @@ namespace {
 		}
 	}
 }
+#endif
 
 namespace http {
+#ifdef _WIN32
 	export struct server_request {
 		string method;
 		string path;
@@ -84,7 +94,7 @@ namespace http {
 
 		int status() const { return status_; }
 		::string_builder const& body() const { return body_; }
-		std::string_view view() const { return { body_.buffer, (std::size_t)body_.size }; }
+		std::string_view view() const { return { body_.buffer, static_cast<uint64>(body_.size) }; }
 	};
 
 	export using handler_func = void(*)(server_request const&, response_writer&);
@@ -140,7 +150,7 @@ namespace http {
 		}
 
 		string url;
-		if (addr.find(':') != std::string::npos) {
+		if (addr.find(':') != string::npos) {
 			if (addr.starts_with(":"))
 				url = fmt("http://+{}/", addr);
 			else
@@ -164,14 +174,14 @@ namespace http {
 		while (true) {
 			ULONG bytesRead = 0;
 
-			ret = HttpReceiveHttpRequest(hQueue, HTTP_NULL_ID, 0, (PHTTP_REQUEST)buf.data(), (ULONG)buf.size(), &bytesRead, nullptr);
+			auto* req = reinterpret_cast<PHTTP_REQUEST>(buf.data());
+			auto size = static_cast<ULONG>(buf.size());
+			ret = HttpReceiveHttpRequest(hQueue, HTTP_NULL_ID, 0, req, size, &bytesRead, nullptr);
 			if (ret != NO_ERROR) {
 				if (ret == ERROR_MORE_DATA)
 					buf.resize(buf.size() * 2);
 				continue;
 			}
-
-			auto* req = (PHTTP_REQUEST)buf.data();
 
 			std::string_view methodStr;
 			if (req->Verb != HttpVerbUnknown) {
@@ -202,7 +212,7 @@ namespace http {
 			HTTP_DATA_CHUNK chunk = {};
 
 			response.Headers.KnownHeaders[HttpHeaderContentType].pRawValue = "text/plain; charset=utf-8";
-			response.Headers.KnownHeaders[HttpHeaderContentType].RawValueLength = (USHORT)(sizeof("text/plain; charset=utf-8") - 1);
+			response.Headers.KnownHeaders[HttpHeaderContentType].RawValueLength = sizeof("text/plain; charset=utf-8") - 1;
 
 			response_writer rw;
 			if (matched) {
@@ -210,14 +220,14 @@ namespace http {
 				matched(sreq, rw);
 
 				auto reason = status_reason(rw.status());
-				response.StatusCode = (USHORT)rw.status();
+				response.StatusCode = static_cast<USHORT>(rw.status());
 				response.pReason = reason.data();
-				response.ReasonLength = (USHORT)reason.size();
+				response.ReasonLength = static_cast<USHORT>(reason.size());
 
 				if (rw.body().size > 0) {
 					chunk.DataChunkType = HttpDataChunkFromMemory;
-					chunk.FromMemory.pBuffer = (PVOID)rw.body().buffer;
-					chunk.FromMemory.BufferLength = (ULONG)rw.body().size;
+					chunk.FromMemory.pBuffer = static_cast<PVOID>(rw.body().buffer);
+					chunk.FromMemory.BufferLength = static_cast<ULONG>(rw.body().size);
 					response.EntityChunkCount = 1;
 					response.pEntityChunks = &chunk;
 				}
@@ -237,4 +247,39 @@ namespace http {
 		HttpCloseServerSession(sessionId);
 		HttpTerminate(HTTP_INITIALIZE_SERVER, nullptr);
 	}
+#else
+	export struct server_request {
+		string method;
+		string path;
+	};
+
+	export class response_writer {
+		int status_ = 200;
+		::string_builder body_;
+	public:
+		void write_status(int s) { status_ = s; }
+		int64 write(Span<char const> auto data) { body_.push_span(data); return data.size(); }
+		void write(string s) { body_.push_span(s); }
+
+		int status() const { return status_; }
+		::string_builder const& body() const { return body_; }
+		std::string_view view() const { return { body_.buffer, static_cast<uint64>(body_.size) }; }
+	};
+
+	export using handler_func = void(*)(server_request const&, response_writer&);
+	struct handler_entry {
+		string pattern;
+		handler_func handler;
+	};
+
+	std::vector<handler_entry> g_handlers;
+
+	export void handle_func(string pattern, handler_func h) {
+		http::g_handlers.push_back({ std::move(pattern), h });
+	}
+
+	export void listen_and_serve(string) {
+		throw std::runtime_error("HTTP server is not available on this platform");
+	}
+#endif
 }

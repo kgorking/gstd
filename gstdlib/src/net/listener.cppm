@@ -1,10 +1,23 @@
 module;
+#include <cstdlib>
+#include <cstring>
+#include <stdexcept>
+#include <system_error>
+#ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <afunix.h>
-#pragma comment(lib, "ws2_32.lib")
+#else
+#include <arpa/inet.h>
+#include <cerrno>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+#include <unistd.h>
+#endif
+//#pragma comment(lib, "ws2_32.lib")
 
 export module gs:listener;
 import :socket;
@@ -12,15 +25,55 @@ import :string;
 import :types;
 import std;
 
+namespace {
+#ifdef _WIN32
+	using socket_handle = SOCKET;
+	using port_type = u_short;
+	using socklen_type = int;
+	constexpr socket_handle invalid_socket = INVALID_SOCKET;
+	constexpr int socket_error = SOCKET_ERROR;
+
+	inline int close_socket(socket_handle const fd) noexcept {
+		return ::closesocket(fd);
+	}
+
+	inline int socket_last_error() noexcept {
+		return ::WSAGetLastError();
+	}
+
+	inline std::error_category const& socket_error_category() noexcept {
+		return std::system_category();
+	}
+#else
+	using socket_handle = int;
+	using port_type = in_port_t;
+	using socklen_type = socklen_t;
+	constexpr int socket_error = -1;
+
+	inline int close_socket(socket_handle const fd) noexcept {
+		return ::close(fd);
+	}
+
+	inline int socket_last_error() noexcept {
+		return errno;
+	}
+
+	inline std::error_category const& socket_error_category() noexcept {
+		return std::generic_category();
+	}
+#endif
+}
+
 export namespace net {
 	class listener {
-		SOCKET fd_ = INVALID_SOCKET;
+		constexpr static socket_handle invalid_socket = socket_handle{} - 1;
+		socket_handle fd_ = invalid_socket;
 	public:
 		listener() = default;
 
 		listener(socket s, string network, string address) {
 			fd_ = s.fd_;
-			s.fd_ = INVALID_SOCKET;
+			s.fd_ = invalid_socket;
 
 			std::string addr_str(address.c_str(), address.size_bytes());
 			sockaddr_storage ss = {};
@@ -36,7 +89,7 @@ export namespace net {
 				}
 				std::string host_str = (colon == 0) ? "" : addr_str.substr(0, colon);
 				std::string port_str = addr_str.substr(colon + 1);
-				addr_in->sin_port = htons(static_cast<u_short>(std::stoi(port_str)));
+				addr_in->sin_port = htons(static_cast<port_type>(std::stoi(port_str)));
 
 				if (host_str.empty()) {
 					addr_in->sin_addr.s_addr = htonl(INADDR_ANY);
@@ -69,13 +122,13 @@ export namespace net {
 					port_str = addr_str.substr(colon + 1);
 				}
 
-				addr_in6->sin6_port = htons(static_cast<u_short>(std::stoi(port_str)));
+				addr_in6->sin6_port = htons(static_cast<port_type>(std::stoi(port_str)));
 
 				if (host_str.empty()) {
 					addr_in6->sin6_addr = in6addr_any;
 				} else if (inet_pton(AF_INET6, host_str.c_str(), &addr_in6->sin6_addr) != 1) {
 					close();
-					throw std::invalid_argument("invalid IPv6 address: " + host_str);
+					throw std::invalid_argument("invalid IP address: " + host_str);
 				}
 			} else if (network == "unix" || network == "unixpacket") {
 				auto* addr_un = reinterpret_cast<sockaddr_un*>(&ss);
@@ -85,23 +138,23 @@ export namespace net {
 					close();
 					throw std::runtime_error("unix socket path too long");
 				}
-				memcpy(addr_un->sun_path, addr_str.c_str(), addr_str.size() + 1);
+				std::memcpy(addr_un->sun_path, addr_str.c_str(), addr_str.size() + 1);
 			} else {
 				close();
 				throw std::invalid_argument("unsupported network: " + std::string(network.c_str(), network.size_bytes()));
 			}
 
-			int addr_len = static_cast<int>(sizeof(ss));
-			if (bind(fd_, reinterpret_cast<sockaddr*>(&ss), addr_len) == SOCKET_ERROR) {
-				DWORD err = WSAGetLastError();
+			socklen_type addr_len = static_cast<socklen_type>(sizeof(ss));
+			if (bind(fd_, reinterpret_cast<sockaddr*>(&ss), addr_len) == socket_error) {
+				int const err = socket_last_error();
 				close();
-				throw std::system_error(err, std::system_category(), "bind failed");
+				throw std::system_error(err, socket_error_category(), "bind failed");
 			}
 
-			if (listen(fd_, SOMAXCONN) == SOCKET_ERROR) {
-				DWORD err = WSAGetLastError();
+			if (listen(fd_, SOMAXCONN) == socket_error) {
+				int const err = socket_last_error();
 				close();
-				throw std::system_error(err, std::system_category(), "listen failed");
+				throw std::system_error(err, socket_error_category(), "listen failed");
 			}
 		}
 
@@ -109,12 +162,12 @@ export namespace net {
 			close();
 		}
 
-		listener(listener&& o) noexcept : fd_(std::exchange(o.fd_, INVALID_SOCKET)) {}
+		listener(listener&& o) noexcept : fd_(std::exchange(o.fd_, invalid_socket)) {}
 
 		listener& operator=(listener&& o) noexcept {
 			if (this != &o) {
 				close();
-				fd_ = std::exchange(o.fd_, INVALID_SOCKET);
+				fd_ = std::exchange(o.fd_, invalid_socket);
 			}
 			return *this;
 		}
@@ -124,17 +177,17 @@ export namespace net {
 
 		socket accept() {
 			sockaddr_storage client_addr = {};
-			int client_addr_len = sizeof(client_addr);
-			SOCKET client = ::accept(fd_, reinterpret_cast<sockaddr*>(&client_addr), &client_addr_len);
+			socklen_type client_addr_len = sizeof(client_addr);
+			socket_handle const client = ::accept(fd_, reinterpret_cast<sockaddr*>(&client_addr), &client_addr_len);
 			return socket(client);
 		}
 
-		bool valid() const { return fd_ != INVALID_SOCKET; }
+		bool valid() const { return fd_ != invalid_socket; }
 
 		void close() {
-			if (fd_ != INVALID_SOCKET) {
-				closesocket(fd_);
-				fd_ = INVALID_SOCKET;
+			if (fd_ != invalid_socket) {
+				close_socket(fd_);
+				fd_ = invalid_socket;
 			}
 		}
 	};

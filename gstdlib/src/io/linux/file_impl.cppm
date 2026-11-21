@@ -2,6 +2,15 @@ module;
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/types.h>
+
+// These names are also exported as io:: flags. Preserve the platform values,
+// then release the macros so the exported constants can use the same names.
+// Linux fcntl values: O_RDWR is 2 and O_TRUNC is 01000 (512).
+#define GBS_POSIX_O_RDWR_VALUE 2
+#define GBS_POSIX_O_TRUNC_VALUE 01000
+#undef O_RDWR
+#undef O_TRUNC
+
 export module gs:file_impl;
 import std;
 import :Reader;
@@ -9,26 +18,26 @@ import :LineReader;
 import :Writer;
 import :LineWriter;
 import :string;
-import :co;
+import :task;
 import :thread_pool;
 import :types;
 
 export namespace io {
-	template<auto operation>
+	template<auto operation, typename Span>
 	class async_io_awaiter {
 	private:
-		std::span<char> buffer;
+		Span buffer;
 		off_t* file_position;
 		int file_fd;
 
 	public:
-		async_io_awaiter(int fd, std::span<char> buf, off_t* pos)
-			: file_fd(fd), buffer(buf), file_position(pos) {}
+		async_io_awaiter(int fd, Span buf, off_t* pos)
+			: buffer(buf), file_position(pos), file_fd(fd) {}
 
 		bool await_ready() const noexcept { return false; }
 
 		void await_suspend(std::coroutine_handle<> cont) {
-			thread_pool::instance().enqueue_io(cont);
+			thread_pool::schedule_io(cont);
 		}
 
 		int64 await_resume() {
@@ -43,10 +52,10 @@ export namespace io {
 
 	constexpr int O_RD = O_RDONLY; // read
 	constexpr int O_WR = O_WRONLY; // write
-	constexpr int O_RDWR = 0x0003; // read/write (O_RDONLY | O_WRONLY)
+	constexpr int O_RDWR = GBS_POSIX_O_RDWR_VALUE; // read/write
 	constexpr int O_ATE = 0x0004; // open at end (custom flag)
 	constexpr int O_APP = O_APPEND; // always write at end
-	constexpr int O_TRUNC = O_TRUNC; // truncate (open and discard contents)
+	constexpr int O_TRUNC = GBS_POSIX_O_TRUNC_VALUE; // truncate (open and discard contents)
 	constexpr int O_BIN = 0x0008; // binary mode (custom flag, no-op on Linux)
 	constexpr int O_CREATE = O_WRONLY | O_CREAT | O_TRUNC;
 
@@ -183,20 +192,20 @@ export namespace io {
 			return static_cast<int64>(bytes_read);
 		}
 
-		co<int64> read_async(std::span<char> buf) {
+		task<int64> read_async(std::span<char> buf) {
 			if (fd < 0) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
 
-			co_return co_await async_io_awaiter<::pread>(fd, buf, &file_position);
+			co_return co_await async_io_awaiter<::pread, std::span<char>>(fd, buf, &file_position);
 		}
 
-		co<int64> write_async(std::span<const char> buf) {
+		task<int64> write_async(std::span<const char> buf) {
 			if (fd < 0) {
 				throw std::system_error(std::make_error_code(std::errc::bad_file_descriptor));
 			}
 
-			co_return co_await async_io_awaiter<::pwrite>(fd, buf, &file_position);
+			co_return co_await async_io_awaiter<::pwrite, std::span<const char>>(fd, buf, &file_position);
 		}
 
 		string read_line() {

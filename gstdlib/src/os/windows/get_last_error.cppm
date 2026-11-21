@@ -1,4 +1,5 @@
 module;
+#include <cstdlib>
 #include <windows.h>
 export module gs:get_last_error;
 import std;
@@ -15,9 +16,9 @@ export string get_last_error() {
 		NULL,
 		dw,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPTSTR) &lpMsgBuf,
+		reinterpret_cast<LPTSTR>(&lpMsgBuf),
 		0, NULL) != 0) {
-		string error_msg((char*)lpMsgBuf);
+		string error_msg(static_cast<char*>(lpMsgBuf));
 		LocalFree(lpMsgBuf);
 		return error_msg;
 	}
@@ -36,9 +37,9 @@ export std::string get_last_std_error() {
 		NULL,
 		dw,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPSTR) &lpMsgBuf,
+		reinterpret_cast<LPSTR>(&lpMsgBuf),
 		0, NULL) != 0) {
-		std::string error_msg((char*)lpMsgBuf);
+		std::string error_msg(static_cast<char*>(lpMsgBuf));
 		LocalFree(lpMsgBuf);
 		return error_msg;
 	}

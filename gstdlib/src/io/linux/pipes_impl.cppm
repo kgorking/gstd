@@ -21,7 +21,8 @@ export namespace io {
 		int pipefd[2];
 
 		if (::pipe(pipefd) < 0) {
-			throw std::system_error(std::make_error_code(std::errc::io_error), get_last_error());
+			auto const message = get_last_std_error();
+			throw std::system_error(std::make_error_code(std::errc::io_error), message);
 		}
 
 		return { file(pipefd[0]), file(pipefd[1]) };

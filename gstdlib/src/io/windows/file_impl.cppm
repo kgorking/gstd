@@ -1,4 +1,5 @@
 module;
+#include <cstdlib>
 #include <windows.h>
 export module gs:file_impl;
 import std;
@@ -26,38 +27,36 @@ export namespace io {
 	class file final {
 		HANDLE handle;
 		uint64 file_position = 0;
-		bool eof_flag;
+		bool eof_flag = false;
 
 	public:
 		file(string path) {
 			handle = INVALID_HANDLE_VALUE;
-			eof_flag = false;
 			open(path, O_RD | O_BIN);
 		}
 
 		file(string path, int flags) {
 			handle = INVALID_HANDLE_VALUE;
-			eof_flag = false;
 			open(path, flags);
 		}
 
-		explicit file(HANDLE h) : handle(h), eof_flag(false) {}
+		explicit file(HANDLE h) : handle(h) {}
 
 		file(const file&) = delete;
 		file& operator=(const file&) = delete;
 
-		file(file&& other) noexcept : handle(other.handle), eof_flag(other.eof_flag), file_position(other.file_position) {
+		file(file&& other) noexcept : handle(other.handle), file_position(other.file_position), eof_flag(other.eof_flag) {
 			other.handle = INVALID_HANDLE_VALUE;
-			other.eof_flag = false;
 			other.file_position = 0;
+			other.eof_flag = false;
 		}
 
 		file& operator=(file&& other) noexcept {
 			if (this != &other) {
 				close();
 				handle = other.handle;
-				eof_flag = other.eof_flag;
 				file_position = other.file_position;
+				eof_flag = other.eof_flag;
 				other.handle = INVALID_HANDLE_VALUE;
 				other.eof_flag = false;
 				other.file_position = 0;

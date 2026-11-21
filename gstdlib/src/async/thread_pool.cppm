@@ -45,16 +45,16 @@ private:
 	};
 
 public:
-	explicit thread_pool(int64 num_threads = std::jthread::hardware_concurrency())
-		: thread_initializition(num_threads)
-		, worker_signal(num_threads){
+	explicit thread_pool(uint64 num_threads = std::jthread::hardware_concurrency())
+		: worker_signal(num_threads)
+		, thread_initializition(num_threads) {
 		if (num_threads <= 0 || num_threads > 8*64)
 			throw std::runtime_error("Bad thread count");
 
 		worker_handles.resize(num_threads);
 		workers.reserve(num_threads);
 		io_workers.reserve(num_threads);
-		for (uint64 i = 0; i < (uint64)num_threads; ++i) {
+		for (uint64 i = 0; i < num_threads; ++i) {
 			workers.emplace_back([this, i](std::stop_token stoken) { worker_loop(stoken, i); });
 			io_workers.emplace_back([this](std::stop_token stoken) { io_worker_loop(stoken); });
 		}
@@ -81,6 +81,10 @@ public:
 	static thread_pool& instance() {
 		static thread_pool pool;
 		return pool;
+	}
+
+	static void schedule_io(std::coroutine_handle<> h) {
+		instance().enqueue_io(h);
 	}
 
 	[[nodiscard]]

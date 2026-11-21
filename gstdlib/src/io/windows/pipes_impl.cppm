@@ -1,4 +1,5 @@
 module;
+#include <cstdlib>
 #include <windows.h>
 export module gs:pipes_impl;
 import std;

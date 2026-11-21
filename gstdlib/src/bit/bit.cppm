@@ -4,14 +4,14 @@ import std;
 
 export template <unsigned N>
 int countr_one(std::bitset<N> const& bs) {
-	using Word = std::uint64_t;
+	using Word = uint64;
 	constexpr Word word_bits = sizeof(Word) * 8;
 	constexpr Word num_words = (N / word_bits) + !std::has_single_bit(N);
 
 	auto const& data = *reinterpret_cast<const std::array<Word, num_words>*>(&bs);
 	int sum = 0;
 
-	for (size_t i = 0; i < num_words; ++i) {
+	for (uint64 i = 0; i < num_words; ++i) {
 		Word w = data[i];
 		sum += std::countr_one(w);
 		if (w != ~Word{ 0 }) {
@@ -30,14 +30,14 @@ namespace std {
 
 export template <unsigned N>
 int countr_zero(std::bitset<N> const& bs) {
-	using Word = std::uint64_t;
+	using Word = uint64;
 	constexpr Word word_bits = sizeof(Word) * 8;
 	constexpr Word num_words = (N / word_bits) + !std::has_single_bit(N);
 
 	auto const& data = *reinterpret_cast<const std::array<Word, num_words>*>(&bs);
 	int sum = 0;
 
-	for (size_t i = 0; i < num_words; ++i) {
+	for (uint64 i = 0; i < num_words; ++i) {
 		Word w = data[i];
 		if constexpr (!std::has_single_bit(N)) {
 			if (i == num_words - 1) {

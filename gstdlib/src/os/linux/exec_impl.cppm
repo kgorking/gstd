@@ -1,22 +1,23 @@
+module;
+#include <cstdlib>
+#include <cstring>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 export module gs:exec_impl;
 import std;
 import :file;
 import :string;
 
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <cstring>
-
 export namespace os {
 	class command {
 		pid_t child_pid;
-		file stdout_pipe;
-		file stdin_pipe;
+		io::file stdout_pipe;
+		io::file stdin_pipe;
 
 	public:
-		command(pid_t pid, file out, file in) 
+		command(pid_t pid, io::file out, io::file in) 
 			: child_pid(pid), stdout_pipe(std::move(out)), stdin_pipe(std::move(in)) {}
 
 		command(const command&) = delete;
@@ -81,12 +82,12 @@ export namespace os {
 		}
 
 		// Get the stdout pipe for reading output
-		file& get_stdout() {
+		io::file& get_stdout() {
 			return stdout_pipe;
 		}
 
 		// Get the stdin pipe for writing input
-		file& get_stdin() {
+		io::file& get_stdin() {
 			return stdin_pipe;
 		}
 	};
@@ -97,13 +98,13 @@ export namespace os {
 
 		// Create pipes
 		if (::pipe(stdout_pipe) < 0) {
-			return { -1, file(-1), file(-1) };
+			return { -1, io::file(-1), io::file(-1) };
 		}
 
 		if (::pipe(stdin_pipe) < 0) {
 			::close(stdout_pipe[0]);
 			::close(stdout_pipe[1]);
-			return { -1, file(-1), file(-1) };
+			return { -1, io::file(-1), io::file(-1) };
 		}
 
 		pid_t child_pid = ::fork();
@@ -114,7 +115,7 @@ export namespace os {
 			::close(stdout_pipe[1]);
 			::close(stdin_pipe[0]);
 			::close(stdin_pipe[1]);
-			return { -1, file(-1), file(-1) };
+			return { -1, io::file(-1), io::file(-1) };
 		}
 
 		if (child_pid == 0) {
@@ -152,7 +153,7 @@ export namespace os {
 		::close(stdout_pipe[1]);
 		::close(stdin_pipe[0]);
 
-		return { child_pid, file(stdout_pipe[0]), file(stdin_pipe[1]) };
+		return { child_pid, io::file(stdout_pipe[0]), io::file(stdin_pipe[1]) };
 	}
 }
 

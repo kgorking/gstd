@@ -1,5 +1,7 @@
 module;
-#include <windows.h>
+#include <cerrno>
+#include <cstdlib>
+#include <cstring>
 export module gs:get_last_error;
 import std;
 import :string;

@@ -1,8 +1,15 @@
 module;
+#include <cstdlib>
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
+#ifdef _WIN32
 #include <windows.h>
 #include <winhttp.h>
-#pragma comment(lib, "winhttp.lib")
+#else
+#include <stdexcept>
+#endif
+//#pragma comment(lib, "winhttp.lib")
 
 export module gs:http;
 import std;
@@ -12,6 +19,7 @@ import :types;
 import :Reader;
 import :concepts;
 
+#ifdef _WIN32
 namespace http {
 	enum class method {
 		Get,
@@ -89,7 +97,7 @@ namespace http {
 			if (!WinHttpSendRequest(hRequest,
 				headers.c_str(),
 				static_cast<DWORD>(headers.size()),
-				(void*)body.c_str(),
+				const_cast<void*>(static_cast<const void*>(body.c_str())), // why does it not take a LPCVOID?
 				static_cast<DWORD>(body.size_bytes()),
 				static_cast<DWORD>(body.size_bytes()),
 				0)) {
@@ -118,7 +126,8 @@ namespace http {
 			url_w = std::wstring(url_len, L'\0');
 			MultiByteToWideChar(CP_UTF8, 0, url.c_str(), static_cast<int>(url.size_bytes()), url_w.data(), url_len);
 
-			URL_COMPONENTSW url_comp = { sizeof(URL_COMPONENTSW) };
+			URL_COMPONENTSW url_comp = { };
+			url_comp.dwStructSize = sizeof(URL_COMPONENTSW);
 			url_comp.dwHostNameLength = ~0ul;
 			url_comp.dwUrlPathLength = ~0ul;
 			url_comp.dwExtraInfoLength = ~0ul;
@@ -163,3 +172,30 @@ namespace http {
 		}
 	};
 }
+#else
+namespace http {
+	enum class method {
+		Get,
+		Post,
+		Put,
+		Delete,
+		Patch,
+		Head,
+		Options
+	};
+
+	struct request {
+		request(string) {
+			throw std::runtime_error("HTTP client is not available on this platform");
+		}
+
+		request(string, string, string = "application/x-www-form-urlencoded") {
+			throw std::runtime_error("HTTP client is not available on this platform");
+		}
+
+		int64 read(Span<char> auto&) {
+			return 0;
+		}
+	};
+}
+#endif

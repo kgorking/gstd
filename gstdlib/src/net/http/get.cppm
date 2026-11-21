@@ -1,6 +1,9 @@
 module;
+#include <cstdlib>
+#ifdef _WIN32
 #include <windows.h>
 #include <winhttp.h>
+#endif
 
 export module gs:http_get;
 import :http;

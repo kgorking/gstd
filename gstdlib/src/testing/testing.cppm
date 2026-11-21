@@ -21,6 +21,16 @@ public:
 		}
 	}
 
+	template<std::invocable Fn>
+	constexpr test(std::string name, Fn&& fn, std::source_location loc = std::source_location::current()) {
+		if consteval {
+			fn();
+		}
+		else {
+			gs::testing::test_registry::register_test(name, std::forward<Fn>(fn), loc);
+		}
+	}
+
 	template<typename T = bool>
 	constexpr static void is_true(bool condition, const char* message = nullptr, std::source_location loc = std::source_location::current()) {
 		if consteval {

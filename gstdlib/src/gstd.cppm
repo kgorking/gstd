@@ -5,6 +5,8 @@ export import :concepts;
 export import :sequence;
 export import :string;
 export import :fmt;
+export import :utf8;
+export import :string_builder;
 
 // bit
 export import :bit;
@@ -14,6 +16,7 @@ export import :frame_pool;
 export import :channel;
 export import :thread_pool;
 export import :task;
+export import :thread_signal;
 
 export import :wait_all;
 export import :yield_all;
@@ -32,8 +35,12 @@ export import :sync_console_writer;
 
 // os
 export import :file;
+export import :file_impl;
 export import :pipes;
+export import :pipes_impl;
+export import :get_last_error;
 export import :exec;
+export import :exec_impl;
 export import :read_file;
 export import :read_lines;
 export import :read_text;
@@ -50,9 +57,11 @@ export import :socket;
 export import :listener;
 
 // net/http
+export import :http;
 export import :http_get;
 export import :http_post;
 export import :http_server;
 
 // testing
+export import :registry;
 export import :testing;

@@ -1,4 +1,5 @@
 module;
+#include <cstdlib>
 #include <windows.h>
 export module gs:exec_impl;
 import std;

@@ -94,9 +94,9 @@ export namespace utf8 {
 		auto const b = static_cast<uint8>(first_byte);
 #if !defined(NDEBUG)
 		// Continuation bytes (10xxxxxx) are invalid here; lead bytes must be 0xxxxxxx or start with >=2 ones.
-		if ((b & 0x80) && ~b != 0x7Fu) { /* valid lead or continuation */ }
+		if ((b & 0x80) && uint8(~b) != 0x7Fu) { /* valid lead or continuation */ }
 #endif
-		return std::max(1ll, static_cast<int64>(std::countl_one(b)));
+		return std::max(int64{1}, static_cast<int64>(std::countl_one(b)));
 	}
 
 	// Count character positions in a byte range. Assumes valid UTF-8.
@@ -116,7 +116,7 @@ export namespace utf8 {
 		int64 offset = 0;
 		for (int64 i = 0; i < char_idx && offset < std::ssize(data); ++i) {
 			auto const len = char_len_from_lead(data[offset]);
-			offset += std::min(len, static_cast<int64>(std::ssize(data)) - offset);
+			offset += std::min(len, std::ssize(data) - offset);
 		}
 		return offset;
 	}
@@ -161,17 +161,30 @@ export namespace utf8 {
 		if (capacity < 1) return 0;
 
 		if (cp <= 0x7F) {
-			if (capacity < 1) return 0; buf[0] = static_cast<char>(cp); return 1;
+			if (capacity < 1) return 0;
+			buf[0] = static_cast<char>(cp);
+			return 1;
 		}
 		else if (cp <= 0x7FF) {
-			if (capacity < 2) return 0; buf[0] = static_cast<char>(0xC0 | (cp >> 6)); buf[1] = static_cast<char>(0x80 | (cp & 0x3F)); return 2;
+			if (capacity < 2) return 0;
+			buf[0] = static_cast<char>(0xC0 | (cp >> 6));
+			buf[1] = static_cast<char>(0x80 | (cp & 0x3F));
+			return 2;
 		}
 		else if (cp <= 0xFFFF) {
-			if (capacity < 3) return 0; buf[0] = static_cast<char>(0xE0 | (cp >> 12)); buf[1] = static_cast<char>(0x80 | ((cp >> 6) & 0x3F)); buf[2] = static_cast<char>(0x80 | (cp & 0x3F)); return 3;
+			if (capacity < 3) return 0;
+			buf[0] = static_cast<char>(0xE0 | (cp >> 12));
+			buf[1] = static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+			buf[2] = static_cast<char>(0x80 | (cp & 0x3F));
+			return 3;
 		}
 		else {
-			if (capacity < 4) return 0; buf[0] = static_cast<char>(0xF0 | (cp >> 18)); buf[1] = static_cast<char>(0x80 | ((cp >> 12) & 0x3F));
-			buf[2] = static_cast<char>(0x80 | ((cp >> 6) & 0x3F)); buf[3] = static_cast<char>(0x80 | (cp & 0x3F)); return 4;
+			if (capacity < 4) return 0;
+			buf[0] = static_cast<char>(0xF0 | (cp >> 18));
+			buf[1] = static_cast<char>(0x80 | ((cp >> 12) & 0x3F));
+			buf[2] = static_cast<char>(0x80 | ((cp >> 6) & 0x3F));
+			buf[3] = static_cast<char>(0x80 | (cp & 0x3F));
+			return 4;
 		}
 	}
 
