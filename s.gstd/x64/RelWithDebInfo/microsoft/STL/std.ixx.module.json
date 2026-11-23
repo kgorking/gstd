@@ -1,0 +1,22 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\microsoft/STL\\std.ixx.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\RelWithDebInfo\\gstdlib.pdb",
+                "x64\\RelWithDebInfo\\microsoft/STL\\",
+                "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\microsoft\\STL\\std.ixx.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "std",
+                    "source-path": "c:\\program files\\microsoft visual studio\\18\\insiders\\vc\\tools\\msvc\\14.52.37025\\modules\\std.ixx",
+                    "is-interface": true
+                }
+            ],
+            "requires": []
+        }
+    ]
+}

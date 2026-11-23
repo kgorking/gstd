@@ -1,0 +1,134 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\gstd.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\gstd.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\gstd.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\gstd.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "gs:concepts"
+                },
+                {
+                    "logical-name": "gs:sequence"
+                },
+                {
+                    "logical-name": "gs:string"
+                },
+                {
+                    "logical-name": "gs:fmt"
+                },
+                {
+                    "logical-name": "gs:bit"
+                },
+                {
+                    "logical-name": "gs:frame_pool"
+                },
+                {
+                    "logical-name": "gs:channel"
+                },
+                {
+                    "logical-name": "gs:thread_pool"
+                },
+                {
+                    "logical-name": "gs:task"
+                },
+                {
+                    "logical-name": "gs:wait_all"
+                },
+                {
+                    "logical-name": "gs:yield_all"
+                },
+                {
+                    "logical-name": "gs:path"
+                },
+                {
+                    "logical-name": "gs:dir"
+                },
+                {
+                    "logical-name": "gs:copy"
+                },
+                {
+                    "logical-name": "gs:Reader"
+                },
+                {
+                    "logical-name": "gs:LineReader"
+                },
+                {
+                    "logical-name": "gs:Writer"
+                },
+                {
+                    "logical-name": "gs:LineWriter"
+                },
+                {
+                    "logical-name": "gs:sync_console_writer"
+                },
+                {
+                    "logical-name": "gs:file"
+                },
+                {
+                    "logical-name": "gs:pipes"
+                },
+                {
+                    "logical-name": "gs:exec"
+                },
+                {
+                    "logical-name": "gs:read_file"
+                },
+                {
+                    "logical-name": "gs:read_lines"
+                },
+                {
+                    "logical-name": "gs:read_text"
+                },
+                {
+                    "logical-name": "gs:write_text"
+                },
+                {
+                    "logical-name": "gs:dir"
+                },
+                {
+                    "logical-name": "gs:lines"
+                },
+                {
+                    "logical-name": "gs:string_reader"
+                },
+                {
+                    "logical-name": "gs:string_writer"
+                },
+                {
+                    "logical-name": "gs:socket"
+                },
+                {
+                    "logical-name": "gs:listener"
+                },
+                {
+                    "logical-name": "gs:http_get"
+                },
+                {
+                    "logical-name": "gs:http_post"
+                },
+                {
+                    "logical-name": "gs:http_server"
+                },
+                {
+                    "logical-name": "gs:testing"
+                }
+            ]
+        }
+    ]
+}

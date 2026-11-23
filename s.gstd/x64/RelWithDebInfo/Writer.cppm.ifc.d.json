@@ -1,0 +1,31 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\source\\repos\\gstd\\gstdlib\\src\\io\\writer.cppm",
+        "ProvidedModule": "gs:Writer",
+        "Includes": [],
+        "ImportedModules": [
+            {
+                "Name": "std",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\microsoft\\STL\\std.ixx.ifc"
+            },
+            {
+                "Name": "gs:types",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\types.cppm.ifc"
+            },
+            {
+                "Name": "gs:task",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\task.cppm.ifc"
+            },
+            {
+                "Name": "gs:channel",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\channel.cppm.ifc"
+            },
+            {
+                "Name": "gs:frame_pool",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\frame_pool.cppm.ifc"
+            }
+        ],
+        "ImportedHeaderUnits": []
+    }
+}

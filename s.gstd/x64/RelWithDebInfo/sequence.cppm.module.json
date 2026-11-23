@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\sequence.cppm.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\RelWithDebInfo\\gstdlib.pdb",
+                "x64\\RelWithDebInfo\\",
+                "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\sequence.cppm.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:sequence",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\async\\sequence.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "gs:concepts"
+                },
+                {
+                    "logical-name": "gs:frame_pool"
+                }
+            ]
+        }
+    ]
+}

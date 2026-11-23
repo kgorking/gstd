@@ -1,0 +1,26 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\registry.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\registry.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\registry.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-registry.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:registry",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\testing\\registry.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                }
+            ]
+        }
+    ]
+}

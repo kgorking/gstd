@@ -1,0 +1,29 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\bit.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\bit.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\bit.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-bit.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:bit",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\bit\\bit.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "std"
+                }
+            ]
+        }
+    ]
+}

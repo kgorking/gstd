@@ -1,0 +1,29 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\LineReader.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\LineReader.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\LineReader.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-LineReader.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:LineReader",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\io\\linereader.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:string"
+                }
+            ]
+        }
+    ]
+}

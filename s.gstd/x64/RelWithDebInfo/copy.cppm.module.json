@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\copy.cppm.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\RelWithDebInfo\\gstdlib.pdb",
+                "x64\\RelWithDebInfo\\",
+                "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\copy.cppm.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:copy",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\io\\copy.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "gs:Reader"
+                },
+                {
+                    "logical-name": "gs:Writer"
+                },
+                {
+                    "logical-name": "std"
+                }
+            ]
+        }
+    ]
+}

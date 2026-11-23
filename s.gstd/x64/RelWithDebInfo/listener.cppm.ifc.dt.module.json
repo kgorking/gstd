@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\listener.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\listener.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\listener.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-listener.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:listener",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\net\\listener.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "gs:socket"
+                },
+                {
+                    "logical-name": "gs:string"
+                },
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "std"
+                }
+            ]
+        }
+    ]
+}

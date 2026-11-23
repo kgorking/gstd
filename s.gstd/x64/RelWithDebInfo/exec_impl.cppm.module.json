@@ -1,0 +1,38 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\exec_impl.cppm.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\RelWithDebInfo\\gstdlib.pdb",
+                "x64\\RelWithDebInfo\\",
+                "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\exec_impl.cppm.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:exec_impl",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\os\\windows\\exec_impl.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:file"
+                },
+                {
+                    "logical-name": "gs:string"
+                },
+                {
+                    "logical-name": "gs:pipes"
+                },
+                {
+                    "logical-name": "gs:get_last_error"
+                }
+            ]
+        }
+    ]
+}

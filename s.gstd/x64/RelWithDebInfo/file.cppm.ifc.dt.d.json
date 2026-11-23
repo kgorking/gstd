@@ -1,0 +1,10 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\source\\repos\\gstd\\gstdlib\\src\\io\\file.cppm",
+        "ProvidedModule": "gs:file",
+        "Includes": [],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

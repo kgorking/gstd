@@ -1,0 +1,32 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\LineWriter.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\LineWriter.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\LineWriter.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-LineWriter.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:LineWriter",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\io\\linewriter.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "gs:string"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,38 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\string.cppm.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\RelWithDebInfo\\gstdlib.pdb",
+                "x64\\RelWithDebInfo\\",
+                "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\string.cppm.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:string",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\string.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "gs:utf8"
+                },
+                {
+                    "logical-name": "gs:sequence"
+                },
+                {
+                    "logical-name": "gs:string_builder"
+                }
+            ]
+        }
+    ]
+}

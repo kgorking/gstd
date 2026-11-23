@@ -1,0 +1,10 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\source\\repos\\gstd\\gstdlib\\src\\fmt\\fmt.cppm",
+        "ProvidedModule": "gs:fmt",
+        "Includes": [],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

@@ -1,0 +1,29 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\frame_pool.cppm.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\RelWithDebInfo\\gstdlib.pdb",
+                "x64\\RelWithDebInfo\\",
+                "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\frame_pool.cppm.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:frame_pool",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\async\\frame_pool.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:types"
+                }
+            ]
+        }
+    ]
+}

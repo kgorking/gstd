@@ -1,0 +1,26 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\types.cppm.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\RelWithDebInfo\\gstdlib.pdb",
+                "x64\\RelWithDebInfo\\",
+                "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\types.cppm.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:types",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\types.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                }
+            ]
+        }
+    ]
+}

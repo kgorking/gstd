@@ -1,0 +1,32 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\string_builder.cppm.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\RelWithDebInfo\\gstdlib.pdb",
+                "x64\\RelWithDebInfo\\",
+                "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\string_builder.cppm.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:string_builder",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\strutil\\string_builder.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:concepts"
+                },
+                {
+                    "logical-name": "gs:types"
+                }
+            ]
+        }
+    ]
+}

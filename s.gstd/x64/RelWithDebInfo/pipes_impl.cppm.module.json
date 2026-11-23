@@ -1,0 +1,41 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\pipes_impl.cppm.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\RelWithDebInfo\\gstdlib.pdb",
+                "x64\\RelWithDebInfo\\",
+                "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\pipes_impl.cppm.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:pipes_impl",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\io\\windows\\pipes_impl.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:file"
+                },
+                {
+                    "logical-name": "gs:LineWriter"
+                },
+                {
+                    "logical-name": "gs:string"
+                },
+                {
+                    "logical-name": "gs:get_last_error"
+                },
+                {
+                    "logical-name": "gs:types"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,41 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\http.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\http.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\http.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-http.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:http",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\net\\http\\http.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:string"
+                },
+                {
+                    "logical-name": "gs:string_builder"
+                },
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "gs:Reader"
+                },
+                {
+                    "logical-name": "gs:concepts"
+                }
+            ]
+        }
+    ]
+}

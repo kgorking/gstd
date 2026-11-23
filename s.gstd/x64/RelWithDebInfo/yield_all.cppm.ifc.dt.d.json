@@ -1,0 +1,10 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\source\\repos\\gstd\\gstdlib\\src\\async\\yield_all.cppm",
+        "ProvidedModule": "gs:yield_all",
+        "Includes": [],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

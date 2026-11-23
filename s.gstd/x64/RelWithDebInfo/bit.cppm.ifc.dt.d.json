@@ -1,0 +1,10 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\source\\repos\\gstd\\gstdlib\\src\\bit\\bit.cppm",
+        "ProvidedModule": "gs:bit",
+        "Includes": [],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

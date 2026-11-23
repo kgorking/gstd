@@ -1,0 +1,29 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\utf8.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\utf8.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\utf8.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-utf8.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:utf8",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\strutil\\utf8.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:types"
+                }
+            ]
+        }
+    ]
+}

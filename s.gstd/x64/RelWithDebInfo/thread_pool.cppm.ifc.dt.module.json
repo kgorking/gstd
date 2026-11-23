@@ -1,0 +1,41 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\thread_pool.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\thread_pool.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\thread_pool.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-thread_pool.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:thread_pool",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\async\\thread_pool.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "gs:channel"
+                },
+                {
+                    "logical-name": "gs:task"
+                },
+                {
+                    "logical-name": "gs:bit"
+                },
+                {
+                    "logical-name": "gs:thread_signal"
+                }
+            ]
+        }
+    ]
+}

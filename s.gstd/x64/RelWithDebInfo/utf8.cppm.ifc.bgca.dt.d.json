@@ -1,0 +1,19 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\source\\repos\\gstd\\gstdlib\\src\\strutil\\utf8.cppm",
+        "ProvidedModule": "gs:utf8",
+        "Includes": [],
+        "ImportedModules": [
+            {
+                "Name": "std",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\microsoft\\STL\\std.ixx.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:types",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\types.cppm.ifc.bgca.dt"
+            }
+        ],
+        "ImportedHeaderUnits": []
+    }
+}

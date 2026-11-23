@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\listener.cppm.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\RelWithDebInfo\\gstdlib.pdb",
+                "x64\\RelWithDebInfo\\",
+                "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\listener.cppm.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:listener",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\net\\listener.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "gs:socket"
+                },
+                {
+                    "logical-name": "gs:string"
+                },
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "std"
+                }
+            ]
+        }
+    ]
+}

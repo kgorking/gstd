@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\sync_console_writer.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\sync_console_writer.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\sync_console_writer.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-sync_console_writer.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:sync_console_writer",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\io\\sync_console_writer.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "gs:Writer"
+                },
+                {
+                    "logical-name": "gs:concepts"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,41 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\http.cppm.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\RelWithDebInfo\\gstdlib.pdb",
+                "x64\\RelWithDebInfo\\",
+                "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\http.cppm.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:http",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\net\\http\\http.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:string"
+                },
+                {
+                    "logical-name": "gs:string_builder"
+                },
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "gs:Reader"
+                },
+                {
+                    "logical-name": "gs:concepts"
+                }
+            ]
+        }
+    ]
+}

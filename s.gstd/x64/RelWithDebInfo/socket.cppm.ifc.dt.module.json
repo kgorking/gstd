@@ -1,0 +1,38 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\socket.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\socket.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\socket.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-socket.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:socket",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\net\\socket.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "gs:Reader"
+                },
+                {
+                    "logical-name": "gs:Writer"
+                },
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "gs:concepts"
+                },
+                {
+                    "logical-name": "std"
+                }
+            ]
+        }
+    ]
+}

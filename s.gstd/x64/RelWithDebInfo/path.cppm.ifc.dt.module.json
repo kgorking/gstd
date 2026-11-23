@@ -1,0 +1,32 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\path.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\path.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\path.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-path.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:path",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\dir\\path.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "gs:string"
+                },
+                {
+                    "logical-name": "gs:fmt"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\wait_all.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\wait_all.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\wait_all.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-wait_all.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:wait_all",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\async\\wait_all.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:channel"
+                },
+                {
+                    "logical-name": "gs:task"
+                },
+                {
+                    "logical-name": "gs:thread_pool"
+                }
+            ]
+        }
+    ]
+}

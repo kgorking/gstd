@@ -1,0 +1,29 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\concepts.cppm.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\RelWithDebInfo\\gstdlib.pdb",
+                "x64\\RelWithDebInfo\\",
+                "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\concepts.cppm.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:concepts",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\concepts.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:types"
+                }
+            ]
+        }
+    ]
+}

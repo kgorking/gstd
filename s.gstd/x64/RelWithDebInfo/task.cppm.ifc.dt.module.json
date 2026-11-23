@@ -1,0 +1,32 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\task.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\task.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\task.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-task.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:task",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\async\\task.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:channel"
+                },
+                {
+                    "logical-name": "gs:frame_pool"
+                }
+            ]
+        }
+    ]
+}

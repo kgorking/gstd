@@ -1,0 +1,35 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\get.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\get.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\get.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-http_get.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:http_get",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\net\\http\\get.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "gs:http"
+                },
+                {
+                    "logical-name": "gs:string"
+                },
+                {
+                    "logical-name": "gs:Reader"
+                },
+                {
+                    "logical-name": "std"
+                }
+            ]
+        }
+    ]
+}

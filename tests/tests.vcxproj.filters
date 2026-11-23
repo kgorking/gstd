@@ -15,52 +15,52 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\gstdlib\unittest\main_test.cpp">
+    <ClCompile Include="..\gstdlib\tests\gstdlib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gstdlib\unittest\test.co.cpp">
+    <ClCompile Include="..\gstdlib\tests\test.co.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gstdlib\unittest\test.exec.cpp">
+    <ClCompile Include="..\gstdlib\tests\test.exec.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gstdlib\unittest\test.file_async.cpp">
+    <ClCompile Include="..\gstdlib\tests\test.file_async.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gstdlib\unittest\test.os_list_dir.cpp">
+    <ClCompile Include="..\gstdlib\tests\test.os_list_dir.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gstdlib\unittest\test.os_read_lines.cpp">
+    <ClCompile Include="..\gstdlib\tests\test.os_read_lines.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gstdlib\unittest\test.pipes.cpp">
+    <ClCompile Include="..\gstdlib\tests\test.pipes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gstdlib\unittest\test.reader.cpp">
+    <ClCompile Include="..\gstdlib\tests\test.reader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gstdlib\unittest\test.sequence.elements_of.cpp">
+    <ClCompile Include="..\gstdlib\tests\test.sequence.elements_of.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gstdlib\unittest\test.sequence.merge.cpp">
+    <ClCompile Include="..\gstdlib\tests\test.sequence.merge.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gstdlib\unittest\test.sequence.take.cpp">
+    <ClCompile Include="..\gstdlib\tests\test.sequence.take.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gstdlib\unittest\test.string.cpp">
+    <ClCompile Include="..\gstdlib\tests\test.string.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gstdlib\unittest\test.strutil.lines.cpp">
+    <ClCompile Include="..\gstdlib\tests\test.strutil.lines.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gstdlib\unittest\test.task.cpp">
+    <ClCompile Include="..\gstdlib\tests\test.task.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gstdlib\unittest\test.testing.cpp">
+    <ClCompile Include="..\gstdlib\tests\test.testing.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\gstdlib\unittest\test.yield_all.cpp">
+    <ClCompile Include="..\gstdlib\tests\test.yield_all.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

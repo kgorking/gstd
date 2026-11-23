@@ -1,0 +1,29 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\get_last_error.cppm.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\RelWithDebInfo\\gstdlib.pdb",
+                "x64\\RelWithDebInfo\\",
+                "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\get_last_error.cppm.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:get_last_error",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\os\\windows\\get_last_error.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:string"
+                }
+            ]
+        }
+    ]
+}

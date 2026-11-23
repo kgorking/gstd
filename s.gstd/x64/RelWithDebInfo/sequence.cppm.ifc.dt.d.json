@@ -1,0 +1,27 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\source\\repos\\gstd\\gstdlib\\src\\async\\sequence.cppm",
+        "ProvidedModule": "gs:sequence",
+        "Includes": [],
+        "ImportedModules": [
+            {
+                "Name": "std",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\microsoft\\STL\\std.ixx.ifc.dt"
+            },
+            {
+                "Name": "gs:types",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\types.cppm.ifc.dt"
+            },
+            {
+                "Name": "gs:concepts",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\concepts.cppm.ifc.dt"
+            },
+            {
+                "Name": "gs:frame_pool",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\frame_pool.cppm.ifc.dt"
+            }
+        ],
+        "ImportedHeaderUnits": []
+    }
+}

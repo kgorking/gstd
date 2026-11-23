@@ -1,0 +1,19 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\source\\repos\\gstd\\gstdlib\\src\\bit\\countr_one.cppm",
+        "ProvidedModule": "gs:countr_one",
+        "Includes": [],
+        "ImportedModules": [
+            {
+                "Name": "gs:types",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\types.cppm.ifc"
+            },
+            {
+                "Name": "std",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\microsoft\\STL\\std.ixx.ifc"
+            }
+        ],
+        "ImportedHeaderUnits": []
+    }
+}

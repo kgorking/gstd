@@ -1,0 +1,29 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\concepts.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\concepts.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\concepts.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-concepts.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:concepts",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\concepts.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:types"
+                }
+            ]
+        }
+    ]
+}

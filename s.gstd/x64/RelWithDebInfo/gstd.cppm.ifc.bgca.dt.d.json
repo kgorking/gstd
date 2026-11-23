@@ -1,0 +1,195 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\source\\repos\\gstd\\gstdlib\\src\\gstd.cppm",
+        "ProvidedModule": "gs",
+        "Includes": [],
+        "ImportedModules": [
+            {
+                "Name": "gs:types",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\types.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "std",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\microsoft\\STL\\std.ixx.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:concepts",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\concepts.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:sequence",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\sequence.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:frame_pool",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\frame_pool.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:string",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\string.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:string_builder",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\string_builder.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:utf8",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\utf8.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:fmt",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\fmt.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:bit",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\bit.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:channel",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\channel.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:thread_pool",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\thread_pool.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:task",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\task.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:thread_signal",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\thread_signal.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:wait_all",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\wait_all.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:yield_all",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\yield_all.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:path",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\path.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:dir",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\list_dir.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:copy",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\copy.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:Reader",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\Reader.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:Writer",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\Writer.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:LineReader",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\LineReader.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:LineWriter",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\LineWriter.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:sync_console_writer",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\sync_console_writer.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:file",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\file.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:file_impl",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\file_impl.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:get_last_error",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\get_last_error.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:pipes",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\pipes.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:pipes_impl",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\pipes_impl.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:exec",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\exec.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:exec_impl",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\exec_impl.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:read_file",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\read_file.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:read_lines",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\read_lines.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:read_text",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\read_text.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:write_text",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\write_text.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:lines",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\lines.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:string_reader",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\string_reader.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:string_writer",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\string_writer.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:socket",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\socket.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:listener",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\listener.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:http_get",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\get.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:http",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\http.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:http_post",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\post.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:http_server",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\server.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:testing",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\testing.cppm.ifc.bgca.dt"
+            },
+            {
+                "Name": "gs:registry",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\registry.cppm.ifc.bgca.dt"
+            }
+        ],
+        "ImportedHeaderUnits": []
+    }
+}

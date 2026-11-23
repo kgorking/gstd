@@ -1,0 +1,32 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\list_dir.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\list_dir.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\list_dir.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-dir.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:dir",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\dir\\list_dir.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:string"
+                },
+                {
+                    "logical-name": "gs:sequence"
+                }
+            ]
+        }
+    ]
+}

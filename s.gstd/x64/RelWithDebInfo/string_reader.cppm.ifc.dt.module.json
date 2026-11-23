@@ -1,0 +1,38 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\string_reader.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\string_reader.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\string_reader.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-string_reader.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:string_reader",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\strutil\\string_reader.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "gs:string"
+                },
+                {
+                    "logical-name": "gs:Reader"
+                },
+                {
+                    "logical-name": "gs:LineReader"
+                }
+            ]
+        }
+    ]
+}

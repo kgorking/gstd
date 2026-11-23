@@ -43,7 +43,7 @@ static void run_benchmark(std::string_view label, frame_cache_mode mode, int ite
 			sleep_task(0)
 		};
 
-		for (int result : yield_all(std::move(tasks)))
+		for (int result : yield_all(tasks))
 			counter += result;
 	}
 

@@ -1,0 +1,29 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\countr_one.cppm.obj",
+            "outputs": [
+                "E:\\source\\repos\\gstd\\x64\\RelWithDebInfo\\gstdlib.pdb",
+                "x64\\RelWithDebInfo\\",
+                "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\countr_one.cppm.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:countr_one",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\bit\\countr_one.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "std"
+                }
+            ]
+        }
+    ]
+}

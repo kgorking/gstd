@@ -1,0 +1,14 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\memory.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\memory.obj.dt.module.json",
+                "x64\\RelWithDebInfo\\memory.obj.dt.d.json"
+            ],
+            "requires": []
+        }
+    ]
+}

@@ -1,0 +1,59 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\source\\repos\\gstd\\gstdlib\\src\\strutil\\string_reader.cppm",
+        "ProvidedModule": "gs:string_reader",
+        "Includes": [],
+        "ImportedModules": [
+            {
+                "Name": "std",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\microsoft\\STL\\std.ixx.ifc"
+            },
+            {
+                "Name": "gs:types",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\types.cppm.ifc"
+            },
+            {
+                "Name": "gs:string",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\string.cppm.ifc"
+            },
+            {
+                "Name": "gs:sequence",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\sequence.cppm.ifc"
+            },
+            {
+                "Name": "gs:concepts",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\concepts.cppm.ifc"
+            },
+            {
+                "Name": "gs:frame_pool",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\frame_pool.cppm.ifc"
+            },
+            {
+                "Name": "gs:string_builder",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\string_builder.cppm.ifc"
+            },
+            {
+                "Name": "gs:utf8",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\utf8.cppm.ifc"
+            },
+            {
+                "Name": "gs:Reader",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\Reader.cppm.ifc"
+            },
+            {
+                "Name": "gs:task",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\task.cppm.ifc"
+            },
+            {
+                "Name": "gs:channel",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\channel.cppm.ifc"
+            },
+            {
+                "Name": "gs:LineReader",
+                "BMI": "E:\\source\\repos\\gstd\\gstdlib\\x64\\RelWithDebInfo\\LineReader.cppm.ifc"
+            }
+        ],
+        "ImportedHeaderUnits": []
+    }
+}

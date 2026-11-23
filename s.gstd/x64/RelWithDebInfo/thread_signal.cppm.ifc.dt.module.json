@@ -1,0 +1,32 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "x64\\RelWithDebInfo\\thread_signal.cppm.ifc.dt.obj",
+            "outputs": [
+                "x64\\RelWithDebInfo\\thread_signal.cppm.ifc.dt.module.json",
+                "x64\\RelWithDebInfo\\thread_signal.cppm.ifc.dt.d.json",
+                "x64\\RelWithDebInfo\\gs-thread_signal.ifc"
+            ],
+            "provides": [
+                {
+                    "logical-name": "gs:thread_signal",
+                    "source-path": "e:\\source\\repos\\gstd\\gstdlib\\src\\async\\thread_signal.cppm",
+                    "is-interface": true
+                }
+            ],
+            "requires": [
+                {
+                    "logical-name": "std"
+                },
+                {
+                    "logical-name": "gs:types"
+                },
+                {
+                    "logical-name": "gs:bit"
+                }
+            ]
+        }
+    ]
+}
